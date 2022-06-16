@@ -1,0 +1,86 @@
+extends layout
+
+block content
+  - var balance = ((address.received - address.sent) / 1000000).toLocaleString('en',{'minimumFractionDigits':6,'maximumFractionDigits':8,'useGrouping':true});
+  - var balanceParts = balance.split('.');
+  - var sent = (address.sent /1000000).toLocaleString('en',{'minimumFractionDigits':6,'maximumFractionDigits':6,'useGrouping':true});
+  - var sentParts = sent.split('.');
+  - var received = (address.received / 1000000).toLocaleString('en',{'minimumFractionDigits':6,'maximumFractionDigits':6,'useGrouping':true});
+  - var receivedParts = received.split('.');
+  .col-xs-12.col-md-12
+    .card.card-default.card-address-summary
+      .card-header(style='position:relative;')
+        strong #{address.a_id} &nbsp; 
+          if settings.labels[address.a_id]
+            if settings.labels[address.a_id].type
+              label(class='label label-'+settings.labels[address.a_id].type+' pull-right hidden-xs', style='margin-left:15px;')
+                =settings.labels[address.a_id].label
+                if settings.labels[address.a_id].url
+                  a(href=settings.labels[address.a_id].url, target='_blank')
+                    span.fa.fa-question-circle(style='margin-left:5px;')
+            else
+              label.label.label-default.pull-right.hidden-xs(style='margin-left:15px;')
+                =settings.labels[address.a_id].label
+                if settings.labels[address.a_id].url
+                  a(href=settings.labels[address.a_id].url, target='_blank')
+                    span.fa.fa-question-circle(style='margin-left:5px;')
+          else
+            if address.name !== "" && typeof address.name !== "undefined"
+              label.badge.badge-pill.pull-right.d-none.d-sm-block(style='margin-left:15px;')
+                =address.name
+            else
+              a.badge.badge-pill.pull-right.d-none.d-sm-block(href="/address/"+ address.a_id +"/claim" style="font-size: smaller;")
+                =" Is this your address? Claim it now!"
+      table.table.table-bordered.table-striped.summary-table
+        thead
+          tr.d-none.d-md-table-row
+            if settings.show_sent_received == true
+              th.addr-summary #{settings.locale.total_sent} (#{settings.symbol})
+            if address.a_id !== 'coinbase'
+              if settings.show_sent_received == true
+                th.addr-summary #{settings.locale.total_received} (#{settings.symbol})
+              th.addr-summary #{settings.locale.rl_balance} (#{settings.symbol})
+              th.addr-summary.d-none.d-sm-table-cell #{settings.locale.a_qr}
+        tbody
+          tr.d-none.d-md-table-row
+            if settings.show_sent_received == true
+              td.addr-summary #{sentParts[0]}.
+                span.decimal #{sentParts[1]} 
+            if address.a_id !== 'coinbase'
+              if settings.show_sent_received == true
+                td.addr-summary #{receivedParts[0]}.
+                  span.decimal #{receivedParts[1]} 
+              td.addr-summary #{balanceParts[0]}.
+                span.decimal #{balanceParts[1]} 
+              td.addr-summary.d-none.d-sm-table-cell
+                img.qrcode(src='/qr/'+address.a_id)
+          
+          tr.d-table-row.d-md-none
+            if settings.show_sent_received == true
+              tr.d-table-row.d-md-none
+                th #{settings.locale.total_sent} 
+                  span.small (#{settings.symbol})
+                th(style="font-size:18px") #{sentParts[0]}.
+                  span.decimal #{sentParts[1]} 
+              if address.a_id !== 'coinbase'
+                if settings.show_sent_received == true
+                  tr.d-table-row.d-md-none
+                    th #{settings.locale.total_received} 
+                      span.small (#{settings.symbol})
+                    th(style="font-size:18px") #{receivedParts[0]}.
+                      span.decimal #{receivedParts[1]}
+            tr.d-table-row.d-md-none
+              th #{settings.locale.rl_balance} 
+                span.small (#{settings.symbol})
+              th(style="font-size:18px") #{balanceParts[0]}.
+                span.decimal #{balanceParts[1]} 
+              
+          tr.d-table-row.d-md-none
+            td.addr-summary(colspan="3")
+              img.qrcode(src='/qr/'+address.a_id, height='192px')
+    .card.card-default
+      .card-header
+        strong #{settings.locale.ex_latest_transactions}
+      table.table-bordered.table-striped
+        include ./includes/address_history.pug
+    .footer-padding

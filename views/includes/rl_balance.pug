@@ -1,0 +1,28 @@
+.card.card-default
+  .card-header
+    h5.card-title #{settings.locale.rl_current_balance} 
+  table.table.table-hover.table-bordered(cellspacing="0")
+    thead
+      tr
+        th(style='text-align:center;') 
+          span.fa.fa-flag-checkered
+        th #{settings.locale.tx_address}
+        th.d-none.d-lg-table-cell #{settings.locale.rl_balance} (#{settings.symbol})
+        th.d-none.d-md-table-cell(style='text-align:center;') %
+    tbody
+      - var count = 0
+      each item in balance
+        - count = count + 1
+        - var itemFixed = (parseInt(item.balance) / 1000000)
+        - var itemFixedParts = itemFixed.toLocaleString('en',{'minimumFractionDigits':6,'maximumFractionDigits':6,'useGrouping':true}).split(".");
+        - var percentage = (itemFixed / stats.supply) * 100;
+        tr
+          td(style='text-align:center; font-size:12px;')
+            =count
+          td(style='font-size:13px;')
+            a(href='/address/'+item.a_id) #{item.a_id}
+            include ./rl_labels.pug
+          td.d-none.d-lg-table-cell #{itemFixedParts[0]}.
+            span.decimal #{itemFixedParts[1]}
+          td.d-none.d-md-table-cell(style='text-align:center;') 
+            =percentage.toFixed(2)

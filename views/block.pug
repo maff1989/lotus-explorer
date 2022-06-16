@@ -1,0 +1,117 @@
+extends layout
+
+block content
+  - var time = new Date((block.time) * 1000).toUTCString();
+  - var block_difficulty = parseFloat(block.difficulty).toFixed(6);
+  .col-xs-12.col-md-12
+    .card.card-default
+      .card-header(style='padding-left:25px;padding-right:25px;')          
+        a(href=`/api/getblock?hash=` + block.hash)
+          span.fa.fa-info-circle.iquidus.pull-right       
+        if block.previousblockhash != null
+          a(href='/block/'+ block.previousblockhash)
+            span.fa.fa-chevron-left.iquidus.block-last(data-toggle='tooltip', data-placement='top', title=settings.locale.block_previous)
+        if block.nextblockhash != null 
+          a(href='/block/'+ block.nextblockhash)
+            span.fa.fa-chevron-right.iquidus.block-next(data-toggle='tooltip', data-placement='top', title=settings.locale.block_next)
+        br
+        strong #{settings.locale.tx_block_hash}: #{block.hash}
+        br
+        br
+        strong #{settings.locale.block_mined_by}: 
+          a(href='/address/' + block.minedby) #{block.minedby}
+      table.table.table-bordered.summary-table 
+        thead
+          tr
+            th #{settings.locale.height}
+            th.d-none.d-lg-table-cell #{settings.locale.confirmations}
+            th.d-sm-table-cell.d-lg-none Conf.
+            th.d-none.d-lg-table-cell #{settings.locale.difficulty}
+            if settings.heavy == true
+              th Vote
+            th.d-none.d-lg-table-cell #{settings.locale.bits}
+            th.d-none.d-lg-table-cell #{settings.locale.nonce}
+            th.d-none.d-sm-table-cell.d-table-cell #{settings.locale.size}
+            th.d-none.d-sm-table-cell.d-table-cell #{settings.locale.block_burned} (#{settings.symbol})
+            th.d-none.d-sm-table-cell.d-table-cell #{settings.locale.timestamp}
+        tbody
+          - var fees_burned = parseFloat(block.burned).toFixed(6);
+          - var block_size = parseFloat(block.size / 1000).toFixed(3) + ' KB';
+          
+          if block.confirmations >= confirmations
+            tr.table-success
+              td=block.height
+              //td=Number(block.difficulty).toFixed(4)
+              td=block.confirmations
+              td.d-none.d-lg-table-cell=block_difficulty
+              if settings.heavy == true
+                td=block.vote
+              td.d-none.d-lg-table-cell=block.bits
+              td.d-none.d-lg-table-cell=block.nonce
+              td.d-none.d-sm-table-cell.d-table-cell=block_size
+              td.d-none.d-sm-table-cell.d-table-cell=fees_burned
+              td.d-none.d-sm-table-cell.d-table-cell=time
+          else if block.confirmations < (confirmations / 2)
+            tr.table-danger
+              td=block.height
+              //td=Number(block.difficulty).toFixed(4)
+              td=block.confirmations
+              td.d-none.d-lg-table-cell=block_difficulty
+              if settings.heavy == true
+                td=block.vote
+              td.d-none.d-lg-table-cell=block.bits
+              td.d-none.d-lg-table-cell=block.nonce
+              td.d-none.d-sm-table-cell.d-table-cell=block_size
+              td.d-none.d-sm-table-cell.d-table-cell=fees_burned
+              td.d-none.d-sm-table-cell.d-table-cell=time
+          else
+            tr.table-warning
+              td=block.height
+              //td=Number(block.difficulty).toFixed(4)
+              td=block.confirmations
+              td.d-none.d-lg-table-cell=block_difficulty
+              if settings.heavy == true
+                td=block.vote
+              td.d-none.d-lg-table-cell=block.bits
+              td.d-none.d-lg-table-cell=block.nonce
+              td.d-none.d-sm-table-cell.d-table-cell=block_size
+              td.d-none.d-sm-table-cell.d-table-cell=fees_burned
+              td.d-none.d-sm-table-cell.d-table-cell=time
+
+    if block.hash == settings.genesis_block
+      .alert.alert-info(role='alert', style='text-align:center;')   
+        strong #{settings.locale.block_genesis}
+    else
+      .card.card-default
+        .card-header
+          strong Transactions (#{block.txcount} Total)
+        table.table.table-bordered.table-striped.summary-table 
+          thead
+            tr
+              th.d-none.d-lg-table-cell #{settings.locale.tx_hash}
+              th #{settings.locale.size}
+              th #{settings.locale.tx_recipients}
+              th #{settings.locale.mkt_amount}
+              th
+          tbody
+            each txn in txs
+              tr
+                td.d-none.d-lg-table-cell
+                  a(href='/tx/'+txn.txid) #{txn.txid}
+                - var tx_size = parseInt(txn.size).toLocaleString('en');
+                td #{tx_size} Bytes
+                td #{txn.vout.length}
+                if txn.vout.length > 0
+                  - var total = (txn.total / 1000000).toLocaleString('en',{'minimumFractionDigits':6,'maximumFractionDigits':6,'useGrouping':true});
+                  - var totalParts = total.split('.')
+                  td #{totalParts[0]}.
+                    span.decimal #{totalParts[1]}
+                else
+                  - var total = (txn.total).toLocaleString('en',{'minimumFractionDigits':6,'maximumFractionDigits':6,'useGrouping':true});
+                  - var totalParts = total.split('.')
+                  td #{totalParts[0]}.
+                    span.decimal #{totalParts[1]}
+                td.view_tx 
+                  a(href='/tx/'+txn.txid)
+                    span.fa.fa-eye
+    .footer-padding  

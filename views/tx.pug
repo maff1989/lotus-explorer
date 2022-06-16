@@ -1,0 +1,187 @@
+extends layout
+
+block content
+  // - var time = format_unixtime(tx.timestamp)
+  - var time = new Date((tx.timestamp) * 1000).toUTCString()
+  .col-xs-12.col-md-12
+    //-.card.card-body.d-lg-none.d-md-none(style='word-wrap:break-word;')
+      | Viewing TXID: #{tx.txid}
+    .card.card-default
+      .card-header.d-sm-block
+        a(href=`/api/getrawtransaction?txid=${tx.txid}&decrypt=1`)
+          span.fa.fa-info-circle.iquidus.pull-right
+        br
+        strong='Transaction ID: ' + tx.txid
+      div.table-responsive
+        table.table.table-bordered.table-striped.summary-table 
+          thead
+            tr
+              th.d-none.d-lg-table-cell #{settings.locale.confirmations}
+              th.d-sm-table-cell.d-lg-none Conf.
+              //th.d-none.d-xl-block #{settings.locale.tx_block_hash}
+              th.d-none.d-xl-table-cell #{settings.locale.tx_block_hash}
+              th #{settings.locale.tx_size}
+              th #{settings.locale.tx_fee}
+              th #{settings.locale.timestamp}
+              th 
+          tbody
+            - var confirms = tx.blockindex === undefined ? 0: (blockcount - tx.blockindex) + 1;
+            - var size = parseInt(tx.size).toLocaleString('en') + ' Bytes';
+            - var fee_rate = parseFloat(tx.fee / tx.size).toLocaleString('en', {'maximumFractionDigits':3});
+            - fee_rate = fee_rate === 0 ? "N/A": fee_rate + " sat/Byte";
+            if confirms >= confirmations             
+              tr.table-success
+                  td #{confirms}
+                  //td.d-none.d-xl-block
+                  td.d-none.d-xl-table-cell
+                    if blockcount == -1
+                      |Mempool Transaction
+                    else
+                      a(href='/block/'+tx.blockhash) #{tx.blockhash}
+                  td #{size}
+                  td #{fee_rate}
+                  td #{time}
+                  td.view_tx  
+                    a(href='/block/'+tx.blockhash)
+                      span.fa.fa-eye 
+            else
+              if confirms < (confirmations / 2)
+                tr.table-danger
+                  td #{confirms}
+                  //td.d-none.d-xl-block 
+                  td.d-none.d-xl-table-cell
+                    if blockcount == -1
+                      |Mempool Transaction
+                    else
+                      a(href='/block/'+tx.blockhash) #{tx.blockhash}
+                  td #{size}
+                  td #{fee_rate}
+                  td #{time}
+                  td.view_tx  
+                    a(href='/block/'+tx.blockhash)
+                      span.fa.fa-eye 
+              else
+                tr.table-warning
+                  td #{confirms}
+                  //td.d-none.d-xl-block 
+                  td.d-none.d-xl-table-cell
+                    if blockcount == -1
+                      |Mempool Transaction
+                    else
+                      a(href='/block/'+tx.blockhash) #{tx.blockhash}
+                  td #{size}
+                  td #{fee_rate}
+                  td #{time}
+                  td.view_tx  
+                    a(href='/block/'+tx.blockhash)
+                      span.fa.fa-eye
+    if tx.vout.length < 1
+      .alert.alert-info(role='alert', style='text-align:center;')   
+        strong #{settings.locale.tx_nonstandard}
+    else
+      .row
+        .col-xl-6
+          .card.card-default
+            .card-header
+              strong #{settings.locale.tx_contributors}
+              span.fa.fa-arrow-right.pull-right.d-xs-none
+            table.table.table-bordered.table-striped.summary-table 
+              thead
+                tr
+                  th #{settings.locale.tx_address}
+                  if (tx.vin.length > 0)
+                    if tx.vin[0].addresses != 'coinbase'
+                      th.d-none.d-md-table-cell # Inputs
+                      th.d-none.d-md-table-cell #{settings.locale.mkt_amount}
+              tbody
+                if tx.vin.length > 0
+                  each r in tx.vin
+                    if r.addresses == 'coinbase' 
+                      tr.table-info(style='text-align:center')
+                        td #{settings.locale.new_coins}
+                    else
+                      - var ramount = (r.amount / 1000000).toLocaleString('en',{'minimumFractionDigits':6,'maximumFractionDigits':6,'useGrouping':true})
+                      - var ramountParts = ramount.split('.')
+                      tr
+                        td 
+                          a.loading(href='/address/' + r.addresses) 
+                            =r.addresses
+                        td.d-none.d-md-table-cell
+                          =r.num_inputs
+                        td.table-danger.d-none.d-md-table-cell #{ramountParts[0]}.
+                          span.decimal #{ramountParts[1]}
+                      tr.d-sm-table-cell.d-md-none
+                        td.table-danger.pull-right #{ramountParts[0]}.
+                          span.decimal #{ramountParts[1]}
+                        td.pull-right #{r.num_inputs} input(s)
+                          
+                      //-tr.d-lg-none.d-md-none
+                          td.table-danger #{ramountParts[0]}.
+                            span.decimal #{ramountParts[1]}
+                else
+                  tr.table-info(style='text-align:center')
+                    td #{settings.locale.proof_of_stake}
+        .col-xl-6
+          .card.card-default
+            .card-header
+              strong #{settings.locale.tx_recipients}
+            table.table.table-bordered.table-striped.summary-table 
+              thead
+                tr
+                  th #{settings.locale.tx_address}
+                  th.d-none.d-md-table-cell #{settings.locale.mkt_amount}
+              tbody
+                each r in tx.vout
+                  //if tx.vout.length > 0 
+                  - var ramount = (r.amount / 1000000).toLocaleString('en',{'minimumFractionDigits':6,'maximumFractionDigits':6,'useGrouping':true})
+                  - var ramountParts = ramount.split('.')
+                  
+                  if r.addresses.includes("OP_RETURN")
+                    // split the asm into array
+                    - var asm = r.asm.split(' ');
+                    - var lokad = asm[1]; // assume the 2nd param is lokad ID
+                    tr
+                      td Burned Coins (
+                        // Lillypad "POND"
+                        if lokad == "1145982800"
+                          - var vote = asm[2]; // 1 for upvote, 0 for downvote
+                          - var hash = asm[3];
+                          b
+                            code Stamp Forum: 
+                          a(href="https://web.stampchat.io/#/forum/" + hash target="_blank") Post reaction: 
+                            if vote == 1
+                              span.fa.fa-thumbs-o-up
+                            else
+                              span.fa.fa-thumbs-o-down
+                        else
+                          code OP_RETURN
+                        |)
+                      td.table-danger.d-none.d-md-table-cell  #{ramountParts[0]}.
+                        span.decimal #{ramountParts[1]}
+                    tr.d-table-cell.d-md-none
+                      td.table-danger.pull-right #{ramountParts[0]}.
+                            span.decimal #{ramountParts[1]}
+                  else
+                    tr
+                      td
+                        a.loading(href='/address/'+r.addresses) 
+                          =r.addresses 
+                      td.table-success.d-none.d-md-table-cell  #{ramountParts[0]}.
+                        span.decimal #{ramountParts[1]}
+                    tr.d-table-cell.d-md-none
+                      td.table-success.pull-right #{ramountParts[0]}.
+                            span.decimal #{ramountParts[1]}
+                  //-
+                    else
+                      - var ramount = (r.amount / 1000000).toLocaleString('en',{'minimumFractionDigits':6,'maximumFractionDigits':6,'useGrouping':true})
+                      - var ramountParts = ramount.split('.')
+                    tr
+                      td 
+                        a.loading(href='/address/' + r.addresses) 
+                          =r.addresses 
+                      td.table-success.d-none.d-md-block  #{ramountParts[0]}.
+                          span.decimal #{ramountParts[1]}
+                    tr.d-sm-block.d-md-none.d-none
+                      td.table-success #{ramountParts[0]}.
+                              span.decimal #{ramountParts[1]}
+    .footer-padding

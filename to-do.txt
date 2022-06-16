@@ -1,0 +1,20 @@
+TO DO:
+------
+- show mempool transactions
+- If address claimed, display username instead of address as clickable link
+- configure SSL termination
+- Fix claim address form layout (css?)
+- charts & graphs?
+- fix/adjust mobile layout?
+
+
+COMPLETED:
+----------
+6/25/21:
+- adjust timestamp display to always display GMT
+--- views/block.pug:5
+--- views/tx.pug:5
+- fix tx page confirmations count bug (off by one)
+--- views/tx.pug:24
+
+

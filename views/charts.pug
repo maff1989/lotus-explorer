@@ -1,0 +1,386 @@
+extends layout
+
+block content
+  script.
+    // data from db queries
+    var chartData = {
+      TxDay: !{JSON.stringify(txsDay)},
+      TxWeek: !{JSON.stringify(txsWeek)},
+      TxMonth: !{JSON.stringify(txsMonth)},
+      DifficultyWeek: !{JSON.stringify(difficultyWeek)},
+      DifficultyMonth: !{JSON.stringify(difficultyMonth)},
+      DifficultyQuarter: !{JSON.stringify(difficultyQuarter)},
+      MiningDistDay: !{JSON.stringify(miningDistDay)},
+      MiningDistWeek: !{JSON.stringify(miningDistWeek)}
+    }
+    
+    // holds the AJAX query object; prevents multiple queries at one time
+    // TODO: implement Ajax functionality to help reduce initial data load
+    // var chartGetDataAjax = null;
+    
+    // plot objects
+    var plots = {
+      plotChartTxDay: null,
+      plotChartTxWeek: null,
+      plotChartTxMonth: null,
+      plotChartDifficultyWeek: null,
+      plotChartDifficultyMonth: null,
+      plotChartDifficultyQuarter: null,
+      plotChartMiningDistDay: null,
+      plotChartMiningDistWeek: null
+    }
+      
+    // pie chart legend location based on screen size
+    var pieLegendLocation;
+    if($(window).width() <= 768) {
+      pieLegendLocation = 's';
+    } else {
+      pieLegendLocation = 'e';
+    }
+    
+    // plot config objects
+    var plotConfigs = {
+      TxDay: {
+        title: "!{parseInt(txsDay_count).toLocaleString('en')} Total",
+        highlighter:{
+          show: true
+        },
+        axes:{
+          xaxis:{
+            show: true,
+            renderer:$.jqplot.DateAxisRenderer,
+            tickInterval:'6 hour',
+            tickOptions:{
+              formatString:'%a %#H:%M',
+            }
+          },
+          yaxis:{
+            show: true,
+            min: 0
+          }
+        },
+        series:[{
+          rendererOptions:{
+            //smooth: true,
+          },
+          lineWidth: 1.5,
+          showMarker: false,
+        }]
+      },
+      TxWeek:{
+        title: "!{parseInt(txsWeek_count).toLocaleString('en')} Total",
+        highlighter:{
+          show: true
+        },
+        axes:{
+          xaxis:{
+            show: true,
+            renderer:$.jqplot.DateAxisRenderer,
+            tickOptions:{
+              formatString:'%m/%d',
+            },
+            tickInterval:'24 hour',
+          },
+          yaxis:{
+            show: true,
+            min: 0
+          }
+        },
+        series:[{
+          rendererOptions:{
+            //smooth: true,
+          },
+          lineWidth: 1.5,
+          showMarker: false,
+        }]
+        
+      },
+      TxMonth: {
+        title: "!{parseInt(txsMonth_count).toLocaleString('en')} Total",
+        highlighter:{
+          show: true
+        },
+        axes:{
+          xaxis:{
+            show: true,
+            renderer:$.jqplot.DateAxisRenderer,
+            tickOptions:{
+              formatString:'%m/%d',
+            },
+            tickInterval:'4 day',
+          },
+          yaxis:{
+            show: true,
+            min: 0
+          }
+        },
+        series:[{
+          rendererOptions:{
+            //smooth: true,
+          },
+          lineWidth: 1.5,
+          showMarker: false,
+        }]
+        
+      },
+      DifficultyWeek: {
+        title: "!{parseFloat(((difficultyWeek[difficultyWeek.length - 1][1] - difficultyWeek[0][1]) / difficultyWeek[0][1]) * 100).toLocaleString('en')}% Change",
+        highlighter:{
+          show: true
+        },
+        axes:{
+          xaxis:{
+            show: true,
+            renderer:$.jqplot.DateAxisRenderer,
+            tickOptions:{
+              formatString:'%m/%d'
+            },
+            tickInterval:'24 hour',
+          },
+          yaxis:{
+            show: true,
+          }
+        },
+        series:[{
+          rendererOptions:{
+            //smooth: true,
+          },
+          lineWidth: 1.5,
+          showMarker: false,
+        }]
+        
+      },
+      DifficultyMonth: {
+        title: "!{parseFloat(((difficultyMonth[difficultyMonth.length - 1][1] - difficultyMonth[0][1]) / difficultyMonth[0][1]) * 100).toLocaleString('en')}% Change",
+        highlighter:{
+          show: true
+        },
+        axes:{
+          xaxis:{
+            show: true,
+            renderer:$.jqplot.DateAxisRenderer,
+            tickOptions:{
+              formatString:'%m/%d'
+            },
+            tickInterval:'4 day',
+          },
+          yaxis:{
+            show: true,
+          }
+        },
+        series:[{
+          rendererOptions:{
+            //smooth: true,
+          },
+          lineWidth: 1.5,
+          showMarker: false,
+        }]  
+      },
+      DifficultyQuarter: {
+        title: "!{parseFloat(((difficultyQuarter[difficultyQuarter.length - 1][1] - difficultyQuarter[0][1]) / difficultyQuarter[0][1]) * 100).toLocaleString('en')}% Change",
+        highlighter:{
+          show: true
+        },
+        axes:{
+          xaxis:{
+            show: true,
+            renderer:$.jqplot.DateAxisRenderer,
+            tickOptions:{
+              formatString:'%m/%d'
+            },
+            tickInterval:'14 day',
+          },
+          yaxis:{
+            show: true,
+          }
+        },
+        series:[{
+          rendererOptions:{
+            //smooth: true,
+          },
+          lineWidth: 1.5,
+          showMarker: false,
+        }]  
+      },
+      MiningDistDay: {
+        title: "!{totalMinersDay} Miners Total",
+        series: [{
+          renderer: $.jqplot.PieRenderer,
+          rendererOptions:{
+            sliceMargin: 3,
+            padding: 26,
+            showDataLabels: true,
+            dataLabels: 'percent',
+            dataLabelPositionFactor: 1.07,
+            dataLabelCenterOn: false,
+            startAngle: -90,
+            shadowOffset: 1
+          }
+        }],
+        legend:{
+          show: true,
+          placement: 'outside',
+          location: pieLegendLocation,
+          //renderer: $.jqplot.EnhancedPieLegendRenderer,
+          rendererOptions:{
+            numberRows: 15,
+            numberColumns: 1
+            //seriesToggle: false,
+            //toolTips: miningDistDay.map((a) => a[1] + ' blocks')
+          },
+          fontSize: 12
+        }
+      },
+      MiningDistWeek: {
+        title: "!{totalMinersWeek} Miners Total",
+        series: [{
+          renderer: $.jqplot.PieRenderer,
+          rendererOptions:{
+            sliceMargin: 3,
+            padding: 26,
+            showDataLabels: true,
+            dataLabels: 'percent',
+            dataLabelPositionFactor: 1.07,
+            dataLabelCenterOn: false,
+            startAngle: -90,
+            shadowOffset: 1
+          }
+        }],
+        legend:{
+          show: true,
+          placement: 'outside',
+          location: pieLegendLocation,
+          //renderer: $.jqplot.EnhancedPieLegendRenderer,
+          rendererOptions:{
+            numberRows: 15,
+            numberColumns: 1
+            //seriesToggle: false,
+            //toolTips: miningDistMonth.map((a) => a[1] + ' blocks')
+          },
+          fontSize: 12
+        },
+      }
+    }
+    
+    $(document).ready(function() {
+      // register jQuery event handler for changing between tabs
+      $('.tabpanel .nav-link').on('click', function() {
+        var clicked = $(this).attr('aria-controls').replace('tab', '');
+        var chart = 'chart' + clicked;
+        var plot = 'plotChart' + clicked;
+        var plotConfig = 'plotConfig' + clicked;
+        setTimeout(function() {
+          var tabMiningDist = $('.tab-content .active div[id*="chartMiningDist"]').parent();
+          if(plot.includes('MiningDist')) {
+            if ($(window).width() <= 768) {
+              plotConfigs[clicked].legend.location = 's';
+              tabMiningDist.css('height', '700px');
+            } else {
+              plotConfigs[clicked].legend.location = 'e';
+              tabMiningDist.css('height', '');
+            }
+          }
+          if(plots[plot] !== null) {
+            plots[plot].destroy();
+          }
+          plots[plot] = $.jqplot(chart, [chartData[clicked]], plotConfigs[clicked]);
+          plots[plot].replot({resetAxes: false});
+        }, 1);
+      });
+      
+      plots['plotChartTxDay'] = $.jqplot('chartTxDay', [chartData['TxDay']], plotConfigs['TxDay']);
+      //plotChartTxWeek = $.jqplot('chartTxWeek', [chartTxWeekData], plotConfigTxWeek);
+      //plotChartTxMonth = $.jqplot('chartTxMonth', [chartTxMonthData], plotConfigTxMonth);
+      
+      plots['plotChartDifficultyWeek'] = $.jqplot('chartDifficultyWeek', [chartData['DifficultyWeek']], plotConfigs['DifficultyWeek']);
+      //plotChartDifficultyMonth = $.jqplot('chartDifficultyMonth', [difficultyMonth], plotConfigDifficultyMonth);
+      
+      if($(window).width() <= 768) {
+        $('#tabMiningDistDay').css('height', '700px');
+        $('#tabMiningDistWeek').css('height', '700px');
+      }
+      
+      plots['plotChartMiningDistDay'] = $.jqplot('chartMiningDistDay', [chartData['MiningDistDay']], plotConfigs['MiningDistDay']);
+      // plots['plotChartMiningDistWeek'] = $.jqplot('chartMiningDistWeek', [chartData['MiningDistWeek']], plotConfigs['MiningDistWeek'];
+      
+    });
+    
+    $(window).resize(function () {
+      // for pie chart legend location
+      var tabMiningDist = $('.tab-content .active div[id*="chartMiningDist"]').parent();
+      // graceful resizing
+      $('.tab-content .active div[id*="chart"]').each(function(index) {
+        var div_id = $(this).attr('id');
+        var plot = "plotChart" + div_id.replace('chart', '');
+        plots[plot].replot({resetAxes: false});
+        if(plot.includes('MiningDist')) {
+          if ($(window).width() <= 768) {
+            plots[plot].legend.location = 's';
+            tabMiningDist.css('height', '700px');
+          } else {
+            plots[plot].legend.location = 'e';
+            tabMiningDist.css('height', '');
+          }
+        }
+      });
+    });
+  
+  
+  //code Number of TX last 24h: #{txs_day.length}
+  //code #{JSON.stringify(txsDay)}
+  .col-md-12
+    .row
+      .col-md-6
+        h4 Non-coinbase Transactions
+        .tabpanel
+          ul.nav.nav-tabs(role='tablist')
+            li.nav-item(role='presentation')
+              a.nav-link.active(href='#tabTxDay', aria-controls='tabTxDay', role='tab', data-toggle='tab') Day
+            li.nav-item(role='presentation')
+              a.nav-link(href='#tabTxWeek', aria-controls='tabTxWeek', role='tab', data-toggle='tab') Week
+            li.nav-item(role='presentation')
+              a.nav-link(href='#tabTxMonth', aria-controls='tabTxMonth', role='tab', data-toggle='tab') Month
+        .tab-content
+          #tabTxDay.tab-pane.active
+            div#chartTxDay
+          #tabTxWeek.tab-pane
+            div#chartTxWeek
+          #tabTxMonth.tab-pane
+            div#chartTxMonth
+        hr
+
+      .col-md-6
+        h4 Block Difficulty
+        .tabpanel
+          ul.nav.nav-tabs(role='tablist')
+            li.nav-item(role='presentation')
+              a.nav-link.active(href='#tabDifficultyWeek', aria-controls='tabDifficultyWeek', role='tab', data-toggle='tab') Week
+            li.nav-item(role='presentation')
+              a.nav-link(href='#tabDifficultyMonth', aria-controls='tabDifficultyMonth', role='tab', data-toggle='tab') Month
+            li.nav-item(role='presentation')
+              a.nav-link(href='#tabDifficultyQuarter', aria-controls='tabDifficultyQuarter', role='tab', data-toggle='tab') Quarter
+        .tab-content
+          #tabDifficultyWeek.tab-pane.active
+            div#chartDifficultyWeek
+          #tabDifficultyMonth.tab-pane
+            div#chartDifficultyMonth
+          #tabDifficultyQuarter.tab-pane
+            div#chartDifficultyQuarter
+        hr
+  
+  .col-md-12
+    .row
+      .col-md-6
+        h4 Block Distribution
+        .tabpanel
+          ul.nav.nav-tabs(role='tablist')
+            li.nav-item(role='presentation')
+              a.nav-link.active(href='#tabMiningDistDay', aria-controls='tabMiningDistDay', role='tab', data-toggle='tab') Day
+            li.nav-item(role='presentation')
+              a.nav-link(href='#tabMiningDistWeek', aria-controls='tabMiningDistWeek', role='tab', data-toggle='tab') Week
+        .tab-content
+          #tabMiningDistDay.tab-pane.active
+            div#chartMiningDistDay(style='height:350px;')
+          #tabMiningDistWeek.tab-pane
+            div#chartMiningDistWeek(style='height:350px;')
+
