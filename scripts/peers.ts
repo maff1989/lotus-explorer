@@ -37,12 +37,11 @@ mongoose.connect(dbString, function(err: any) {
 	// get all peers from db
 	db.get_peers(async (dbPeers: DbPeer[]) => {
 		// put all peer IP addresses into array
-		const db_peer_ips: string[] = dbPeers.map(obj => {
-			return obj.address;
+		const db_peer_ips: string[] = dbPeers.map(dbPeer => {
+			return dbPeer.address;
 		});
 		// get current connected peers from node
 		const body = await request.get('http://127.0.0.1:' + settings.port + '/api/getpeerinfo', {json: true});
-		console.log(body);
 		// get all of the IP addresses of the node peers
 		const nodePeers: NodePeer[] = [];
 		body.forEach((peer: NodePeer) => {
@@ -89,11 +88,11 @@ mongoose.connect(dbString, function(err: any) {
 			});
 		});
 		// db peers that are not in node's peer list are considered dead
-		const dead_peer_ips: string[] = db_peer_ips.filter(ip => {
-			return nodePeers.findIndex(peer => ip == peer.addr) < 0
+		const deadPeers: DbPeer[] = dbPeers.filter(dbPeer => {
+			return nodePeers.findIndex(nodePeer => dbPeer.address == nodePeer.addr) < 0
 		});
-		dead_peer_ips.forEach(ip => {
-			db.drop_peer(ip, () => console.log("Dropped dead peer: " + ip))
+		deadPeers.forEach(dbPeer => {
+			db.drop_peer(dbPeer.address, () => console.log("Dropped dead peer: " + dbPeer.address))
 		});
 	});
 });
