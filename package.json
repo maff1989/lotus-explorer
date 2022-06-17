@@ -25,10 +25,12 @@
     "pug": "^2.0.3",
     "qr-image": "~2.0.0",
     "request": "^2.88.0",
+    "request-promise": "^4.2.6",
     "static-favicon": "~1.0.0",
     "typescript": "^4.7.3"
   },
   "devDependencies": {
+    "@types/request-promise": "^4.1.48",
     "jasmine": "^3.5.0"
   }
 }

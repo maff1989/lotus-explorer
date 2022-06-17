@@ -1,7 +1,7 @@
 const db = require('../lib/database')
-  , settings = require('../lib/settings');
-import * as mongoose from 'mongoose';
-import * as request from 'async-request';
+  , settings = require('../lib/settings')
+	, mongoose = require('mongoose');
+import * as request from 'request-promise';
 
 function exit() {
   mongoose.disconnect();
@@ -28,20 +28,20 @@ const dbString = 'mongodb://' + settings.dbsettings.user
 	+ ':' + settings.dbsettings.port
 	+ '/' + settings.dbsettings.database;
 
-mongoose.connect(dbString, function(err) {
+mongoose.connect(dbString, function(err: any) {
   if (err) {
     console.log('Unable to connect to database: %s', dbString);
     console.log('Aborting');
     exit();
 	}
 	// get all peers from db
-	db.get_peers(async db_peers => {
+	db.get_peers(async (dbPeers: DbPeer[]) => {
 		// put all peer IP addresses into array
-		const db_peer_ips: string[] = db_peers.map(function(obj, i, array) {
+		const db_peer_ips: string[] = dbPeers.map(obj => {
 			return obj.address;
 		});
 		// get current connected peers from node
-		const body = await request('http://127.0.0.1:' + settings.port + '/api/getpeerinfo', {json: true});
+		const body = await request.get('http://127.0.0.1:' + settings.port + '/api/getpeerinfo', {json: true});
 		// get all of the IP addresses of the node peers
 		const nodePeers: NodePeer[] = [];
 		body.forEach((peer: NodePeer) => {
@@ -62,7 +62,7 @@ mongoose.connect(dbString, function(err) {
 					const ipv6_address = nodePeer.addr.includes(':')
 						? nodePeer.addr.replace(/^\[(([0-9a-f]{0,4}:?){1,8})\]$/, '$1')
 						: null;
-					const geo = await request('https://json.geoiplookup.io/' + (ipv6_address
+					const geo = await request.get('https://json.geoiplookup.io/' + (ipv6_address
 						? ipv6_address
 						: nodePeer.addr
 					));
