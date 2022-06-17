@@ -75,7 +75,7 @@ mongoose.connect(dbString, function(err) {
 	              // peer already exists
 	              loop.next();
 	            } else {
-	              request({uri: 'https://freegeoip.app/json/' + (ipv6_address ? ipv6_address: address), json: true}, function (error, response, geo) {
+	              request({uri: 'https://json.geoiplookup.io/' + (ipv6_address ? ipv6_address: address), json: true}, function (error, response, geo) {
 	                db.create_peer({
 	                  address: address,
 	                  port: port,
