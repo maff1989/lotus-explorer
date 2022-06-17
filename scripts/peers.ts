@@ -42,6 +42,7 @@ mongoose.connect(dbString, function(err: any) {
 		});
 		// get current connected peers from node
 		const body = await request.get('http://127.0.0.1:' + settings.port + '/api/getpeerinfo', {json: true});
+		console.log(body);
 		// get all of the IP addresses of the node peers
 		const nodePeers: NodePeer[] = [];
 		body.forEach((peer: NodePeer) => {
