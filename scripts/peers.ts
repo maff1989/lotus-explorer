@@ -51,12 +51,15 @@ mongoose.connect(dbString, function(err: any) {
 				? peer.addr.length
 				: parseInt(peer.addr.substring(index + 1));
 			// keep node peer details
-			nodePeers.push({ addr: addr.substring(0, portSplit), version, subver });
+			const nodePeer: NodePeer = { addr: addr.substring(0, portSplit), version, subver };
+			nodePeers.push(nodePeer);
+			console.log('added nodePeer:', nodePeer);
 		});
 		// process all of the node peers accordingly
 		nodePeers.forEach(nodePeer => {
 			db.find_peer(nodePeer.addr, async (dbPeer: DbPeer) => {
 				if (!dbPeer) {
+					console.log('nodePeer not found in db; creating...');
 					// convert IPv6 into proper format for GeoIP lookup
 					// also set ipv6_address const for GeoIP lookup; save address const to db
 					const ipv6_address = nodePeer.addr.includes(':')
@@ -73,12 +76,12 @@ mongoose.connect(dbString, function(err: any) {
 						version: nodePeer.subver.replace('/', '').replace('/', ''),
 						country: geo.country_name,
 						country_code: geo.country_code
-					} as DbPeer, () => {});
+					} as DbPeer, () => console.log('nodePeer created in db'));
 				// peer already exists
 				} else {
-					// 
+					console.log('found dbPeer:', dbPeer);
 					if (isNaN(dbPeer['port']) || dbPeer['country'].length < 1 || dbPeer['country_code'].length < 1) {
-						db.drop_peers(function() {
+						db.drop_peers(() => {
 							console.log('Saved peers missing ports or country, dropping peers. Re-reun this script afterwards.');
 							console.log('Peer:', dbPeer)
 							exit();
@@ -91,6 +94,7 @@ mongoose.connect(dbString, function(err: any) {
 		const deadPeers: DbPeer[] = dbPeers.filter(dbPeer => {
 			return nodePeers.find(nodePeer => dbPeer.address == nodePeer.addr)
 		});
+		console.log('deadPeers:', deadPeers);
 		deadPeers.forEach(dbPeer => {
 			db.drop_peer(dbPeer.address, () => console.log("Dropped dead peer: " + dbPeer.address))
 		});
