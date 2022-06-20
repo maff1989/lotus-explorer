@@ -92,7 +92,7 @@ mongoose.connect(dbString, function(err: any) {
 		});
 		// db peers that are not in node's peer list are considered dead
 		const deadPeers: DbPeer[] = dbPeers.filter(dbPeer => {
-			return nodePeers.find(nodePeer => dbPeer.address == nodePeer.addr)
+			return nodePeers.find(nodePeer => dbPeer.address != nodePeer.addr)
 		});
 		console.log('deadPeers:', deadPeers);
 		deadPeers.forEach(dbPeer => {
