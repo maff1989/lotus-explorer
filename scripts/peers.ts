@@ -50,7 +50,7 @@ mongoose.connect(dbString, function(err: any) {
 			const portSplit = (index < 0)
 				? peer.addr.length
 				: parseInt(peer.addr.substring(index + 1));
-			// keep IP address
+			// keep node peer details
 			nodePeers.push({ addr: addr.substring(0, portSplit), version, subver });
 		});
 		// process all of the node peers accordingly
@@ -73,7 +73,7 @@ mongoose.connect(dbString, function(err: any) {
 						version: nodePeer.subver.replace('/', '').replace('/', ''),
 						country: geo.country_name,
 						country_code: geo.country_code
-					} as DbPeer);
+					} as DbPeer, () => {});
 				// peer already exists
 				} else {
 					// 
