@@ -185,7 +185,7 @@ export class Explorer {
     blockFeesBurned: number,
   }> {
     const data = { blockFees: 0, blockFeesBurned: 0 };
-    const docs: TransactionDocument[] = Tx.find({ 'blockindex': height }, 'fee').exec();
+    const docs: TransactionDocument[] = await Tx.find({ 'blockindex': height }, 'fee');
     docs.forEach(doc => data.blockFees += doc.fee);
     data.blockFeesBurned = parseFloat((Math.round(data.blockFees / 2) / XPI_DIVISOR).toFixed(6));
     return data;
@@ -194,7 +194,7 @@ export class Explorer {
   // return burned supply in XPI
   async get_burned_supply(): Promise<number> {
     const data = { totalBurned: 0 };
-    const docs: BlockDocument[] = await Block.find({}, 'burned').where('burned').gt(0).exec();
+    const docs: BlockDocument[] = await Block.find({}, 'burned').where('burned').gt(0);
     docs.forEach(doc => data.totalBurned += doc.burned);
     return data.totalBurned;
   };
@@ -212,8 +212,8 @@ export class Explorer {
     return block.confirmations === -1
       // check previous block height too to make sure no orphan
       ? await this.is_block_orphaned(height--)
-      // block at this height is not orphaned; return this height to callback
-      // callback will determine if processing for orphaned blocks is required
+      // block at this height is not orphaned; return this good height
+      // calling will determine if processing for orphaned blocks is required
       : height;
   };
 
@@ -284,7 +284,7 @@ export class Explorer {
     return data;
   };
 
-  async get_input_addresses(
+  private async get_input_addresses(
     vin: TransactionInput,
     vouts: TransactionOutput[]
   ) {
