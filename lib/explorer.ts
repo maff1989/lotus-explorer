@@ -187,7 +187,7 @@ export class Explorer {
     const data = { blockFees: 0, blockFeesBurned: 0 };
     const docs: TransactionDocument[] = await Tx.find({ 'blockindex': height }, 'fee');
     docs.forEach(doc => data.blockFees += doc.fee);
-    data.blockFeesBurned = parseFloat((Math.round(data.blockFees / 2) / XPI_DIVISOR).toFixed(6));
+    data.blockFeesBurned = Math.round(data.blockFees / 2);
     return data;
   };
 
