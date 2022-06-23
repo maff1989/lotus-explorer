@@ -37,10 +37,16 @@ const main = async () => {
   const supply = await lib.balance_supply();
   const blockFees = await lib.get_block_fees(273101);
   const burnedSupply = await lib.get_burned_supply();
+  const { vin } = await lib.prepare_vin(tx);
+  const { vout } = await lib.prepare_vout(tx.vout);
+  const fee = await lib.calculate_fee(vout, vin);
 
   console.log('supply', supply);
   console.log('blockFees', blockFees);
   console.log('burnedSupply', burnedSupply);
+  console.log('preparedVin', vin);
+  console.log('preparedVout', vout);
+  console.log('fee', fee);
   await disconnect();
 
 };
