@@ -97,7 +97,7 @@ function remove_lock(cb) {
 }
 
 function is_locked(cb) {
-  return false;
+  return cb(false);
   if ( database == 'index' ) {
     var fname = './tmp/' + database + '.pid';
     fs.exists(fname, function (exists){
