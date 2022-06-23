@@ -1,5 +1,5 @@
-const settings = require('./settings');
-import Address from '../models/address';
+const settings = require('./settings')
+  , Address = require('../models/address');
 import Block from '../models/block';
 import Tx from '../models/tx';
 import BitcoinRpc from 'bitcoin-rpc-promise';
