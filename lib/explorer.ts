@@ -175,7 +175,7 @@ export class Explorer {
 
   async balance_supply(): Promise<number> {
     const data = { totalBalance: 0 };
-    const docs: AddressDocument[] = Address.find({}, 'balance').where('balance').gt(0).exec();
+    const docs: AddressDocument[] = await Address.find({}, 'balance').where('balance').gt(0);
     docs.forEach(doc => data.totalBalance += doc.balance);
     return data.totalBalance;
   };
