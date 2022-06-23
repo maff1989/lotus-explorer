@@ -35,8 +35,12 @@ const main = async () => {
   + '/' + settings.dbsettings.database;
   await connect(dbString);
   const supply = await lib.balance_supply();
+  const blockFees = await lib.get_block_fees(274575);
+  const burnedSupply = await lib.get_burned_supply();
 
   console.log('supply', supply);
+  console.log('blockFees', blockFees);
+  console.log('burnedSupply', burnedSupply);
   await disconnect();
 
 };
