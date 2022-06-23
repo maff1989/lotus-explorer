@@ -1,4 +1,6 @@
+import * as settings from '../lib/settings';
 import { Explorer } from '../lib/explorer';
+import { connect, disconnect } from 'mongoose';
 const lib = new Explorer();
 const main = async () => {
   /**
@@ -26,9 +28,16 @@ const main = async () => {
   /**
    * Database calls
    */
+  const dbString = 'mongodb://' + settings.dbsettings.user
+  + ':' + settings.dbsettings.password
+  + '@' + settings.dbsettings.address
+  + ':' + settings.dbsettings.port
+  + '/' + settings.dbsettings.database;
+  await connect(dbString);
   const supply = await lib.balance_supply();
 
   console.log('supply', supply);
+  await disconnect();
 
 };
 main();
