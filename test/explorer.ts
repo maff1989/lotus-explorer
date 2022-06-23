@@ -14,7 +14,7 @@ const main = async () => {
   const blockcount = await lib.get_blockcount();
   const blockhash = await lib.get_blockhash(123456);
   const block = await lib.get_block(blockhash);
-  const tx = await lib.get_rawtransaction(block.tx[0]);
+  const tx = await lib.get_rawtransaction(block.tx[1]);
 
   console.log('hashrate', hashrate);
   console.log('difficulty', difficulty);
