@@ -58,16 +58,16 @@ const BLOCKSPANS: {
   year: 262800
 };
 const find_address = async (hash: string): Promise<AddressDocument> => {
-  return await Address.findOne({ a_id: hash });
+  return await Address.findOne({ a_id: hash })._doc;
 };
 const find_richlist = async (coin: string) => {
-  return await Richlist.findOne({ coin: coin });
+  return await Richlist.findOne({ coin: coin })._doc;
 };
 const find_tx = async (txid: string): Promise<TransactionDocument> => {
-  return await Tx.findOne({ txid: txid });
+  return await Tx.findOne({ txid: txid })._doc;
 };
 const find_block = async (height: number) => {
-  return await Block.findOne({ height: height });
+  return await Block.findOne({ height: height })._doc;
 };
 const find_latest_block = async (): Promise<BlockDocument[]> => {
   return await Block.find().sort({'timestamp': -1}).limit(1);
@@ -657,7 +657,7 @@ export class Database {
           _id: 0,
           balance: '$balance'
         }
-      }*/]).pop().balance;
+      }*/]).balance;
 
     const txs: TransactionDocument[] = [];
     const balance = { running: currentBalance ?? 0 };
