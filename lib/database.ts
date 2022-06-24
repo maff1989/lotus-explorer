@@ -663,8 +663,10 @@ export class Database {
     const balance = { running: currentBalance ?? 0 };
     for (const addressTx of addressTxs) {
       const tx = await find_tx(addressTx.txid);
-      tx.balance = balance.running;
-      txs.push(tx);
+      txs.push({
+        ...tx,
+        balance: balance.running
+      } as TransactionDocument);
       balance.running -= addressTx.amount;
     }
 
