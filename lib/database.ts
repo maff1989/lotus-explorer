@@ -595,7 +595,10 @@ export class Database {
     return true;
   };
   
-  async get_last_blocks_ajax(start: number, length: number) {
+  async get_last_blocks_ajax(
+    start: number,
+    length: number
+  ) {
     const data: {
       blocks: BlockDocument[],
       count: number
@@ -609,7 +612,11 @@ export class Database {
     return data;
   };
 
-  async get_last_txs_ajax(start: number, length: number, min: number) {
+  async get_last_txs_ajax(
+    start: number,
+    length: number,
+    min: number
+  ) {
     const data: {
       txs: TransactionDocument[],
       count: number
@@ -623,7 +630,11 @@ export class Database {
     return data;
   };
 
-  async get_address_txs_ajax(hash: string, start: number, length: number) {
+  async get_address_txs_ajax(
+    hash: string,
+    start: number,
+    length: number
+  ) {
     const addressTxs: AddressTransactionDocument[] = await AddressTx.find({ a_id: hash })
       .sort({ blockindex: -1 })
       // BUG: Order parent->child transactions properly in address history (prevent negative Balance)
@@ -631,7 +642,8 @@ export class Database {
       .sort({ amount: 1 })
       .skip(start)
       .limit(length);
-    const balance: number = await AddressTx.aggregate([
+    const count: number = await AddressTx.find({ a_id: hash }).count();
+    const currentBalance: number = await AddressTx.aggregate([
       { $match: { a_id: hash }},
       { $sort: { blockindex: -1 }},
       { $skip: start },
@@ -640,19 +652,23 @@ export class Database {
           _id: '',
           balance: { $sum: '$amount' }
         }
-      },
-      {
+      },/*{
         $project: {
           _id: 0,
           balance: '$balance'
         }
-      }]).balance;
-    const count: number = await AddressTx.find( {a_id: hash }).count();
+      }*/]).pop().balance;
+
+    const txs: TransactionDocument[] = [];
+    const balance = { running: currentBalance ?? 0 };
     for (const addressTx of addressTxs) {
       const tx = await find_tx(addressTx.txid);
+      tx.balance = balance.running;
+      txs.push(tx);
+      balance.running -= addressTx.amount;
     }
 
-    return { addressTxs, count, balance };
+    return { txs, count };
     /*
     var totalCount = 0;
     AddressTx.find({a_id: hash}).count(function(err, count){
