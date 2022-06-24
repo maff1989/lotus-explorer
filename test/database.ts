@@ -14,10 +14,12 @@ const main = async () => {
   const isLocked = await db.is_locked();
   const stats = await db.get_stats('Lotus');
   const newStats = await db.create_stats('homina');
+  const address = await db.get_address('lotus_16PSJMPL9PB7v6md8mbnHsQAZC1RXEs92uZFRRcWq');
 
   console.log('isLocked', isLocked);
   console.log('stats', stats);
   console.log('newStats', newStats);
+  console.log('address', address);
   await db.disconnect();
 };
 main();
