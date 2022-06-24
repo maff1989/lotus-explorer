@@ -24,6 +24,7 @@ set('useFindAndModify', false);
 type BlockInfo = Explorer.BlockInfo;
 type BlockDocument = Explorer.BlockDocument;
 type TransactionDocument = Explorer.TransactionDocument;
+type AddressDocument = Explorer.AddressDocument;
 type AddressTransactionDocument = {
   a_id: string,
   blockindex: number,
@@ -56,7 +57,7 @@ const BLOCKSPANS: {
   quarter: 65700,
   year: 262800
 };
-const find_address = async (hash: string) => {
+const find_address = async (hash: string): Promise<AddressDocument> => {
   return await Address.findOne({ a_id: hash });
 };
 const find_richlist = async (coin: string) => {
