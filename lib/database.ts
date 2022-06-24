@@ -31,6 +31,14 @@ type AddressTransactionDocument = {
   txid: string,
   amount: number,
 };
+type MarketDocument = {
+  market: string,
+  summary: object,
+  //chartData: Array,
+  //buys: Array,
+  //sells: Array,
+  //history: Array
+};
 type StatsDocument = {
   coin: string,
   count: number,
@@ -250,7 +258,9 @@ const is_locked = async (lockfile: string): Promise<boolean> => {
  */
 export class Database {
 
-  // initialize DB
+  /*
+   *    Database Connectivity
+   */
   async connect(database: string) {
     try {
       await connect(database);
@@ -274,22 +284,19 @@ export class Database {
     return await is_locked('db_index');
   };
 
-  async update_label(hash: string, message: string) {
-    const address = await find_address(hash);
-    if(address){
-      return await Address.updateOne({ a_id: hash }, { name: message });
-    }
-    return false;
+  /*
+   *    Create Database Entries
+   */
+  async create_market() {
+
+  };
+  
+  async create_peer() {
+
   };
 
-  async check_stats(coin: string) {
-    const stats = await Stats.findOne({ coin: coin });
-    return stats ? true: false;
-  };
+  async create_richlist() {
 
-  async get_stats(coin: string): Promise<StatsDocument> {
-    const stats = await Stats.findOne({ coin: coin });
-    return stats ?? null
   };
 
   async create_stats(coin: string): Promise<StatsDocument> {
@@ -301,23 +308,97 @@ export class Database {
     return newStats ?? null;
   };
 
+  async create_txs(block: BlockInfo): Promise<boolean> {
+    if (await is_locked('db_index')) {
+      console.log('db_index lock file exists...');
+      return false;
+    }
+    for (const txid of block.tx) {
+      try {
+        await save_tx(txid, block.height);
+      } catch (e: any) {
+        console.log(`error saving tx ${txid}: %s`, e.message);
+        return false;
+      }
+    }
+    return true;
+  };
+
+  /*
+   *
+   *    Check Database Entries
+   *
+   */
+  async check_market(market: string): Promise<boolean> {
+    try {
+      const findOne = await Markets.findOne({ market: market });
+      return findOne as boolean;
+    } catch (e: any) {
+      return false;
+    }
+  };
+
+  async check_richlist(coin: string) {
+    try {
+      const richlist = await Richlist.findOne({ coin: coin });
+      return richlist as boolean;
+    } catch (e: any) {
+      return false;
+    }
+  };
+
+  async check_stats(coin: string) {
+    try {
+      const stats = await Stats.findOne({ coin: coin });
+      return stats as boolean;
+    } catch (e: any) {
+      return false;
+    }
+  };
+
+  /*
+   *
+   *    Get Database Entries
+   * 
+   */
   async get_address(hash: string) {
     return await find_address(hash);
   };
 
-  async get_richlist(coin: string) {
-    return await find_richlist(coin);
-  };
-  
-  // Polls the Charts db for latest aggregate data
-  async get_charts() {
-    return await Charts.findOne();
-  };
-  
   async get_block(height: number) {
     return await find_block(height);
   };
 
+  // Polls the Charts db for latest aggregate data
+  async get_charts() {
+    return await Charts.findOne();
+  };
+
+  async get_distribution() {
+
+  };
+
+  async get_market() {
+
+  };
+
+  async get_peer() {
+
+  };
+
+  async get_peers() {
+    
+  }
+  
+  async get_richlist(coin: string) {
+    return await find_richlist(coin);
+  };
+  
+  async get_stats(coin: string): Promise<StatsDocument> {
+    const stats = await Stats.findOne({ coin: coin });
+    return stats ?? null
+  };
+  
   async get_tx(txid: string) {
     return await find_tx(txid);
   };
@@ -330,106 +411,95 @@ export class Database {
     }
     return txs;
   };
-  
-  //property: 'received' or 'balance'
-  async update_richlist(list: string) {
-    const addresses = list == 'received'
-      ? await Address.find({}, 'a_id balance received name').sort({ received: 'desc' }).limit(100)
-      : await Address.find({}, 'a_id balance received name').sort({ balance: 'desc' }).limit(100);
-    return list == 'received'
-      ? await Richlist.updateOne({ coin: settings.coin }, { received: addresses })
-      : await Richlist.updateOne({ coin: settings.coin }, { balance: addresses });
-  };
-  
-  // gather and prepare chart data for transaction count based on timespan
-  async get_charts_txs(timespan: string): Promise<{
-    data: Array<[string, number]>,
-    txtotal: number
-  }> {
-    const [ dbBlock ] = await find_latest_block();
-    const timespan_s = TIMESPANS[timespan];
-    const result: Array<{
+
+  /*
+   *
+   *    Get AJAX Entries
+   * 
+   */
+  async get_last_blocks_ajax(
+    start: number,
+    length: number
+  ) {
+    const data: {
       blocks: BlockDocument[],
-      txtotal: number
-    }> = await Block.aggregate([
-      { '$match': {
-        'timestamp': { '$gte': (dbBlock.timestamp - timespan_s) },
-        'txcount': { $gt: 1 } 
-      }},
-      { "$sort": { "timestamp": 1 } },
-      //{ "$limit": blockspan },
-      { "$group":
-        {
-          _id: null,
-          "blocks": {
-            $push: {
-              localeTimestamp: "$localeTimestamp",
-              txcount: {
-                $subtract: ["$txcount", 1] 
-              }
-            }
-          },
-          // add together all txcount minus 1; we don't include coinbase tx in count
-          'txtotal': {
-            $sum: {
-              $subtract: ["$txcount", 1] 
-            }
-          }
-        }
-      },
-    ]);
-    const arranged_data: { [x: string]: number } = {};
-    result[0].blocks.forEach((block: BlockDocument) => {
-      arranged_data[block.localeTimestamp] = block.txcount;
-    });
-
-    return {
-      data: Object.entries(arranged_data),
-      txtotal: result[0].txtotal
+      count: number
+    } = {
+      blocks: await Block.find({})
+        .sort({ 'height': -1 })
+        .skip(start)
+        .limit(length),
+      count: await Block.find({}).count()
     };
+    return data;
   };
-  
-  async get_charts_reward_distribution(timespan: string): Promise<{
-    data: Array<[string, number]>,
-    minerTotal: number
-  }> {
-    const [ dbBlock ] = await find_latest_block();
-    const timespan_s = TIMESPANS[timespan];
-    const blockspan = BLOCKSPANS[timespan];
-    const result: Array<{
-      _id: null,
-      blocks: Array<{ minedby: string }>
-    }> = await Block.aggregate([
-      { '$match': {
-        'timestamp': { '$gte': (dbBlock.timestamp - timespan_s) }
-      }},
-      //{ "$sort": {"timestamp": 1} },
-      //{ "$limit": blockspan },
-      { "$group": {
-        _id: null,
-        "blocks": { $push: { minedby: "$minedby" } }
-      }},
-    ]);
-    const minerBlockCounts: { [minedby: string]: number } = {};
-    result[0].blocks.forEach((block) => {
-      minerBlockCounts[block.minedby] !== undefined
-        ? minerBlockCounts[block.minedby]++
-        : minerBlockCounts[block.minedby] = 1
-    });
 
-    let minerMiscBlocks = 0;
-    const minerFiltered: { [minedby: string]: number } = {};
-    for (const [minedby, blockCount] of Object.entries(minerBlockCounts)) {
-      blockCount > Math.floor(0.03 * blockspan)
-        ? minerFiltered[minedby] = blockCount
-        : minerMiscBlocks += blockCount;
+  async get_last_txs_ajax(
+    start: number,
+    length: number,
+    min: number
+  ) {
+    const data: {
+      txs: TransactionDocument[],
+      count: number
+    } = {
+      txs: await Tx.find({ 'total': { $gte: min }})
+        .sort({ blockindex: -1 })
+        .skip(start)
+        .limit(length),
+      count: await Tx.find({}).count()
+    };
+    return data;
+  };
+
+  async get_address_txs_ajax(
+    hash: string,
+    start: number,
+    length: number
+  ) {
+    const addressTxs: AddressTransactionDocument[] = await AddressTx.find({ a_id: hash })
+      .sort({ blockindex: -1 })
+      // BUG: Order parent->child transactions properly in address history (prevent negative Balance)
+      // add sort for ascending amount
+      .sort({ amount: 1 })
+      .skip(start)
+      .limit(length);
+    const aggResult = await AddressTx.aggregate([
+      { $match: { a_id: hash }},
+      { $sort: { blockindex: -1 }},
+      { $skip: start },
+      {
+        $group: {
+          _id: '',
+          balance: { $sum: '$amount' },
+          count: { $sum: 1 }
+        }
+      }
+    ]);
+    const { count, balance }: {
+      count: number,
+      balance: number
+    } = aggResult.pop();
+
+    let runningBalance = balance ?? 0;
+    const txs: TransactionDocument[] = [];
+    for (const addressTx of addressTxs) {
+      const tx = await find_tx(addressTx.txid);
+      txs.push({
+        ...tx,
+        balance: runningBalance
+      } as TransactionDocument);
+      runningBalance -= addressTx.amount;
     }
 
-    const data = Object.entries(minerFiltered).sort((a, b) => b[1] - a[1]);
-    data.push(["Miscellaneous Miners (<= 3% hashrate each)", minerMiscBlocks]);
-    return { data, minerTotal: Object.keys(minerBlockCounts).length };
+    return { txs, count };
   };
-  
+
+  /*
+   *
+   *    Get Database Charts
+   * 
+   */
   async get_charts_difficulty(timespan: string) {
     const [ dbBlock ] = await find_latest_block();
     const timespan_s = TIMESPANS[timespan];
@@ -561,100 +631,151 @@ export class Database {
       data: result[0].blocks.map((block) => Object.values(block))
     };
   };
-
-  async create_txs(block: BlockInfo): Promise<boolean> {
-    if (await is_locked('db_index')) {
-      console.log('db_index lock file exists...');
-      return false;
-    }
-    for (const txid of block.tx) {
-      try {
-        await save_tx(txid, block.height);
-      } catch (e: any) {
-        console.log(`error saving tx ${txid}: %s`, e.message);
-        return false;
-      }
-    }
-    return true;
-  };
   
-  async get_last_blocks_ajax(
-    start: number,
-    length: number
-  ) {
-    const data: {
-      blocks: BlockDocument[],
-      count: number
-    } = {
-      blocks: await Block.find({})
-        .sort({ 'height': -1 })
-        .skip(start)
-        .limit(length),
-      count: await Block.find({}).count()
-    };
-    return data;
-  };
-
-  async get_last_txs_ajax(
-    start: number,
-    length: number,
-    min: number
-  ) {
-    const data: {
-      txs: TransactionDocument[],
-      count: number
-    } = {
-      txs: await Tx.find({ 'total': { $gte: min }})
-        .sort({ blockindex: -1 })
-        .skip(start)
-        .limit(length),
-      count: await Tx.find({}).count()
-    };
-    return data;
-  };
-
-  async get_address_txs_ajax(
-    hash: string,
-    start: number,
-    length: number
-  ) {
-    const addressTxs: AddressTransactionDocument[] = await AddressTx.find({ a_id: hash })
-      .sort({ blockindex: -1 })
-      // BUG: Order parent->child transactions properly in address history (prevent negative Balance)
-      // add sort for ascending amount
-      .sort({ amount: 1 })
-      .skip(start)
-      .limit(length);
-    const aggResult = await AddressTx.aggregate([
-      { $match: { a_id: hash }},
-      { $sort: { blockindex: -1 }},
-      { $skip: start },
-      {
-        $group: {
-          _id: '',
-          balance: { $sum: '$amount' },
-          count: { $sum: 1 }
-        }
-      }
+  async get_charts_reward_distribution(timespan: string): Promise<{
+    data: Array<[string, number]>,
+    minerTotal: number
+  }> {
+    const [ dbBlock ] = await find_latest_block();
+    const timespan_s = TIMESPANS[timespan];
+    const blockspan = BLOCKSPANS[timespan];
+    const result: Array<{
+      _id: null,
+      blocks: Array<{ minedby: string }>
+    }> = await Block.aggregate([
+      { '$match': {
+        'timestamp': { '$gte': (dbBlock.timestamp - timespan_s) }
+      }},
+      //{ "$sort": {"timestamp": 1} },
+      //{ "$limit": blockspan },
+      { "$group": {
+        _id: null,
+        "blocks": { $push: { minedby: "$minedby" } }
+      }},
     ]);
-    const { count, balance }: {
-      count: number,
-      balance: number
-    } = aggResult.pop();
+    const minerBlockCounts: { [minedby: string]: number } = {};
+    result[0].blocks.forEach((block) => {
+      minerBlockCounts[block.minedby] !== undefined
+        ? minerBlockCounts[block.minedby]++
+        : minerBlockCounts[block.minedby] = 1
+    });
 
-    let runningBalance = balance ?? 0;
-    const txs: TransactionDocument[] = [];
-    for (const addressTx of addressTxs) {
-      const tx = await find_tx(addressTx.txid);
-      txs.push({
-        ...tx,
-        balance: runningBalance
-      } as TransactionDocument);
-      runningBalance -= addressTx.amount;
+    let minerMiscBlocks = 0;
+    const minerFiltered: { [minedby: string]: number } = {};
+    for (const [minedby, blockCount] of Object.entries(minerBlockCounts)) {
+      blockCount > Math.floor(0.03 * blockspan)
+        ? minerFiltered[minedby] = blockCount
+        : minerMiscBlocks += blockCount;
     }
 
-    return { txs, count };
+    const data = Object.entries(minerFiltered).sort((a, b) => b[1] - a[1]);
+    data.push(["Miscellaneous Miners (<= 3% hashrate each)", minerMiscBlocks]);
+    return { data, minerTotal: Object.keys(minerBlockCounts).length };
   };
 
+  // gather and prepare chart data for transaction count based on timespan
+  async get_charts_txs(timespan: string): Promise<{
+    data: Array<[string, number]>,
+    txtotal: number
+  }> {
+    const [ dbBlock ] = await find_latest_block();
+    const timespan_s = TIMESPANS[timespan];
+    const result: Array<{
+      blocks: BlockDocument[],
+      txtotal: number
+    }> = await Block.aggregate([
+      { '$match': {
+        'timestamp': { '$gte': (dbBlock.timestamp - timespan_s) },
+        'txcount': { $gt: 1 } 
+      }},
+      { "$sort": { "timestamp": 1 } },
+      //{ "$limit": blockspan },
+      { "$group":
+        {
+          _id: null,
+          "blocks": {
+            $push: {
+              localeTimestamp: "$localeTimestamp",
+              txcount: {
+                $subtract: ["$txcount", 1] 
+              }
+            }
+          },
+          // add together all txcount minus 1; we don't include coinbase tx in count
+          'txtotal': {
+            $sum: {
+              $subtract: ["$txcount", 1] 
+            }
+          }
+        }
+      },
+    ]);
+    const arranged_data: { [x: string]: number } = {};
+    result[0].blocks.forEach((block: BlockDocument) => {
+      arranged_data[block.localeTimestamp] = block.txcount;
+    });
+
+    return {
+      data: Object.entries(arranged_data),
+      txtotal: result[0].txtotal
+    };
+  };
   
+  /*
+   *
+   *    Update Database Entries
+   * 
+   */
+
+  async update_charts_db() {
+
+  };
+  
+  async update_label(hash: string, message: string) {
+    const address = await find_address(hash);
+    if(address){
+      return await Address.updateOne({ a_id: hash }, { name: message });
+    }
+    return false;
+  };
+
+  async update_markets_db() {
+
+  };
+
+  //property: 'received' or 'balance'
+  async update_richlist(list: string) {
+    const addresses = list == 'received'
+      ? await Address.find({}, 'a_id balance received name').sort({ received: 'desc' }).limit(100)
+      : await Address.find({}, 'a_id balance received name').sort({ balance: 'desc' }).limit(100);
+    return list == 'received'
+      ? await Richlist.updateOne({ coin: settings.coin }, { received: addresses })
+      : await Richlist.updateOne({ coin: settings.coin }, { balance: addresses });
+  };
+
+  async update_tx_db() {
+
+  };
+
+  async update_db() {
+
+  };
+
+  /*
+   *
+   *    Delete Database Entries
+   * 
+   */
+  async drop_peer() {
+
+  };
+
+  async drop_peers() {
+
+  };
+
+  async delete_richlist() {
+
+  }; 
+
 };
