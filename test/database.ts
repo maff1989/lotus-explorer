@@ -23,6 +23,9 @@ const main = async () => {
   const lastBlocks = await db.get_last_blocks_ajax(0, 10);
   const lastTxs = await db.get_last_txs_ajax(0, 10, 0);
   const addressTxs = await db.get_address_txs_ajax('lotus_16PSJMPL9PB7v6md8mbnHsQAZC1RXEs92uZFRRcWq', 0, 10);
+  const checkMarket = await db.check_market('exbitron');
+  const checkRichlist = await db.check_richlist('Lotus');
+  const checkStats = await db.check_stats('Lotus');
 
   console.log('isLocked', isLocked);
   console.log('stats', stats);
@@ -35,6 +38,9 @@ const main = async () => {
   console.log('lastBlocks', lastBlocks);
   console.log('lastTxs', lastTxs);
   console.log('addressTxs', addressTxs);
+  console.log('checkMarket', checkMarket);
+  console.log('checkRichlist', checkRichlist);
+  console.log('checkStats', checkStats);
 
   await db.disconnect();
 };
