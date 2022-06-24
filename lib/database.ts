@@ -30,7 +30,6 @@ type AddressTransactionDocument = {
   blockindex: number,
   txid: string,
   amount: number,
-  balance?: number,
 };
 type StatsDocument = {
   coin: string,
@@ -294,11 +293,12 @@ export class Database {
   };
 
   async create_stats(coin: string): Promise<StatsDocument> {
-    const newStats = new Stats({
+    const create = new Stats({
       coin: coin,
       last: 0,
     });
-    return await newStats.save();
+    const newStats = await create.save();
+    return newStats ?? null;
   };
 
   async get_address(hash: string) {
@@ -309,11 +309,33 @@ export class Database {
     return await find_richlist(coin);
   };
   
+  // Polls the Charts db for latest aggregate data
+  async get_charts() {
+    return await Charts.findOne();
+  };
+  
+  async get_block(height: number) {
+    return await find_block(height);
+  };
+
+  async get_tx(txid: string) {
+    return await find_tx(txid);
+  };
+
+  async get_txs(block: BlockInfo) {
+    const txs: TransactionDocument[] = [];
+    for (const txid of block.tx) {
+      const tx = await find_tx(txid);
+      txs.push(tx);
+    }
+    return txs;
+  };
+  
   //property: 'received' or 'balance'
   async update_richlist(list: string) {
     const addresses = list == 'received'
       ? await Address.find({}, 'a_id balance received name').sort({ received: 'desc' }).limit(100)
-      : await Address.find({}, 'a_id balance received name').sort({balance: 'desc'}).limit(100);
+      : await Address.find({}, 'a_id balance received name').sort({ balance: 'desc' }).limit(100);
     return list == 'received'
       ? await Richlist.updateOne({ coin: settings.coin }, { received: addresses })
       : await Richlist.updateOne({ coin: settings.coin }, { balance: addresses });
@@ -325,14 +347,13 @@ export class Database {
     txtotal: number
   }> {
     const [ dbBlock ] = await find_latest_block();
-    const dbBlockTimestamp: number = dbBlock.timestamp;
     const timespan_s = TIMESPANS[timespan];
     const result: Array<{
       blocks: BlockDocument[],
       txtotal: number
     }> = await Block.aggregate([
       { '$match': {
-        'timestamp': { '$gte': (dbBlockTimestamp - timespan_s) },
+        'timestamp': { '$gte': (dbBlock.timestamp - timespan_s) },
         'txcount': { $gt: 1 } 
       }},
       { "$sort": { "timestamp": 1 } },
@@ -373,15 +394,14 @@ export class Database {
     minerTotal: number
   }> {
     const [ dbBlock ] = await find_latest_block();
-    const dbBlockTimestamp: number = dbBlock.timestamp;
     const timespan_s = TIMESPANS[timespan];
     const blockspan = BLOCKSPANS[timespan];
     const result: Array<{
       _id: null,
-      blocks: Array<{minedby: string}>
+      blocks: Array<{ minedby: string }>
     }> = await Block.aggregate([
       { '$match': {
-        'timestamp': { '$gte': (dbBlockTimestamp - timespan_s) }
+        'timestamp': { '$gte': (dbBlock.timestamp - timespan_s) }
       }},
       //{ "$sort": {"timestamp": 1} },
       //{ "$limit": blockspan },
@@ -412,11 +432,10 @@ export class Database {
   
   async get_charts_difficulty(timespan: string) {
     const [ dbBlock ] = await find_latest_block();
-    const dbBlockTimestamp: number = dbBlock.timestamp;
     const timespan_s = TIMESPANS[timespan];
     const agg: Array<{}> = [
       { '$match': {
-        'timestamp': { '$gte': (dbBlockTimestamp - timespan_s) }
+        'timestamp': { '$gte': (dbBlock.timestamp - timespan_s) }
       }},
       { "$sort": {"timestamp": 1} },
       //{ "$limit": blockspan },
@@ -541,42 +560,6 @@ export class Database {
     return {
       data: result[0].blocks.map((block) => Object.values(block))
     };
-    
-    /*
-    // old query
-    Block.find({}, {_id: 0, localeTimestamp: 1, difficulty: 1}).sort({timestamp: -1}).limit(2160).exec(function(err, blocks2) {
-      var plot_data = [];
-      async.each(blocks2, function(block, cb2) {
-        //var localeTimestamp = new Date(block.timestamp * 1000).toLocaleString('en-us', {timeZone:"UTC"});
-        plot_data.push([block.localeTimestamp, block.difficulty]);
-        cb2();
-      }, function(err) {
-        return cb(plot_data);
-      });
-    });
-    */
-  };
-  
-  // Polls the Charts db for latest aggregate data
-  async get_charts() {
-    return await Charts.findOne();
-  };
-  
-  async get_block(height: number) {
-    return await find_block(height);
-  };
-
-  async get_tx(txid: string) {
-    return await find_tx(txid);
-  };
-
-  async get_txs(block: BlockInfo) {
-    const txs: TransactionDocument[] = [];
-    for (const txid of block.tx) {
-      const tx = await find_tx(txid);
-      txs.push(tx);
-    }
-    return txs;
   };
 
   async create_txs(block: BlockInfo): Promise<boolean> {
@@ -671,70 +654,7 @@ export class Database {
     }
 
     return { txs, count };
-    /*
-    var totalCount = 0;
-    AddressTx.find({a_id: hash}).count(function(err, count){
-      if(err) {
-        return cb(err);
-      } else {
-        totalCount = count;
-        AddressTx.aggregate([
-          { $match: { a_id: hash } },
-          { $sort: {blockindex: -1} },
-          { $skip: Number(start) },
-          {
-            $group: {
-              _id: '',
-              balance: { $sum: '$amount' }
-            }
-          },
-          {
-            $project: {
-              _id: 0,
-              balance: '$balance'
-            }
-          },
-          { $sort: {blockindex: -1} }
-        ], function (err,balance_sum) {
-          if (err) {
-            return cb(err);
-          } else {
-            // BUG: Order parent->child transactions properly in address history (prevent negative Balance)
-            // add sort for ascending amount
-            AddressTx.find({a_id: hash}).sort({blockindex: -1}).sort({amount: 1}).skip(Number(start)).limit(Number(length)).exec(function (err, address_tx) {
-              if (err) {
-                return cb(err);
-              } else {
-                var txs = [];
-                var count = address_tx.length;
-                var running_balance = balance_sum.length > 0 ? balance_sum[0].balance : 0;
-
-                var txs = [];
-
-                lib.syncLoop(count, function (loop) {
-                  var i = loop.iteration();
-                  find_tx(address_tx[i].txid, function (tx) {
-                    if (tx && !txs.includes(tx)) {
-                      tx.balance = running_balance;
-                      txs.push(tx);
-                      loop.next();
-                    } else if (!txs.includes(tx)) {
-                      txs.push("1. Not found");
-                      loop.next();
-                    } else {
-                      loop.next();
-                    }
-                    running_balance = running_balance - address_tx[i].amount;
-                  })
-                }, function () {
-                  return cb(txs, totalCount);
-                });
-              }
-            });
-          }
-        });
-      }
-    });
-    */
   };
+
+  
 };
