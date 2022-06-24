@@ -415,12 +415,14 @@ export class Database {
     const dbBlockTimestamp: number = dbBlock.timestamp;
     const timespan_s = TIMESPANS[timespan];
     const agg: Array<{}> = [
-      { '$match': { 'timestamp': { '$gte': (dbBlockTimestamp - timespan_s) }}},
-      { "$sort": { "timestamp": 1 }},
+      { '$match': {
+        'timestamp': { '$gte': (dbBlockTimestamp - timespan_s) }
+      }},
+      { "$sort": {"timestamp": 1} },
       //{ "$limit": blockspan },
       { "$group": {
         _id: null,
-        "blocks": { $push: { localeTimestamp: "$localeTimestamp", difficulty: "$difficulty" }}
+        "blocks": { $push: { t: "$localeTimestamp", d: "$difficulty" } }
       }},
     ];
     // filter agg results depending on blockspan to reduce data load
@@ -530,13 +532,12 @@ export class Database {
         });
         break;
     }
-    const result: {
-      _id: null,
+    const result: Array<{
       blocks: Array<{
         localeTimestamp: string,
         difficulty: number
       }>
-    }[] = Block.aggregate(agg);
+    }> = await Block.aggregate(agg);
     return {
       data: result[0].blocks.map((block) => Object.values(block))
     };
