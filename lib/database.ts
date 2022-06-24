@@ -31,6 +31,14 @@ type AddressTransactionDocument = {
   amount: number,
   balance?: number,
 };
+type StatsDocument = {
+  coin: string,
+  count: number,
+  last: number,
+  supply: number,
+  burned: number,
+  connections: number,
+};
 const TIMESPANS: {
   [timespan: string]: number
 } = {
@@ -279,7 +287,7 @@ export class Database {
     return stats ? true: false;
   };
 
-  async get_stats(coin: string) {
+  async get_stats(coin: string): Promise<StatsDocument> {
     const stats = await Stats.findOne({ coin: coin });
     return stats ?? null
   };
