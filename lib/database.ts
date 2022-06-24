@@ -293,7 +293,7 @@ export class Database {
     return stats ?? null
   };
 
-  async create_stats(coin: string) {
+  async create_stats(coin: string): Promise<StatsDocument> {
     const newStats = new Stats({
       coin: coin,
       last: 0,
