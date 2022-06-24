@@ -20,6 +20,9 @@ const main = async () => {
   const chartsTxs = await db.get_charts_txs('day');
   const chartsRewards = await db.get_charts_reward_distribution('day');
   const chartsDifficulty = await db.get_charts_difficulty('week');
+  const lastBlocks = await db.get_last_blocks_ajax(0, 10);
+  const lastTxs = await db.get_last_txs_ajax(0, 10, 0);
+  const addressTxs = await db.get_address_txs_ajax('lotus_16PSJMPL9PB7v6md8mbnHsQAZC1RXEs92uZFRRcWq', 0, 10);
 
   console.log('isLocked', isLocked);
   console.log('stats', stats);
@@ -29,6 +32,9 @@ const main = async () => {
   console.log('chartsTxs', chartsTxs);
   console.log('chartsRewards', chartsRewards);
   console.log('chartsDifficulty', chartsDifficulty);
+  console.log('lastBlocks', lastBlocks);
+  console.log('lastTxs', lastTxs);
+  console.log('addressTxs', addressTxs);
 
   await db.disconnect();
 };
