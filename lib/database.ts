@@ -654,20 +654,20 @@ export class Database {
         }
       }
     ]);
-    const { count, currentBalance }: {
+    const { count, balance }: {
       count: number,
-      currentBalance: number
+      balance: number
     } = aggResult.pop();
 
+    let runningBalance = balance ?? 0;
     const txs: TransactionDocument[] = [];
-    const balance = { running: currentBalance ?? 0 };
     for (const addressTx of addressTxs) {
       const tx = await find_tx(addressTx.txid);
       txs.push({
         ...tx,
-        balance: balance.running
+        balance: runningBalance
       } as TransactionDocument);
-      balance.running -= addressTx.amount;
+      runningBalance -= addressTx.amount;
     }
 
     return { txs, count };
