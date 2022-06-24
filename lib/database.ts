@@ -642,22 +642,22 @@ export class Database {
       .sort({ amount: 1 })
       .skip(start)
       .limit(length);
-    const count: number = await AddressTx.find({ a_id: hash }).count();
-    const currentBalance: number = await AddressTx.aggregate([
+    const aggResult = await AddressTx.aggregate([
       { $match: { a_id: hash }},
       { $sort: { blockindex: -1 }},
       { $skip: start },
       {
         $group: {
           _id: '',
-          balance: { $sum: '$amount' }
+          balance: { $sum: '$amount' },
+          count: { $sum: 1 }
         }
-      },/*{
-        $project: {
-          _id: 0,
-          balance: '$balance'
-        }
-      }*/]).balance;
+      }
+    ]);
+    const { count, currentBalance }: {
+      count: number,
+      currentBalance: number
+    } = aggResult.pop();
 
     const txs: TransactionDocument[] = [];
     const balance = { running: currentBalance ?? 0 };
