@@ -1,6 +1,5 @@
 const settings = require('./settings');
-import { connect, disconnect, set, MongooseOptions } from 'mongoose';
-import assert from 'assert';
+import { connect, disconnect } from 'mongoose';
 import * as fs from 'fs/promises';
 import * as Explorer from '../lib/explorer';
 import Address from '../models/address';
@@ -65,46 +64,77 @@ const BLOCKSPANS: {
   year: 262800
 };
 const find_address = async (hash: string): Promise<AddressDocument> => {
-  return (await Address.findOne({ a_id: hash }))._doc;
+  try {
+    return (await Address.findOne({ a_id: hash }))._doc;
+  } catch (e: any) {
+    throw new Error(`database: find_address failed: ${e.message}`);
+  }
 };
 const find_richlist = async (coin: string) => {
-  return (await Richlist.findOne({ coin: coin }))._doc;
+  try {
+    return (await Richlist.findOne({ coin: coin }))._doc;
+  } catch (e: any) {
+    throw new Error(`database: find_richlist failed: ${e.message}`);
+  }
 };
 const find_tx = async (txid: string): Promise<TransactionDocument> => {
-  return (await Tx.findOne({ txid: txid }))._doc;
+  try {
+    return (await Tx.findOne({ txid: txid }))._doc;
+  } catch (e: any) {
+    throw new Error(`database: find_tx failed: ${e.message}`);
+  }
 };
 const find_block = async (height: number) => {
-  return (await Block.findOne({ height: height }))._doc;
+  try {
+    return (await Block.findOne({ height: height }))._doc;
+  } catch (e: any) {
+    throw new Error(`database: find_block failed: ${e.message}`);
+  }
 };
 const find_latest_block = async (): Promise<BlockDocument[]> => {
-  return await Block.find().sort({'timestamp': -1}).limit(1);
+  try {
+    return await Block.find().sort({'timestamp': -1}).limit(1);
+  } catch (e: any) {
+    throw new Error(`database: find_latest_block failed: ${e.message}`);
+  }
 };
 const save_tx = async (txid: string, blockheight: number) => {
   const tx = await lib.get_rawtransaction(txid);
-  assert(tx, 'Unable to fetch raw tx');
   const { vin } = await lib.prepare_vin(tx);
   const { vout, burned } = await lib.prepare_vout(tx.vout);
   const total = await lib.calculate_total(vout);
   const fee = await lib.calculate_fee(vout, vin);
   // update vins and vouts
-  vin.forEach(async input => await update_address(
-    input.addresses,
-    input.amount,
-    blockheight,
-    txid,
-    'vin'
-  ));
-  vout.forEach(async output => await update_address(
-    output.addresses,
-    output.amount,
-    blockheight,
-    txid,
-    vin.find(input => output.addresses == input.addresses)
-      // don't add output to "Total Received" for this address
-      ? 'toSelf'
-      // only update if address is not an OP_RETURN with a value > 0
-      : 'vout'
-  ));
+  vin.forEach(async input => {
+    try {
+      await update_address(
+        input.addresses,
+        input.amount,
+        blockheight,
+        txid,
+        'vin'
+      );
+    } catch (e: any) {
+      throw new Error(`save_tx: update_address failed for vin ${input.addresses}: ${e.message}`);
+    }
+  });
+  vout.forEach(async output => {
+    try {
+      await update_address(
+        output.addresses,
+        output.amount,
+        blockheight,
+        txid,
+        vin.find(input => output.addresses == input.addresses)
+          // don't add output to "Total Received" for this address
+          ? 'toSelf'
+          // only update if address is not an OP_RETURN with a value > 0
+          : 'vout'
+      );
+    } catch (e: any) {
+      throw new Error(`save_tx: update_address failed for vout ${output.addresses}: ${e.message}`);
+    }
+  });
   // save Tx
   try {
     const newTx = new Tx({
@@ -115,7 +145,7 @@ const save_tx = async (txid: string, blockheight: number) => {
       size: tx.size,
       total: total.toFixed(6),
       timestamp: tx.time,
-      localeTimestamp: new Date(tx.time * 1000).toLocaleString('en-us', {timeZone:"UTC"}),
+      localeTimestamp: new Date(tx.time * 1000).toLocaleString('en-us', { timeZone:"UTC" }),
       blockhash: tx.blockhash,
       blockindex: blockheight,
     });
