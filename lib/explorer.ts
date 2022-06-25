@@ -29,6 +29,7 @@ export type TransactionDocument = {
   localeTimestamp: string,
   blockhash: string,
   blockindex: number,
+  balance?: number,
 };
 export type BlockDocument = {
   height: number,
