@@ -57,7 +57,7 @@ mongoose.connect(dbString, function(err: any) {
 		});
 		// process all of the node peers accordingly
 		nodePeers.forEach(nodePeer => {
-			db.find_peer(nodePeer.addr, async (dbPeer: DbPeer) => {
+			db.get_peer(nodePeer.addr, async (dbPeer: DbPeer) => {
 				if (!dbPeer) {
 					console.log('nodePeer not found in db; creating...');
 					// convert IPv6 into proper format for GeoIP lookup
