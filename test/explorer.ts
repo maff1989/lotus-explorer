@@ -1,6 +1,7 @@
 import * as settings from '../lib/settings';
 import { Explorer } from '../lib/explorer';
 import { connect, disconnect } from 'mongoose';
+const BLOCK_HEIGHT = 252648
 const lib = new Explorer();
 const main = async () => {
   /**
@@ -12,7 +13,7 @@ const main = async () => {
   const mempoolInfo = await lib.get_mempoolinfo();
   const rawMempool = await lib.get_rawmempool();
   const blockcount = await lib.get_blockcount();
-  const blockhash = await lib.get_blockhash(252648);
+  const blockhash = await lib.get_blockhash(BLOCK_HEIGHT);
   const block = await lib.get_block(blockhash);
   const tx = await lib.get_rawtransaction(block.tx[2]);
 
@@ -34,8 +35,9 @@ const main = async () => {
   + ':' + settings.dbsettings.port
   + '/' + settings.dbsettings.database;
   await connect(dbString);
+
   const supply = await lib.balance_supply();
-  const blockFees = await lib.get_block_fees(273101);
+  const blockFees = await lib.get_block_fees(BLOCK_HEIGHT);
   const burnedSupply = await lib.get_burned_supply();
   const { vin } = await lib.prepare_vin(tx);
   const { vout, burned } = await lib.prepare_vout(tx.vout);
@@ -48,7 +50,7 @@ const main = async () => {
   console.log('preparedVout', vout);
   console.log('fee', fee);
   console.log('burned', burned);
+  
   await disconnect();
-
 };
 main();
