@@ -2,6 +2,9 @@ const settings = require('./settings');
 import { connect, disconnect } from 'mongoose';
 import * as fs from 'fs/promises';
 import * as Explorer from '../lib/explorer';
+import {
+  getChartsDifficultyAggregation,
+} from '../lib/util';
 import Address from '../models/address';
 import AddressTx from '../models/addresstx';
 import Block from '../models/block';
@@ -46,6 +49,9 @@ type StatsDocument = {
   burned: number,
   connections: number,
 };
+type ChartTransactionTimespan = 'day' | 'week' | 'month';
+type ChartDifficultyTimespan = 'week' | 'month' | 'quarter' | 'year';
+type ChartDistributionTimespan = 'day' | 'week';
 const TIMESPANS: {
   [timespan: string]: number
 } = {
@@ -84,7 +90,7 @@ const find_tx = async (txid: string): Promise<TransactionDocument> => {
     throw new Error(`database: find_tx failed: ${e.message}`);
   }
 };
-const find_block = async (height: number) => {
+const find_block = async (height: number): Promise<BlockDocument> => {
   try {
     return (await Block.findOne({ height: height }))._doc;
   } catch (e: any) {
@@ -158,12 +164,12 @@ const save_tx = async (txid: string, blockheight: number) => {
 const save_block = async (
   block: BlockInfo,
   txburned: number
-): Promise<void | Error> => {
+): Promise<void> => {
   const { blockFees, blockFeesBurned } = await lib.get_block_fees(block.height);
   const totalFeesBurned = blockFeesBurned + txburned;
   // gather minedby address
-  const tx = await lib.get_rawtransaction(block.tx[0]);
-  const miner = tx.vout[1].scriptPubKey.addresses[0];
+  const coinbaseTx = await lib.get_rawtransaction(block.tx[0]);
+  const miner = coinbaseTx.vout[1].scriptPubKey.addresses[0];
   // save block
   try {
     const newBlock = new Block({
@@ -180,7 +186,7 @@ const save_block = async (
     });
     newBlock.save();
   } catch (e: any) {
-    return new Error(`save_block: failed to save new block to db: ${e.message}`);
+    throw new Error(`save_block: failed to save new block to db: ${e.message}`);
   }
   return;
 };
@@ -190,12 +196,12 @@ const update_address = async (
   blockheight: number,
   txid: string,
   type: string
-): Promise<void | Error> => {
+): Promise<void> => {
   const addr_inc: {
-    sent?: number,
-    balance?: number,
-    received?: number
-  } = {};
+    sent: number,
+    balance: number,
+    received: number
+  } = { sent: 0, balance: 0, received: 0 };
   if (hash == 'coinbase') {
     addr_inc.sent = amount;
   } else {
@@ -219,11 +225,13 @@ const update_address = async (
     await Address.findOneAndUpdate(
       { a_id: hash },
       { $inc: addr_inc },
-      { new: true,
-        upsert: true
-      }
+      { new: true, upsert: true },
     );
-    if (hash != 'coinbase') {
+  } catch (e: any) {
+    throw new Error(`update_address: failed to update balance for Address ${hash}: ${e.message}`);
+  }
+  if (hash != 'coinbase') {
+    try {
       await AddressTx.findOneAndUpdate(
         { a_id: hash, txid: txid },
         { $inc: {
@@ -233,13 +241,11 @@ const update_address = async (
           blockindex: blockheight,
           txid: txid
         }},
-        { new: true,
-          upsert: true
-        }
+        { new: true, upsert: true }
       );
-    }
-  } catch (e: any) {
-    return new Error(`update_address: failed to update address ${hash}: ${e.message}`);
+    } catch (e: any) {
+      throw new Error(`update_address: failed to add AddressTx ${txid}: ${e.message}`);
+    };
   }
   return;
 };
@@ -330,12 +336,13 @@ export class Database {
   };
 
   async create_stats(coin: string): Promise<StatsDocument> {
-    const create = new Stats({
-      coin: coin,
-      last: 0,
-    });
-    const newStats = await create.save();
-    return newStats ?? null;
+    try {
+      const create = new Stats({ coin: coin, last: 0 });
+      return await create.save();
+    } catch (e: any) {
+      console.log(`error saving stats for ${coin}:`, e.message);
+      return null;
+    }
   };
 
   async create_txs(block: BlockInfo): Promise<boolean> {
@@ -347,7 +354,7 @@ export class Database {
       try {
         await save_tx(txid, block.height);
       } catch (e: any) {
-        console.log(`error saving tx ${txid}: %s`, e.message);
+        console.log(`error saving tx ${txid}:`, e.message);
         return false;
       }
     }
@@ -361,8 +368,8 @@ export class Database {
    */
   async check_market(market: string): Promise<boolean> {
     try {
-      const findOne = await Markets.findOne({ market: market });
-      return findOne as boolean;
+      await Markets.findOne({ market: market });
+      return true;
     } catch (e: any) {
       return false;
     }
@@ -370,8 +377,8 @@ export class Database {
 
   async check_richlist(coin: string) {
     try {
-      const richlist = await Richlist.findOne({ coin: coin });
-      return richlist as boolean;
+      await Richlist.findOne({ coin: coin });
+      return true;
     } catch (e: any) {
       return false;
     }
@@ -379,8 +386,8 @@ export class Database {
 
   async check_stats(coin: string) {
     try {
-      const stats = await Stats.findOne({ coin: coin });
-      return stats as boolean;
+      await Stats.findOne({ coin: coin });
+      return true;
     } catch (e: any) {
       return false;
     }
@@ -392,24 +399,40 @@ export class Database {
    * 
    */
   async get_address(hash: string) {
-    return await find_address(hash);
+    try {
+      return await find_address(hash);
+    } catch (e: any) {
+      return null;
+    }
   };
 
   async get_block(height: number) {
-    return await find_block(height);
+    try {
+      return await find_block(height);
+    } catch (e: any) {
+      return null;
+    }
   };
 
   // Polls the Charts db for latest aggregate data
   async get_charts() {
-    return await Charts.findOne();
+    try {
+      return await Charts.findOne();
+    } catch (e: any) {
+      return null;
+    }
   };
 
   async get_distribution() {
 
   };
 
-  async get_market() {
-
+  async get_market(market: string) {
+    try {
+      return await Markets.findOne({ market: market });
+    } catch (e: any) {
+      return null;
+    }
   };
 
   async get_peer() {
@@ -436,8 +459,12 @@ export class Database {
   async get_txs(block: BlockInfo) {
     const txs: TransactionDocument[] = [];
     for (const txid of block.tx) {
-      const tx = await find_tx(txid);
-      txs.push(tx);
+      try {
+        const tx = await find_tx(txid);
+        txs.push(tx);
+      } catch (e: any) {
+        // ignore tx if we can't find it
+      }
     }
     return txs;
   };
@@ -454,13 +481,17 @@ export class Database {
     const data: {
       blocks: BlockDocument[],
       count: number
-    } = {
-      blocks: await Block.find({})
+    } = { blocks: [], count: 0 };
+    try {
+      data.blocks = await Block.find({})
         .sort({ 'height': -1 })
         .skip(start)
-        .limit(length),
-      count: await Block.find({}).count()
-    };
+        .limit(length);
+      data.count = await Block.find({}).count();
+    } catch (e: any) {
+      console.log(`get_last_blocks_ajax: failed to poll blocks collection: ${e.message}`);
+      return null;
+    }
     return data;
   };
 
@@ -472,13 +503,17 @@ export class Database {
     const data: {
       txs: TransactionDocument[],
       count: number
-    } = {
-      txs: await Tx.find({ 'total': { $gte: min }})
+    } = { txs: [], count: 0 };
+    try {
+      data.txs = await Tx.find({ 'total': { $gte: min }})
         .sort({ blockindex: -1 })
         .skip(start)
-        .limit(length),
-      count: await Tx.find({}).count()
-    };
+        .limit(length);
+      data.count = await Tx.find({}).count();
+    } catch (e: any) {
+      console.log(`get_last_txs_ajax: failed to poll txs collection: ${e.message}`);
+      return null;
+    }
     return data;
   };
 
@@ -487,42 +522,45 @@ export class Database {
     start: number,
     length: number
   ) {
-    const addressTxs: AddressTransactionDocument[] = await AddressTx.find({ a_id: hash })
-      .sort({ blockindex: -1 })
-      // BUG: Order parent->child transactions properly in address history (prevent negative Balance)
-      // add sort for ascending amount
-      .sort({ amount: 1 })
-      .skip(start)
-      .limit(length);
-    const aggResult = await AddressTx.aggregate([
-      { $match: { a_id: hash }},
-      { $sort: { blockindex: -1 }},
-      { $skip: start },
-      {
-        $group: {
-          _id: '',
-          balance: { $sum: '$amount' },
-          count: { $sum: 1 }
+    const data: {
+      txs: TransactionDocument[],
+      count: number
+    } = { txs: [], count: 0 };
+    try {
+      const addressTxs: AddressTransactionDocument[] = await AddressTx.find({ a_id: hash })
+        .sort({ blockindex: -1 })
+        // BUG: Order parent->child transactions properly in address history (prevent negative Balance)
+        // add sort for ascending amount
+        .sort({ amount: 1 })
+        .skip(start)
+        .limit(length);
+      const aggResult = await AddressTx.aggregate([
+        { $match: { a_id: hash }},
+        { $sort: { blockindex: -1 }},
+        { $skip: start },
+        {
+          $group: {
+            _id: '',
+            balance: { $sum: '$amount' },
+            count: { $sum: 1 }
+          }
         }
+      ]);
+      data.count = aggResult[0].count;
+      let runningBalance = aggResult[0].balance ?? 0;
+      for (const addressTx of addressTxs) {
+        const tx = await find_tx(addressTx.txid);
+        data.txs.push({
+          ...tx,
+          balance: runningBalance
+        } as TransactionDocument);
+        runningBalance -= addressTx.amount;
       }
-    ]);
-    const { count, balance }: {
-      count: number,
-      balance: number
-    } = aggResult.pop();
-
-    let runningBalance = balance ?? 0;
-    const txs: TransactionDocument[] = [];
-    for (const addressTx of addressTxs) {
-      const tx = await find_tx(addressTx.txid);
-      txs.push({
-        ...tx,
-        balance: runningBalance
-      } as TransactionDocument);
-      runningBalance -= addressTx.amount;
+    } catch (e: any) {
+      console.log(`get_address_txs_ajax: failed to poll addresstxs collection: ${e.message}`);
+      return null;
     }
-
-    return { txs, count };
+    return data;
   };
 
   /*
@@ -530,139 +568,40 @@ export class Database {
    *    Get Database Charts
    * 
    */
-  async get_charts_difficulty(timespan: string) {
-    const [ dbBlock ] = await find_latest_block();
+  async get_charts_difficulty(timespan: ChartDifficultyTimespan) {
     const timespan_s = TIMESPANS[timespan];
-    const agg: Array<{}> = [
-      { '$match': {
-        'timestamp': { '$gte': (dbBlock.timestamp - timespan_s) }
-      }},
-      { "$sort": {"timestamp": 1} },
-      //{ "$limit": blockspan },
-      { "$group": {
-        _id: null,
-        "blocks": { $push: { t: "$localeTimestamp", d: "$difficulty" } }
-      }},
-    ];
-    // filter agg results depending on blockspan to reduce data load
-    switch (timespan) {
-      case 'week':
-        agg.push({
-          '$project': {
-            // filter blocks 
-            'blocks': {
-              '$filter': {
-                'input': '$blocks',
-                'as': 'block',
-                'cond': {
-                  // get difficulty from 6 blocks from each hour of the day
-                  '$and': [
-                    { '$gte': [{ '$hour': {'$dateFromString': {'dateString': "$$block.t"}}}, 0]},
-                    { '$lte': [{ '$hour': {'$dateFromString': {'dateString': "$$block.t"}}}, 23]},
-                    { '$or': [
-                      { '$eq': [{ '$minute': {'$dateFromString': {'dateString': "$$block.t"}}}, 0]},
-                      { '$eq': [{ '$minute': {'$dateFromString': {'dateString': "$$block.t"}}}, 10]},
-                      { '$eq': [{ '$minute': {'$dateFromString': {'dateString': "$$block.t"}}}, 20]},
-                      { '$eq': [{ '$minute': {'$dateFromString': {'dateString': "$$block.t"}}}, 30]},
-                      { '$eq': [{ '$minute': {'$dateFromString': {'dateString': "$$block.t"}}}, 40]},
-                      { '$eq': [{ '$minute': {'$dateFromString': {'dateString': "$$block.t"}}}, 50]},
-                    ]}
-                  ]
-                }
-              }
-            }
-          }
-        });
-        break;
-      case 'month':
-        agg.push({
-          '$project': {
-            // filter blocks 
-            'blocks': {
-              '$filter': {
-                'input': '$blocks',
-                'as': 'block',
-                'cond': {
-                  // get difficulty from 2 blocks per every 4th hour of the day
-                  '$and': [
-                    { '$or': [
-                      { '$eq': [{ '$hour': {'$dateFromString': {'dateString': "$$block.t"}}}, 0]},
-                      { '$eq': [{ '$hour': {'$dateFromString': {'dateString': "$$block.t"}}}, 4]},
-                      { '$eq': [{ '$hour': {'$dateFromString': {'dateString': "$$block.t"}}}, 8]},
-                      { '$eq': [{ '$hour': {'$dateFromString': {'dateString': "$$block.t"}}}, 12]},
-                      { '$eq': [{ '$hour': {'$dateFromString': {'dateString': "$$block.t"}}}, 16]},
-                      { '$eq': [{ '$hour': {'$dateFromString': {'dateString': "$$block.t"}}}, 20]},
-                    ]},
-                    { '$or': [
-                      { '$eq': [{ '$minute': {'$dateFromString': {'dateString': "$$block.t"}}}, 0]},
-                      { '$eq': [{ '$minute': {'$dateFromString': {'dateString': "$$block.t"}}}, 30]},
-                    ]}
-                  ]
-                }
-              }
-            }
-          }
-        });
-        break;
-      case 'quarter':
-        agg.push({
-          '$project': {
-            // filter blocks 
-            'blocks': {
-              '$filter': {
-                'input': '$blocks',
-                'as': 'block',
-                'cond': {
-                  // get difficulty from 1 block per day
-                  '$eq': [{ '$hour': {'$dateFromString': {'dateString': "$$block.t"}}}, 0]
-                }
-              }
-            }
-          }
-        });
-        break;
-      case 'year':
-        agg.push({
-          '$project': {
-            // filter blocks 
-            'blocks': {
-              '$filter': {
-                'input': '$blocks',
-                'as': 'block',
-                'cond': {
-                  // get difficulty from 11 blocks per month
-                  '$or': [
-                    { '$eq': [{ '$dayOfMonth': {'$dateFromString': {'dateString': "$$block.t"}}}, 1]},
-                    { '$eq': [{ '$dayOfMonth': {'$dateFromString': {'dateString': "$$block.t"}}}, 4]},
-                    { '$eq': [{ '$dayOfMonth': {'$dateFromString': {'dateString': "$$block.t"}}}, 7]},
-                    { '$eq': [{ '$dayOfMonth': {'$dateFromString': {'dateString': "$$block.t"}}}, 10]},
-                    { '$eq': [{ '$dayOfMonth': {'$dateFromString': {'dateString': "$$block.t"}}}, 13]},
-                    { '$eq': [{ '$dayOfMonth': {'$dateFromString': {'dateString': "$$block.t"}}}, 16]},
-                    { '$eq': [{ '$dayOfMonth': {'$dateFromString': {'dateString': "$$block.t"}}}, 19]},
-                    { '$eq': [{ '$dayOfMonth': {'$dateFromString': {'dateString': "$$block.t"}}}, 22]},
-                    { '$eq': [{ '$dayOfMonth': {'$dateFromString': {'dateString': "$$block.t"}}}, 25]},
-                    { '$eq': [{ '$dayOfMonth': {'$dateFromString': {'dateString': "$$block.t"}}}, 28]},
-                    { '$eq': [{ '$dayOfMonth': {'$dateFromString': {'dateString': "$$block.t"}}}, 31]},
-                  ]
-                }
-              }
-            }
-          }
-        });
-        break;
+    const data: {
+      plot: Array<(string | number)[]>
+    } = { plot: [] };
+    try {
+      const [ dbBlock ] = await find_latest_block();
+      const agg: Array<{}> = [
+        { '$match': {
+          'timestamp': { '$gte': (dbBlock.timestamp - timespan_s) }
+        }},
+        { "$sort": {"timestamp": 1} },
+        //{ "$limit": blockspan },
+        { "$group": {
+          _id: null,
+          "blocks": { $push: { t: "$localeTimestamp", d: "$difficulty" } }
+        }},
+      ];
+      // filter agg results depending on blockspan to reduce data load
+      agg.push(getChartsDifficultyAggregation[timespan]);
+      const result: Array<{
+        blocks: Array<{
+          localeTimestamp: string,
+          difficulty: number
+        }>
+      }> = await Block.aggregate(agg);
+      data.plot = result[0].blocks.map((block) => Object.values(block));
+    } catch (e: any) {
+
     }
-    const result: Array<{
-      blocks: Array<{
-        localeTimestamp: string,
-        difficulty: number
-      }>
-    }> = await Block.aggregate(agg);
-    return {
-      data: result[0].blocks.map((block) => Object.values(block))
-    };
+    return data;
   };
   
-  async get_charts_reward_distribution(timespan: string): Promise<{
+  async get_charts_reward_distribution(timespan: ChartDistributionTimespan): Promise<{
     data: Array<[string, number]>,
     minerTotal: number
   }> {
@@ -704,7 +643,7 @@ export class Database {
   };
 
   // gather and prepare chart data for transaction count based on timespan
-  async get_charts_txs(timespan: string): Promise<{
+  async get_charts_txs(timespan: ChartTransactionTimespan): Promise<{
     data: Array<[string, number]>,
     txtotal: number
   }> {
