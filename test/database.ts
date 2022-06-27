@@ -1,7 +1,7 @@
 const settings = require('../lib/settings');
 import { Database } from '../lib/database';
 
-
+const address = 'lotus_16PSJMPL9PB7v6md8mbnHsQAZC1RXEs92uZFRRcWq';
 const dbString = 'mongodb://' + settings.dbsettings.user
   + ':' + settings.dbsettings.password
   + '@' + settings.dbsettings.address
@@ -15,22 +15,24 @@ const main = async () => {
   const isLocked = await db.is_locked();
   const stats = await db.get_stats('Lotus');
   // const newStats = await db.create_stats('homina');
-  const address = await db.get_address('lotus_16PSJMPL9PB7v6md8mbnHsQAZC1RXEs92uZFRRcWq');
+  const addressDocument = await db.get_address(address);
   const richlist = await db.get_richlist('Lotus');
   const chartsTxs = await db.get_charts_txs('day');
   const chartsRewards = await db.get_charts_reward_distribution('day');
   const chartsDifficulty = await db.get_charts_difficulty('week');
   const lastBlocks = await db.get_last_blocks_ajax(0, 10);
   const lastTxs = await db.get_last_txs_ajax(0, 10, 0);
-  const addressTxs = await db.get_address_txs_ajax('lotus_16PSJMPL9PB7v6md8mbnHsQAZC1RXEs92uZFRRcWq', 0, 10);
+  const addressTxs = await db.get_address_txs_ajax(address, 0, 10);
   const checkMarket = await db.check_market('exbitron');
   const checkRichlist = await db.check_richlist('Lotus');
   const checkStats = await db.check_stats('Lotus');
+  const checkMarketBad = await db.check_market('sexbitron');
+  const checkStatsBad = await db.check_stats('hehehe');
 
   console.log('isLocked', isLocked);
   console.log('stats', stats);
   // console.log('newStats', newStats);
-  console.log('address', address);
+  console.log('addressDocument', addressDocument);
   console.log('richlist', richlist);
   console.log('chartsTxs', chartsTxs);
   console.log('chartsRewards', chartsRewards);
@@ -41,6 +43,8 @@ const main = async () => {
   console.log('checkMarket', checkMarket);
   console.log('checkRichlist', checkRichlist);
   console.log('checkStats', checkStats);
+  console.log('checkMarketBad', checkMarketBad);
+  console.log('checkStatsBad', checkStatsBad);
 
   await db.disconnect();
 };
