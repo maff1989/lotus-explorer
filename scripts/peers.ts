@@ -54,6 +54,7 @@ const main = async () => {
 	deadPeers.forEach(async dbPeer => {
 		await db.drop_peer(dbPeer.address)
 	});
+	await db.disconnect();
 	process.exit();
 };
 main();
