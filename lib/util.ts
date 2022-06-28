@@ -1,7 +1,7 @@
 export const getChartsDifficultyAggregation: {
   [timespan: string]: {}
 } = {
-  'week': {
+  week: {
     '$project': {
       // filter blocks 
       'blocks': {
@@ -27,7 +27,7 @@ export const getChartsDifficultyAggregation: {
       }
     }
   },
-  'month': {
+  month: {
     '$project': {
       // filter blocks 
       'blocks': {
@@ -55,7 +55,7 @@ export const getChartsDifficultyAggregation: {
       }
     }
   },
-  'quarter': {
+  quarter: {
     '$project': {
       // filter blocks 
       'blocks': {
@@ -70,7 +70,7 @@ export const getChartsDifficultyAggregation: {
       }
     }
   },
-  'year': {
+  year: {
     '$project': {
       // filter blocks 
       'blocks': {
