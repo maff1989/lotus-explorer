@@ -1,10 +1,10 @@
 const settings = require('./settings');
 import { connect, disconnect } from 'mongoose';
 import * as fs from 'fs/promises';
-import * as Explorer from '../lib/explorer';
+import * as Explorer from './explorer';
 import {
   getChartsDifficultyAggregation,
-} from '../lib/util';
+} from './util';
 import Address from '../models/address';
 import AddressTx from '../models/addresstx';
 import Block from '../models/block';
@@ -41,6 +41,20 @@ type MarketDocument = {
   //sells: Array,
   //history: Array
 };
+type PeerDocument = {
+  createdAt?: Date,
+  address: string,
+  port: string,
+  protocol: string,
+  version: string,
+  country: string,
+  country_code: string,
+};
+type RichlistDocument = {
+  coin: string,
+  received: AddressDocument[],
+  balance: AddressDocument[],
+};
 type StatsDocument = {
   coin: string,
   count: number,
@@ -73,91 +87,86 @@ const find_address = async (hash: string): Promise<AddressDocument> => {
   try {
     return (await Address.findOne({ a_id: hash }))._doc;
   } catch (e: any) {
-    throw new Error(`database: find_address failed: ${e.message}`);
+    throw new Error(`find_address: ${e.message}`);
   }
 };
-const find_richlist = async (coin: string) => {
+const find_richlist = async (coin: string): Promise<RichlistDocument> => {
   try {
     return (await Richlist.findOne({ coin: coin }))._doc;
   } catch (e: any) {
-    throw new Error(`database: find_richlist failed: ${e.message}`);
+    throw new Error(`find_richlist: ${e.message}`);
   }
 };
 const find_tx = async (txid: string): Promise<TransactionDocument> => {
   try {
     return (await Tx.findOne({ txid: txid }))._doc;
   } catch (e: any) {
-    throw new Error(`database: find_tx failed: ${e.message}`);
+    throw new Error(`find_tx: ${e.message}`);
   }
 };
 const find_block = async (height: number): Promise<BlockDocument> => {
   try {
     return (await Block.findOne({ height: height }))._doc;
   } catch (e: any) {
-    throw new Error(`database: find_block failed: ${e.message}`);
+    throw new Error(`find_block: ${e.message}`);
   }
 };
 const find_latest_block = async (): Promise<BlockDocument[]> => {
   try {
     return await Block.find().sort({'timestamp': -1}).limit(1);
   } catch (e: any) {
-    throw new Error(`database: find_latest_block failed: ${e.message}`);
+    throw new Error(`find_latest_block: ${e.message}`);
   }
 };
-const save_tx = async (txid: string, blockheight: number) => {
+const save_tx = async (txid: string, height: number) => {
   const tx = await lib.get_rawtransaction(txid);
   const { vin } = await lib.prepare_vin(tx);
   const { vout, burned } = await lib.prepare_vout(tx.vout);
   const total = await lib.calculate_total(vout);
   const fee = await lib.calculate_fee(vout, vin);
   // update vins and vouts
-  vin.forEach(async input => {
+  for (const input of vin) {
+    const { addresses, amount } = input;
     try {
-      await update_address(
-        input.addresses,
-        input.amount,
-        blockheight,
-        txid,
-        'vin'
-      );
+      await update_address(addresses, amount, height, txid, 'vin');
     } catch (e: any) {
-      throw new Error(`save_tx: update_address failed for vin ${input.addresses}: ${e.message}`);
+      throw new Error(`save_tx: update_address: vin ${input.addresses}: ${e.message}`);
     }
-  });
-  vout.forEach(async output => {
+  }
+  for (const output of vout) {
+    const { addresses, amount } = output;
+    const type = { output: '' };
+    // only update if address is not an OP_RETURN with a value > 0
+    if (amount > 0 && !addresses.includes("OP_RETURN")) {
+      type.output = 'vout';
+    }
+    // if sending to itself, don't add output to "Total Received" for this address
+    if (vin.find(input => input.addresses == addresses)) {
+      type.output = 'toSelf';
+    }
     try {
-      await update_address(
-        output.addresses,
-        output.amount,
-        blockheight,
-        txid,
-        vin.find(input => output.addresses == input.addresses)
-          // don't add output to "Total Received" for this address
-          ? 'toSelf'
-          // only update if address is not an OP_RETURN with a value > 0
-          : 'vout'
-      );
+      await update_address(addresses, amount, height, txid, type.output);
     } catch (e: any) {
-      throw new Error(`save_tx: update_address failed for vout ${output.addresses}: ${e.message}`);
+      throw new Error(`save_tx: update_address: vout ${addresses}: ${e.message}`);
     }
-  });
+  }
   // save Tx
+  const newTx = new Tx({
+    txid: tx.txid,
+    vin,
+    vout,
+    fee,
+    size: tx.size,
+    total: total.toFixed(6),
+    timestamp: tx.time,
+    localeTimestamp: new Date(tx.time * 1000).toLocaleString('en-us', { timeZone:"UTC" }),
+    blockhash: tx.blockhash,
+    blockindex: height,
+  });
   try {
-    const newTx = new Tx({
-      txid: tx.txid,
-      vin,
-      vout,
-      fee,
-      size: tx.size,
-      total: total.toFixed(6),
-      timestamp: tx.time,
-      localeTimestamp: new Date(tx.time * 1000).toLocaleString('en-us', { timeZone:"UTC" }),
-      blockhash: tx.blockhash,
-      blockindex: blockheight,
-    });
     await newTx.save();
   } catch (e: any) {
-    throw new Error(`save_tx: failed to save new tx to db: ${e.message}`);
+    throw new Error(`save_tx: ${e.message}`);
   }
   return { burned };
 };
@@ -171,19 +180,19 @@ const save_block = async (
   const coinbaseTx = await lib.get_rawtransaction(block.tx[0]);
   const miner = coinbaseTx.vout[1].scriptPubKey.addresses[0];
   // save block
+  const newBlock = new Block({
+    height: block.height,
+    minedby: miner,
+    //hash: block.hash,
+    difficulty: block.difficulty,
+    timestamp: block.time,
+    localeTimestamp: new Date(block.time * 1000).toLocaleString('en-us', { timeZone:"UTC" }),
+    size: block.size,
+    fees: blockFees,
+    burned: totalFeesBurned,
+    txcount: block.nTx
+  });
   try {
-    const newBlock = new Block({
-      height: block.height,
-      minedby: miner,
-      //hash: block.hash,
-      difficulty: block.difficulty,
-      timestamp: block.time,
-      localeTimestamp: new Date(block.time * 1000).toLocaleString('en-us', { timeZone:"UTC" }),
-      size: block.size,
-      fees: blockFees,
-      burned: totalFeesBurned,
-      txcount: block.nTx
-    });
     newBlock.save();
   } catch (e: any) {
     throw new Error(`save_block: failed to save new block to db: ${e.message}`);
@@ -228,7 +237,7 @@ const update_address = async (
       { new: true, upsert: true },
     );
   } catch (e: any) {
-    throw new Error(`update_address: failed to update balance for Address ${hash}: ${e.message}`);
+    throw new Error(`update_address: ${hash}: ${e.message}`);
   }
   if (hash != 'coinbase') {
     try {
@@ -244,7 +253,7 @@ const update_address = async (
         { new: true, upsert: true }
       );
     } catch (e: any) {
-      throw new Error(`update_address: failed to add AddressTx ${txid}: ${e.message}`);
+      throw new Error(`update_address: ${txid}: ${e.message}`);
     };
   }
   return;
@@ -327,12 +336,22 @@ export class Database {
 
   };
   
-  async create_peer() {
-
+  async create_peer(params: PeerDocument): Promise<PeerDocument> {
+    try {
+      const peer = new Peers(params);
+      return await peer.save();
+    } catch (e: any) {
+      return null;
+    }
   };
 
-  async create_richlist() {
-
+  async create_richlist(coin: string): Promise<RichlistDocument> {
+    try {
+      const richlist = new Richlist({ coin: coin });
+      return await richlist.save();
+    } catch (e: any) {
+      return null;
+    }
   };
 
   async create_stats(coin: string): Promise<StatsDocument> {
@@ -340,7 +359,7 @@ export class Database {
       const create = new Stats({ coin: coin, last: 0 });
       return await create.save();
     } catch (e: any) {
-      console.log(`error saving stats for ${coin}:`, e.message);
+      console.log(`error saving Stats for ${coin}:`, e.message);
       return null;
     }
   };
@@ -354,7 +373,7 @@ export class Database {
       try {
         await save_tx(txid, block.height);
       } catch (e: any) {
-        console.log(`error saving tx ${txid}:`, e.message);
+        console.log(`error saving Tx ${txid}:`, e.message);
         return false;
       }
     }
@@ -435,16 +454,28 @@ export class Database {
     }
   };
 
-  async get_peer() {
-
+  async get_peer(address: string): Promise<PeerDocument> {
+    try {
+      return await Peers.findOne({ address: address });
+    } catch (e: any) {
+      return null;
+    }
   };
 
-  async get_peers() {
-    
+  async get_peers(): Promise<PeerDocument[]> {
+    try {
+      return await Peers.find({});
+    } catch (e: any) {
+      return null;
+    }
   }
   
   async get_richlist(coin: string) {
-    return await find_richlist(coin);
+    try {
+      return await find_richlist(coin);  
+    } catch (e: any) {
+      return null;
+    }    
   };
   
   async get_stats(coin: string): Promise<StatsDocument> {
@@ -569,7 +600,7 @@ export class Database {
    * 
    */
   async get_charts_difficulty(timespan: ChartDifficultyTimespan) {
-    const timespan_s = TIMESPANS[timespan];
+    const seconds = TIMESPANS[timespan];
     const data: {
       plot: Array<(string | number)[]>
     } = { plot: [] };
@@ -577,7 +608,7 @@ export class Database {
       const [ dbBlock ] = await find_latest_block();
       const agg: Array<{}> = [
         { '$match': {
-          'timestamp': { '$gte': (dbBlock.timestamp - timespan_s) }
+          'timestamp': { '$gte': (dbBlock.timestamp - seconds) }
         }},
         { "$sort": {"timestamp": 1} },
         //{ "$limit": blockspan },
@@ -596,7 +627,7 @@ export class Database {
       }> = await Block.aggregate(agg);
       data.plot = result[0].blocks.map((block) => Object.values(block));
     } catch (e: any) {
-
+      
     }
     return data;
   };
@@ -605,41 +636,45 @@ export class Database {
     data: Array<[string, number]>,
     minerTotal: number
   }> {
-    const [ dbBlock ] = await find_latest_block();
-    const timespan_s = TIMESPANS[timespan];
+    const seconds = TIMESPANS[timespan];
     const blockspan = BLOCKSPANS[timespan];
-    const result: Array<{
-      _id: null,
-      blocks: Array<{ minedby: string }>
-    }> = await Block.aggregate([
-      { '$match': {
-        'timestamp': { '$gte': (dbBlock.timestamp - timespan_s) }
-      }},
-      //{ "$sort": {"timestamp": 1} },
-      //{ "$limit": blockspan },
-      { "$group": {
+    try {
+      const [ dbBlock ] = await find_latest_block();
+      const result: Array<{
         _id: null,
-        "blocks": { $push: { minedby: "$minedby" } }
-      }},
-    ]);
-    const minerBlockCounts: { [minedby: string]: number } = {};
-    result[0].blocks.forEach((block) => {
-      minerBlockCounts[block.minedby] !== undefined
-        ? minerBlockCounts[block.minedby]++
-        : minerBlockCounts[block.minedby] = 1
-    });
+        blocks: Array<{ minedby: string }>
+      }> = await Block.aggregate([
+        { '$match': {
+          'timestamp': { '$gte': (dbBlock.timestamp - seconds) }
+        }},
+        //{ "$sort": {"timestamp": 1} },
+        //{ "$limit": blockspan },
+        { "$group": {
+          _id: null,
+          "blocks": { $push: { minedby: "$minedby" } }
+        }},
+      ]);
+      const minerBlockCounts: { [minedby: string]: number } = {};
+      result[0].blocks.forEach((block) => {
+        minerBlockCounts[block.minedby] !== undefined
+          ? minerBlockCounts[block.minedby]++
+          : minerBlockCounts[block.minedby] = 1
+      });
+  
+      let minerMiscBlocks = 0;
+      const minerFiltered: { [minedby: string]: number } = {};
+      for (const [minedby, blockCount] of Object.entries(minerBlockCounts)) {
+        blockCount > Math.floor(0.03 * blockspan)
+          ? minerFiltered[minedby] = blockCount
+          : minerMiscBlocks += blockCount;
+      }
+  
+      const data = Object.entries(minerFiltered).sort((a, b) => b[1] - a[1]);
+      data.push(["Miscellaneous Miners (<= 3% hashrate each)", minerMiscBlocks]);
+      return { data, minerTotal: Object.keys(minerBlockCounts).length };
+    } catch (e: any) {
 
-    let minerMiscBlocks = 0;
-    const minerFiltered: { [minedby: string]: number } = {};
-    for (const [minedby, blockCount] of Object.entries(minerBlockCounts)) {
-      blockCount > Math.floor(0.03 * blockspan)
-        ? minerFiltered[minedby] = blockCount
-        : minerMiscBlocks += blockCount;
     }
-
-    const data = Object.entries(minerFiltered).sort((a, b) => b[1] - a[1]);
-    data.push(["Miscellaneous Miners (<= 3% hashrate each)", minerMiscBlocks]);
-    return { data, minerTotal: Object.keys(minerBlockCounts).length };
   };
 
   // gather and prepare chart data for transaction count based on timespan
@@ -647,14 +682,14 @@ export class Database {
     data: Array<[string, number]>,
     txtotal: number
   }> {
+    const seconds = TIMESPANS[timespan];
     const [ dbBlock ] = await find_latest_block();
-    const timespan_s = TIMESPANS[timespan];
     const result: Array<{
       blocks: BlockDocument[],
       txtotal: number
     }> = await Block.aggregate([
       { '$match': {
-        'timestamp': { '$gte': (dbBlock.timestamp - timespan_s) },
+        'timestamp': { '$gte': (dbBlock.timestamp - seconds) },
         'txcount': { $gt: 1 } 
       }},
       { "$sort": { "timestamp": 1 } },
@@ -700,12 +735,15 @@ export class Database {
 
   };
   
-  async update_label(hash: string, message: string) {
-    const address = await find_address(hash);
-    if(address){
-      return await Address.updateOne({ a_id: hash }, { name: message });
+  async update_label(hash: string, message: string): Promise<AddressDocument> {
+    try {
+      const address = await find_address(hash);
+      return address
+        ? await Address.updateOne({ a_id: hash }, { name: message })
+        : null;
+    } catch (e: any) {
+      throw new Error(e.message)
     }
-    return false;
   };
 
   async update_markets_db() {
@@ -714,12 +752,16 @@ export class Database {
 
   //property: 'received' or 'balance'
   async update_richlist(list: string) {
-    const addresses = list == 'received'
-      ? await Address.find({}, 'a_id balance received name').sort({ received: 'desc' }).limit(100)
-      : await Address.find({}, 'a_id balance received name').sort({ balance: 'desc' }).limit(100);
-    return list == 'received'
-      ? await Richlist.updateOne({ coin: settings.coin }, { received: addresses })
-      : await Richlist.updateOne({ coin: settings.coin }, { balance: addresses });
+    try {
+      const addresses = list == 'received'
+        ? await Address.find({}, 'a_id balance received name').sort({ received: 'desc' }).limit(100)
+        : await Address.find({}, 'a_id balance received name').sort({ balance: 'desc' }).limit(100);
+      return list == 'received'
+        ? await Richlist.updateOne({ coin: settings.coin }, { received: addresses })
+        : await Richlist.updateOne({ coin: settings.coin }, { balance: addresses });
+    } catch (e: any) {
+      throw new Error(e.message);
+    }
   };
 
   async update_tx_db() {
@@ -735,16 +777,28 @@ export class Database {
    *    Delete Database Entries
    * 
    */
-  async drop_peer() {
-
+  async drop_peer(address: string): Promise<void> {
+    try {
+      await Peers.deleteOne({ address: address });
+    } catch (e: any) {
+      throw new Error(e.message);
+    }
   };
 
-  async drop_peers() {
-
+  async drop_peers(): Promise<void> {
+    try {
+      await Peers.deleteMany({});
+    } catch (e: any) {
+      throw new Error(e.message);
+    }
   };
 
-  async delete_richlist() {
-
+  async delete_richlist(coin: string): Promise<void> {
+    try {
+      await Richlist.findOneAndRemove({ coin: coin });
+    } catch (e: any) {
+      throw new Error(e.message);
+    }
   }; 
 
 };
