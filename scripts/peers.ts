@@ -16,7 +16,7 @@ const main = async () => {
 	for (const peer of getPeerInfo) {
 		console.log('found peer:', peer.addr);
 		const index = peer.addr.lastIndexOf(':');
-		const peerAddr = peer.addr.substring(0, index + 1);
+		const peerAddr = peer.addr.substring(0, index);
 		const dbPeer = await db.get_peer(peerAddr);
 		// do not save this peer if already in db
 		// but check it to make sure it's valid
