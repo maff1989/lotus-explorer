@@ -15,12 +15,8 @@ const main = async () => {
 	const getPeerInfo = await lib.get_peerinfo();
 	for (const peer of getPeerInfo) {
 		console.log('found peer:', peer.addr);
-		const index = peer.addr.lastIndexOf(":");
-		const portSplit = (index < 0)
-			? peer.addr.length
-			: parseInt(peer.addr.substring(index + 1));
-		// update peer addr in RAM
-		const peerAddr = peer.addr.substring(0, portSplit);
+		const index = peer.addr.lastIndexOf(':');
+		const peerAddr = peer.addr.substring(0, index + 1);
 		const dbPeer = await db.get_peer(peerAddr);
 		// do not save this peer if already in db
 		// but check it to make sure it's valid
