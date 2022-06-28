@@ -1,5 +1,5 @@
 const settings = require('../lib/settings');
-import * as request from 'request-promise';
+import request from 'request-promise';
 import { Database } from '../lib/database';
 import { Explorer } from '../lib/explorer';
 
@@ -29,7 +29,7 @@ const main = async () => {
 			const geo = await request.get('https://json.geoiplookup.io/' + (ipv6_address
 				? ipv6_address
 				: peerAddr
-			));
+			), { json: true });
 			try {
 				await db.create_peer({
 					address: peerAddr,
