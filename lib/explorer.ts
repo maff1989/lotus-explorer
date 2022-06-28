@@ -61,6 +61,12 @@ export type MempoolInfo = {
 export type MiningInfo = {
   networkhashps: number,
 };
+export type PeerInfo = {
+  addr: string,
+  version: number,
+  subver: string,
+
+};
 export type TransactionInput = {
   txid: string,
   vout: number,
@@ -99,7 +105,10 @@ const rpc = new BitcoinRpc('http://'
  * @param params  - RPC command parameters
  * @returns {Promise<any>} Command result
  */
-const rpcCommand = async (command: string, params: Array<string | number | boolean> = []) => {
+const rpcCommand = async (
+  command: string,
+  params: Array<string | number | boolean> = []
+): Promise<any> => {
   try {
     return await rpc.call(command, ...params);
   } catch (e: any) {
@@ -219,6 +228,9 @@ export class Explorer {
       }
     }
     return 0;
+  };
+  async get_peerinfo(): Promise<PeerInfo[]> {
+    return await rpcCommand('getpeerinfo');
   };
   /**
    * Fetch all address balances from database and calculate available supply
