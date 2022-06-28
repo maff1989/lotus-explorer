@@ -48,7 +48,7 @@ const main = async () => {
 	// db peers that are not in node's peer list are considered dead
 	const dbPeers = await db.get_peers();
 	const deadPeers = dbPeers.filter(dbPeer => {
-		return getPeerInfo.findIndex(peer => peer.addr == dbPeer.address) < 0
+		return getPeerInfo.findIndex(peer => peer.addr.includes(dbPeer.address)) < 0
 	});
 	console.log('deadPeers:', deadPeers);
 	deadPeers.forEach(async dbPeer => {
