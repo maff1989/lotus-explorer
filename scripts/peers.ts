@@ -23,7 +23,6 @@ const main = async () => {
 		if (!dbPeer) {
 			console.log(`peer ${peerAddr} not found in db; creating...`);
 			// convert IPv6 into proper format for GeoIP lookup
-			// also set ipv6_address const for GeoIP lookup; save address const to db
 			const ipv6_address = peerAddr.includes(':')
 				? peerAddr.replace(/^\[(([0-9a-f]{0,4}:?){1,8})\]$/, '$1')
 				: null;
@@ -36,7 +35,7 @@ const main = async () => {
 					address: peerAddr,
 					port: String(10605),
 					protocol: String(peer.version),
-					version: peer.subver.replace('/', '').replace('/', ''),
+					version: peer.subver.replace(/\//g, ''),
 					country: geo.country_name,
 					country_code: geo.country_code
 				});
