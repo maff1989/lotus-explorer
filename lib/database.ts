@@ -270,6 +270,10 @@ const update_address = async (
   }
   return;
 };
+const get_market_data = async (market: string) => {
+  const exMarket = await import('./lib/markets/' + market + '.ts');
+  exMarket.get_data();
+};
 const create_lock = async (lockfile: string): Promise<boolean> => {
   if (settings.lock_during_index == true) {
     const fileName = './tmp/' + lockfile + '.pid';
@@ -549,8 +553,11 @@ export class Database {
   };
   
   async get_stats(coin: string): Promise<StatsDocument> {
-    const stats = await Stats.findOne({ coin: coin });
-    return stats ?? null
+    try {
+      return await Stats.findOne({ coin: coin });;
+    } catch (e: any) {
+      return null;
+    }
   };
   
   async get_tx(txid: string) {
@@ -564,7 +571,11 @@ export class Database {
         const tx = await find_tx(txid);
         txs.push(tx);
       } catch (e: any) {
-        // ignore tx if we can't find it
+        // couldn't find txid in db
+        throw new Error(
+          e.message
+          + ` -- block data at height ${block.height} didn't save to db?`
+        );
       }
     }
     return txs;
@@ -831,12 +842,12 @@ export class Database {
   };
   
   async update_label(hash: string, message: string): Promise<void> {
-      const address = await find_address(hash);
+    const address = await find_address(hash);
     if (address) {
       try {
         await Address.updateOne({ a_id: hash }, { name: message });
-    } catch (e: any) {
-      throw new Error(e.message)
+      } catch (e: any) {
+        throw new Error(e.message)
       }
     }
   };
