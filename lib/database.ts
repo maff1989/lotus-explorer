@@ -484,16 +484,20 @@ export class Database {
       const percent = (addressBalanceXpi / stats.supply) * 100;
       switch (true) {
         case count <= 25:
-          distribution.t_1_25 = { percent, total: addressBalanceXpi };
+          distribution.t_1_25.percent = distribution.t_1_25.percent + percent;
+          distribution.t_1_25.total = distribution.t_1_25.total + addressBalanceXpi;
           break;
         case count <= 50:
-          distribution.t_26_50 = { percent, total: addressBalanceXpi };
+          distribution.t_26_50.percent = distribution.t_26_50.percent + percent;
+          distribution.t_26_50.total = distribution.t_26_50.total + addressBalanceXpi;
           break;
         case count <= 75:
-          distribution.t_51_75 = { percent, total: addressBalanceXpi };
+          distribution.t_51_75.percent = distribution.t_51_75.percent + percent;
+          distribution.t_51_75.total = distribution.t_51_75.total + addressBalanceXpi;
           break;
         case count <= 100:
-          distribution.t_76_100 = { percent, total: addressBalanceXpi };
+          distribution.t_76_100.percent = distribution.t_76_100.percent + percent;
+          distribution.t_76_100.total = distribution.t_76_100.total + addressBalanceXpi;
           break;
       }
     }
