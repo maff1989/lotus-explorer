@@ -63,6 +63,18 @@ type StatsDocument = {
   burned: number,
   connections: number,
 };
+type SupplyDistributionTier =
+  't_1_25'
+  | 't_26_50'
+  | 't_51_75'
+  | 't_76_100'
+  | 't_101plus';
+type SupplyDistribution = {
+  [tier in SupplyDistributionTier]: {
+    percent: number,
+    total: number
+  }
+};
 type ChartTransactionTimespan = 'day' | 'week' | 'month';
 type ChartDifficultyTimespan = 'week' | 'month' | 'quarter' | 'year';
 type ChartDistributionTimespan = 'day' | 'week';
@@ -193,7 +205,7 @@ const save_block = async (
     txcount: block.nTx
   });
   try {
-    newBlock.save();
+    await newBlock.save();
   } catch (e: any) {
     throw new Error(`save_block: failed to save new block to db: ${e.message}`);
   }
@@ -332,8 +344,16 @@ export class Database {
   /*
    *    Create Database Entries
    */
-  async create_market() {
-
+  async create_market(
+    coin: string,
+    market: string
+  ): Promise<MarketDocument> {
+    try {
+      const create = new Markets({ coin, market });
+      await create.save();
+    } catch (e: any) {
+      return null;
+    }
   };
   
   async create_peer(params: PeerDocument): Promise<PeerDocument> {
@@ -442,8 +462,58 @@ export class Database {
     }
   };
 
-  async get_distribution() {
-
+  async get_distribution(
+    richlist: RichlistDocument,
+    stats: StatsDocument
+  ): Promise<SupplyDistribution> {
+    const distribution = {
+      t_1_25: { percent: 0, total: 0 },
+      t_26_50: { percent: 0, total: 0 },
+      t_51_75: { percent: 0, total: 0 },
+      t_76_100: { percent: 0, total: 0 },
+      t_101plus: { percent: 0, total: 0 }
+    };
+    for (let i = 0; i < richlist.balance.length; i++) {
+      const addressDoc = richlist.balance[i];
+      const addressBalanceXpi = lib.convert_to_xpi(addressDoc.balance);
+      const count = i + 1;
+      const percent = (addressBalanceXpi / stats.supply) * 100;
+      switch (true) {
+        case count <= 25:
+          distribution.t_1_25 = { percent, total: addressBalanceXpi };
+          break;
+        case count <= 50:
+          distribution.t_26_50 = { percent, total: addressBalanceXpi };
+          break;
+        case count <= 75:
+          distribution.t_51_75 = { percent, total: addressBalanceXpi };
+          break;
+        case count <= 100:
+          distribution.t_76_100 = { percent, total: addressBalanceXpi };
+          break;
+      }
+    }
+    const t_101plus_percent = 100
+      - distribution.t_76_100.percent
+      - distribution.t_51_75.percent
+      - distribution.t_26_50.percent
+      - distribution.t_1_25.percent;
+    const t_101plus_total = stats.supply
+      - distribution.t_76_100.total
+      - distribution.t_51_75.total
+      - distribution.t_26_50.total
+      - distribution.t_1_25.total;
+    distribution.t_101plus.percent = parseFloat(t_101plus_percent.toFixed(2));
+    distribution.t_101plus.total = parseFloat(t_101plus_total.toFixed(6));
+    distribution.t_1_25.percent = parseFloat(distribution.t_1_25.percent.toFixed(2));
+    distribution.t_1_25.total = parseFloat(distribution.t_1_25.total.toFixed(6));
+    distribution.t_26_50.percent = parseFloat(distribution.t_26_50.percent.toFixed(2));
+    distribution.t_26_50.total = parseFloat(distribution.t_26_50.total.toFixed(6));
+    distribution.t_51_75.percent = parseFloat(distribution.t_51_75.percent.toFixed(2));
+    distribution.t_51_75.total = parseFloat(distribution.t_51_75.total.toFixed(6));
+    distribution.t_76_100.percent = parseFloat(distribution.t_76_100.percent.toFixed(2));
+    distribution.t_76_100.total = parseFloat(distribution.t_76_100.total.toFixed(6));
+    return distribution;
   };
 
   async get_market(market: string) {
@@ -633,7 +703,7 @@ export class Database {
   };
   
   async get_charts_reward_distribution(timespan: ChartDistributionTimespan): Promise<{
-    data: Array<[string, number]>,
+    plot: Array<[string, number]>,
     minerTotal: number
   }> {
     const seconds = TIMESPANS[timespan];
@@ -669,9 +739,9 @@ export class Database {
           : minerMiscBlocks += blockCount;
       }
   
-      const data = Object.entries(minerFiltered).sort((a, b) => b[1] - a[1]);
-      data.push(["Miscellaneous Miners (<= 3% hashrate each)", minerMiscBlocks]);
-      return { data, minerTotal: Object.keys(minerBlockCounts).length };
+      const plot = Object.entries(minerFiltered).sort((a, b) => b[1] - a[1]);
+      plot.push(["Miscellaneous Miners (<= 3% hashrate each)", minerMiscBlocks]);
+      return { plot, minerTotal: Object.keys(minerBlockCounts).length };
     } catch (e: any) {
 
     }
@@ -679,8 +749,8 @@ export class Database {
 
   // gather and prepare chart data for transaction count based on timespan
   async get_charts_txs(timespan: ChartTransactionTimespan): Promise<{
-    data: Array<[string, number]>,
-    txtotal: number
+    plot: Array<[string, number]>,
+    txTotal: number
   }> {
     const seconds = TIMESPANS[timespan];
     const [ dbBlock ] = await find_latest_block();
@@ -720,8 +790,8 @@ export class Database {
     });
 
     return {
-      data: Object.entries(arranged_data),
-      txtotal: result[0].txtotal
+      plot: Object.entries(arranged_data),
+      txTotal: result[0].txtotal
     };
   };
   
@@ -732,7 +802,32 @@ export class Database {
    */
 
   async update_charts_db() {
+    try {
+      // Transaction Charts
+      const { plot: txsDay, txTotal: txsDay_count } = await this.get_charts_txs('day');
+      const { plot: txsWeek, txTotal: txsWeek_count } = await this.get_charts_txs('week');
+      const { plot: txsMonth, txTotal: txsMonth_count } = await this.get_charts_txs('month');
+      // Reward Distribution Charts
+      const { plot: miningDistDay, minerTotal: totalMinersDay } = await this.get_charts_reward_distribution('day');
+      const { plot: miningDistWeek, minerTotal: totalMinersWeek } = await this.get_charts_reward_distribution('week');
+      // Difficulty Charts
+      const { plot: difficultyWeek } = await this.get_charts_difficulty('week');
+      const { plot: difficultyMonth } = await this.get_charts_difficulty('month');
+      const { plot: difficultyQuarter } = await this.get_charts_difficulty('quarter');
+      await Charts.findOneAndUpdate({}, {
+        // txs
+        txsDay, txsDay_count,
+        txsWeek, txsWeek_count,
+        txsMonth, txsMonth_count,
+        // miningDist
+        miningDistDay, totalMinersDay,
+        miningDistWeek, totalMinersWeek,
+        // difficulty
+        difficultyWeek, difficultyMonth, difficultyQuarter
+      }, { upsert: true });
+    } catch (e: any) {
 
+    }
   };
   
   async update_label(hash: string, message: string): Promise<AddressDocument> {
@@ -746,8 +841,8 @@ export class Database {
     }
   };
 
-  async update_markets_db() {
-
+  async update_markets_db(market: string) {
+    
   };
 
   //property: 'received' or 'balance'
@@ -764,12 +859,66 @@ export class Database {
     }
   };
 
-  async update_tx_db() {
+  async update_tx_db(
+    coin: string,
+    startBlockHeight: number,
+    endBlockHeight: number
+  ) {
+    /*
+    // return if locked
+    if (await is_locked('db_index')) {
+      return console.log('db_index lock file exists...');
+    }
+    // return if cannot create lock
+    if (!(await create_lock('db_index'))) {
+      return console.log('failed to create lock for db_index');
+    }
+    */
+    const counter = { currentBlockHeight: startBlockHeight };
+    while (counter.currentBlockHeight <= endBlockHeight) {
+      let blockBurned = 0;
+      try {
+        const blockhash = await lib.get_blockhash(counter.currentBlockHeight);
+        const block = await lib.get_block(blockhash);
+        // save all txs
+        for (const txid of block.tx) {
+          console.log('%s: %s', counter, txid);
+          const { burned } = await save_tx(txid, block.height);
+          blockBurned += burned;
+        }
+        // save block
+        await save_block(block, blockBurned);
+        console.log('-- Block %s saved', block.height);
+      } catch (e: any) {
+        throw new Error(e.message);
+      }
+      counter.currentBlockHeight++;
+    }
 
+    // update Stats collection
+    try {
+      await Stats.updateOne({ coin: coin }, { last: endBlockHeight });
+    } catch (e: any) {
+      throw new Error(e.message);
+    }
+    // await remove_lock('db_index');
   };
 
-  async update_db() {
-
+  async update_db(coin: string): Promise<StatsDocument> {
+    const count = await lib.get_blockcount();
+    const supply = await lib.get_supply();
+    const burned = await lib.get_burned_supply();
+    const connections = await lib.get_connectioncount();
+    try {
+      return await Stats.findOneAndUpdate({ coin: coin }, {
+        $set: { coin, count, supply, burned, connections }
+      }, {
+        // return new, updated document
+        new: true
+      });
+    } catch (e: any) {
+      throw new Error(e.message);
+    }
   };
 
   /*
