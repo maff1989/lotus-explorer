@@ -409,30 +409,30 @@ export class Database {
    *    Check Database Entries
    *
    */
-  async check_market(market: string): Promise<boolean> {
+  async check_market(market: string): Promise<MarketDocument> {
     try {
-      await Markets.findOne({ market: market });
-      return true;
+      // returns either full document or null
+      return await Markets.findOne({ market: market });
     } catch (e: any) {
-      return false;
+      return null;
     }
   };
 
-  async check_richlist(coin: string) {
+  async check_richlist(coin: string): Promise<RichlistDocument> {
     try {
-      await Richlist.findOne({ coin: coin });
-      return true;
+      // returns either full document or null
+      return await Richlist.findOne({ coin: coin });
     } catch (e: any) {
-      return false;
+      return null;
     }
   };
 
-  async check_stats(coin: string) {
+  async check_stats(coin: string): Promise<StatsDocument> {
     try {
-      await Stats.findOne({ coin: coin });
-      return true;
+      // returns either full document or null
+      return await Stats.findOne({ coin: coin });
     } catch (e: any) {
-      return false;
+      return null;
     }
   };
 
