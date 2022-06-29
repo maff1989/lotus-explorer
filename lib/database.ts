@@ -801,7 +801,7 @@ export class Database {
    * 
    */
 
-  async update_charts_db() {
+  async update_charts_db(): Promise<void> {
     try {
       // Transaction Charts
       const { plot: txsDay, txTotal: txsDay_count } = await this.get_charts_txs('day');
@@ -826,18 +826,18 @@ export class Database {
         difficultyWeek, difficultyMonth, difficultyQuarter
       }, { upsert: true });
     } catch (e: any) {
-
+      throw new Error(e.message);
     }
   };
   
-  async update_label(hash: string, message: string): Promise<AddressDocument> {
-    try {
+  async update_label(hash: string, message: string): Promise<void> {
       const address = await find_address(hash);
-      return address
-        ? await Address.updateOne({ a_id: hash }, { name: message })
-        : null;
+    if (address) {
+      try {
+        await Address.updateOne({ a_id: hash }, { name: message });
     } catch (e: any) {
       throw new Error(e.message)
+      }
     }
   };
 
@@ -846,12 +846,12 @@ export class Database {
   };
 
   //property: 'received' or 'balance'
-  async update_richlist(list: string) {
+  async update_richlist(list: string): Promise<void> {
     try {
       const addresses = list == 'received'
         ? await Address.find({}, 'a_id balance received name').sort({ received: 'desc' }).limit(100)
         : await Address.find({}, 'a_id balance received name').sort({ balance: 'desc' }).limit(100);
-      return list == 'received'
+      list == 'received'
         ? await Richlist.updateOne({ coin: settings.coin }, { received: addresses })
         : await Richlist.updateOne({ coin: settings.coin }, { balance: addresses });
     } catch (e: any) {
@@ -863,7 +863,7 @@ export class Database {
     coin: string,
     startBlockHeight: number,
     endBlockHeight: number
-  ) {
+  ): Promise<void> {
     /*
     // return if locked
     if (await is_locked('db_index')) {
@@ -904,13 +904,13 @@ export class Database {
     // await remove_lock('db_index');
   };
 
-  async update_db(coin: string): Promise<StatsDocument> {
+  async update_db(coin: string): Promise<void> {
     const count = await lib.get_blockcount();
     const supply = await lib.get_supply();
     const burned = await lib.get_burned_supply();
     const connections = await lib.get_connectioncount();
     try {
-      return await Stats.findOneAndUpdate({ coin: coin }, {
+      await Stats.findOneAndUpdate({ coin: coin }, {
         $set: { coin, count, supply, burned, connections }
       }, {
         // return new, updated document
