@@ -318,15 +318,20 @@ export const is_locked = async (lockfile: string): Promise<boolean> => {
  * 
  */
 export class Database {
+  private dbString = 'mongodb://' + settings.dbsettings.user
+  + ':' + settings.dbsettings.password
+  + '@' + settings.dbsettings.address
+  + ':' + settings.dbsettings.port
+  + '/' + settings.dbsettings.database;
 
   /*
    *    Database Connectivity
    */
-  async connect(database: string) {
+  async connect() {
     try {
-      await connect(database);
+      await connect(this.dbString);
     } catch (e: any) {
-      console.log('Unable to connect to database: %s', database);
+      console.log('Unable to connect to database: %s', this.dbString);
       console.log('Aborting');
       process.exit(1);
     }
