@@ -69,11 +69,6 @@ if (process.argv[2] == 'index') {
   printUsageAndExit();
 }
 
-const dbString = 'mongodb://' + settings.dbsettings.user
-  + ':' + settings.dbsettings.password
-  + '@' + settings.dbsettings.address
-  + ':' + settings.dbsettings.port
-  + '/' + settings.dbsettings.database;
 const db = new Database();
 const lib = new Explorer();
 
@@ -86,7 +81,7 @@ const main = async () => {
   try {
     // Init
     await create_lock(DATABASE)
-    await db.connect(dbString);
+    await db.connect();
     // Sanity checks
     const stats = await db.check_stats(settings.coin);
     if (!stats) {
