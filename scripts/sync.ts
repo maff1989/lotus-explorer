@@ -1,4 +1,4 @@
-const settings = require('./settings');
+const settings = require('../lib/settings');
 import {
   Explorer
 } from '../lib/explorer';
