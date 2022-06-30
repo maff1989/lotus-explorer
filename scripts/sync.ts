@@ -158,6 +158,7 @@ const main = async () => {
         }
         break;
     }
+    await db.disconnect();
     await remove_lock(DATABASE)
   } catch (e: any) {
     await db.disconnect();
