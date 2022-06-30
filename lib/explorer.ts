@@ -341,10 +341,13 @@ export class Explorer {
         case 'nulldata':
           data.burned += amount;
       }
-      const index = data.vout.findIndex(vout => vout.addresses == addresses[0]);
+      const address = type == 'nulldata'
+        ? "OP_RETURN"
+        : addresses[0];
+      const index = data.vout.findIndex(vout => vout.addresses == address);
       index < 0
         ? data.vout.push({
-            addresses: type == 'nulldata' ? "OP_RETURN": addresses[0],
+            addresses: address,
             amount
           })
         : data.vout[index].amount += amount;
