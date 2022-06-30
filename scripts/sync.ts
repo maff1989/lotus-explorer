@@ -140,7 +140,8 @@ const main = async () => {
             console.log("update_richlist (received) complete");
             await db.update_richlist('balance');
             console.log("update_richlist (balance) complete");
-            await db.update_db(settings.coin);
+            await db.update_stats(settings.coin);
+            console.log("update_stats complete");
             console.log('reindex complete (block: %s)', blockcount);
             break;
           case 'check':
@@ -155,7 +156,8 @@ const main = async () => {
             console.log("update_richlist (received) complete");
             await db.update_richlist('balance');
             console.log("update_richlist (balance) complete");
-            await db.update_db(settings.coin);
+            await db.update_stats(settings.coin);
+            console.log("update_stats complete");
             console.log('update complete (block: %s)', blockcount);
             break;
           case 'reindex-rich':

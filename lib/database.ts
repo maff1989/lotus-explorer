@@ -917,7 +917,7 @@ export class Database {
     // await remove_lock('db_index');
   };
 
-  async update_db(coin: string): Promise<void> {
+  async update_stats(coin: string): Promise<void> {
     const count = await lib.get_blockcount();
     const supply = await lib.get_supply();
     const burned = await lib.get_burned_supply();
