@@ -274,7 +274,7 @@ const get_market_data = async (market: string) => {
   const exMarket = await import('./lib/markets/' + market + '.ts');
   exMarket.get_data();
 };
-const create_lock = async (lockfile: string): Promise<boolean> => {
+export const create_lock = async (lockfile: string): Promise<boolean> => {
   if (settings.lock_during_index == true) {
     const fileName = './tmp/' + lockfile + '.pid';
     try {
@@ -287,7 +287,7 @@ const create_lock = async (lockfile: string): Promise<boolean> => {
   }
   return false;
 };
-const remove_lock = async (lockfile: string): Promise<boolean> => {
+export const remove_lock = async (lockfile: string): Promise<boolean> => {
   if (settings.lock_during_index == true) {
     const fileName = './tmp/' + lockfile + '.pid';
     try {
@@ -300,7 +300,7 @@ const remove_lock = async (lockfile: string): Promise<boolean> => {
   }
   return false;
 };
-const is_locked = async (lockfile: string): Promise<boolean> => {
+export const is_locked = async (lockfile: string): Promise<boolean> => {
   if (settings.lock_during_index == true) {
     const fileName = './tmp/' + lockfile + '.pid';
     try {
@@ -339,10 +339,6 @@ export class Database {
       console.log('Unable to disconnect from database: %s', e.message);
       process.exit(1);
     }
-  };
-
-  async is_locked() {
-    return await is_locked('db_index');
   };
 
   /*
@@ -389,10 +385,12 @@ export class Database {
   };
 
   async create_txs(block: BlockInfo): Promise<boolean> {
+    /*
     if (await is_locked('db_index')) {
       console.log('db_index lock file exists...');
       return false;
     }
+    */
     for (const txid of block.tx) {
       try {
         await save_tx(txid, block.height);
