@@ -16,7 +16,7 @@ var ChartsSchema = new Schema({
   difficultyWeek: { type: Array, default: [] },
   difficultyMonth: { type: Array, default: [] },
   difficultyQuarter: { type: Array, default: [] },
-  difficultyAll: { type: Array, default: [] },
+  difficultyYear: { type: Array, default: [] },
   // Block Distribution
   miningDistDay: { type: Array, default: [] },
   miningDistWeek: { type: Array, default: [] },

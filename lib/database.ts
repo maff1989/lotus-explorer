@@ -827,6 +827,7 @@ export class Database {
       const { plot: difficultyWeek } = await this.get_charts_difficulty('week');
       const { plot: difficultyMonth } = await this.get_charts_difficulty('month');
       const { plot: difficultyQuarter } = await this.get_charts_difficulty('quarter');
+      const { plot: difficultyYear } = await this.get_charts_difficulty('year');
       await Charts.findOneAndUpdate({}, {
         // txs
         txsDay, txsDay_count,
@@ -836,7 +837,10 @@ export class Database {
         miningDistDay, totalMinersDay,
         miningDistWeek, totalMinersWeek,
         // difficulty
-        difficultyWeek, difficultyMonth, difficultyQuarter
+        difficultyWeek,
+        difficultyMonth,
+        difficultyQuarter,
+        difficultyYear
       }, { upsert: true });
     } catch (e: any) {
       throw new Error(`update_charts_db: ${e.message}`);
