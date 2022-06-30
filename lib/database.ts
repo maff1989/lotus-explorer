@@ -178,7 +178,7 @@ const save_tx = async (txid: string, height: number) => {
   try {
     await newTx.save();
   } catch (e: any) {
-    throw new Error(`save_tx: ${e.message}`);
+    throw new Error(`save_tx: newTx.save: ${e.message}`);
   }
   return { burned };
 };
@@ -839,7 +839,7 @@ export class Database {
         difficultyWeek, difficultyMonth, difficultyQuarter
       }, { upsert: true });
     } catch (e: any) {
-      throw new Error(e.message);
+      throw new Error(`update_charts_db: ${e.message}`);
     }
   };
   
@@ -849,7 +849,7 @@ export class Database {
       try {
         await Address.updateOne({ a_id: hash }, { name: message });
       } catch (e: any) {
-        throw new Error(e.message)
+        throw new Error(`update_label: ${e.message}`)
       }
     }
   };
@@ -868,7 +868,7 @@ export class Database {
         ? await Richlist.updateOne({ coin: settings.coin }, { received: addresses })
         : await Richlist.updateOne({ coin: settings.coin }, { balance: addresses });
     } catch (e: any) {
-      throw new Error(e.message);
+      throw new Error(`update_richlist: ${e.message}`);
     }
   };
 
@@ -895,7 +895,7 @@ export class Database {
         const block = await lib.get_block(blockhash);
         // save all txs
         for (const txid of block.tx) {
-          console.log('%s: %s', counter, txid);
+          console.log('%s: %s', counter.currentBlockHeight, txid);
           const { burned } = await save_tx(txid, block.height);
           blockBurned += burned;
         }
@@ -903,7 +903,7 @@ export class Database {
         await save_block(block, blockBurned);
         console.log('-- Block %s saved', block.height);
       } catch (e: any) {
-        throw new Error(e.message);
+        throw new Error(`update_tx_db: ${e.message}`);
       }
       counter.currentBlockHeight++;
     }
@@ -912,7 +912,7 @@ export class Database {
     try {
       await Stats.updateOne({ coin: coin }, { last: endBlockHeight });
     } catch (e: any) {
-      throw new Error(e.message);
+      throw new Error(`update_tx_db: Stats.updateOne: ${e.message}`);
     }
     // await remove_lock('db_index');
   };
@@ -930,7 +930,7 @@ export class Database {
         new: true
       });
     } catch (e: any) {
-      throw new Error(e.message);
+      throw new Error(`update_stats: ${e.message}`);
     }
   };
 
@@ -943,7 +943,7 @@ export class Database {
     try {
       await Peers.deleteOne({ address: address });
     } catch (e: any) {
-      throw new Error(e.message);
+      throw new Error(`drop_peer: ${e.message}`);
     }
   };
 
@@ -951,7 +951,7 @@ export class Database {
     try {
       await Peers.deleteMany({});
     } catch (e: any) {
-      throw new Error(e.message);
+      throw new Error(`drop_peers: ${e.message}`);
     }
   };
 
@@ -959,7 +959,7 @@ export class Database {
     try {
       await Richlist.findOneAndRemove({ coin: coin });
     } catch (e: any) {
-      throw new Error(e.message);
+      throw new Error(`delete_richlist: ${e.message}`);
     }
   }; 
 
