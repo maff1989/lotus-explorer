@@ -33,6 +33,32 @@ type AddressTransactionDocument = {
   txid: string,
   amount: number,
 };
+type Charts = 
+  // Transactions
+  'txsDay'
+  | 'txsWeek'
+  | 'txsMonth'
+  | 'txsQuarter'
+  // Difficulty
+  | 'difficultyWeek'
+  | 'difficultyMonth'
+  | 'difficultyQuarter'
+  | 'difficultyYear'
+  // Block reward distribution
+  | 'miningDistDay'
+  | 'miningDistWeek'
+  | 'miningDistMonth'
+  // Counters
+  | 'txsDay_count'
+  | 'txsWeek_count'
+  | 'txsMonth_count'
+  | 'txsQuarter_count'
+  | 'totalMinersDay'
+  | 'totalMinersWeek'
+  | 'totalMinersMonth';
+type ChartsDocument = {
+  [type in Charts]: Array<(string | number)[]> | number
+};
 type MarketDocument = {
   market: string,
   summary: object,
@@ -461,7 +487,7 @@ export class Database {
   };
 
   // Polls the Charts db for latest aggregate data
-  async get_charts() {
+  async get_charts(): Promise<ChartsDocument> {
     try {
       return await Charts.findOne();
     } catch (e: any) {
