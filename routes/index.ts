@@ -13,9 +13,9 @@ import {
 } from '../lib/explorer';
 
 const settings = require('../lib/settings')
-  , locale = require('../lib/locale');
-const db = new Database();
-const lib = new Explorer();
+  , locale = require('../lib/locale')
+  , db = new Database()
+  , lib = new Explorer();
 /*
  *
  *      Handler Functions
