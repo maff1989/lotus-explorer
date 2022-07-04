@@ -6,11 +6,7 @@ import { Explorer } from '../lib/explorer';
 const main = async () => {
 	const lib = new Explorer();
 	const db = new Database();
-	await db.connect('mongodb://' + settings.dbsettings.user
-		+ ':' + settings.dbsettings.password
-		+ '@' + settings.dbsettings.address
-		+ ':' + settings.dbsettings.port
-		+ '/' + settings.dbsettings.database);
+	await db.connect();
 	
 	const getPeerInfo = await lib.get_peerinfo();
 	for (const peer of getPeerInfo) {
