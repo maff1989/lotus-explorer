@@ -102,7 +102,7 @@ const main = async () => {
         const blockcount = await lib.get_blockcount();
         // exit if already up-to-date
         if (stats.last == blockcount) {
-          console.log('Database is already up-to-date.');
+          console.log('Database is already up-to-date (block: %s)', blockcount);
           process.exit(0);
         }
         switch (MODE) {
