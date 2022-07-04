@@ -283,4 +283,5 @@ router.post('/search', async (req, res) => {
   }
   return route_get_index(res, locale.ex_search_error + search);
 });
-export { router };
+
+export default router;
