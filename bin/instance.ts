@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import app from '../app';
+import debug from 'debug';
 import { Database } from '../lib/database';
 const settings = require('../lib/settings');
 const db = new Database();
@@ -24,5 +25,9 @@ const main = async () => {
   if (!dbRichlist) {
     await db.create_richlist(settings.coin);
   }
+  // Start the listener
+  const server = app.listen(app.get('port'), '::', function() {
+    debug('Express server listening on port ' + server.address());
+  });
 };
 main();
