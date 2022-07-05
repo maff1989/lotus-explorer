@@ -36,12 +36,12 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/api', bitcoinapi.app);
 app.use('/', router);
 app.use('/ext/getmoneysupply', async (req, res) => {
-  const supply = await lib.get_supply();
-  return res.send(` ${supply}`);
+  const stats = await db.get_stats(settings.coin);
+  return res.send(` ${stats.supply}`);
 });
 app.use('/ext/getburnedsupply', async (req, res) => {
-  const burned = await lib.get_burned_supply();
-  return res.send(` ${burned}`);
+  const stats = await db.get_stats(settings.coin);
+  return res.send(` ${stats.burned}`);
 });
 app.use('/ext/getaddress/:address', async (req, res) => {
   const last_txs: Array<{
