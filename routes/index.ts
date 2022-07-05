@@ -76,7 +76,7 @@ const route_get_block = async (
       return res.render('block', renderData);
     // default block render
     default:
-      const dbBlock = await db.get_block(renderData.block.height);
+      const dbBlock = await db.get_block(block.height);
       // create dbTxs if it doesn't exist
       const coinbaseTxExists = await db.get_tx(block.tx[0]);
       if (!coinbaseTxExists) {
