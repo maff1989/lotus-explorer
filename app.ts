@@ -59,8 +59,8 @@ app.use('/ext/getaddress/:address', async (req, res) => {
     for (const tx of txs) {
       const { txid } = tx ?? null;
       const value = { vin: 0, vout: 0 };
-      value.vin += tx.vin.find(vin => vin.addresses == address)?.amount ?? 0;
-      value.vout += tx.vout.find(vout => vout.addresses == address)?.amount ?? 0;
+      value.vin += tx.vin?.find(vin => vin.addresses == address).amount ?? 0;
+      value.vout += tx.vout?.find(vout => vout.addresses == address).amount ?? 0;
       const type = value.vin > value.vout ? 'vin': 'vout';
       last_txs.push({ txid, type });
     }
