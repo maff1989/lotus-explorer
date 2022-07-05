@@ -71,9 +71,9 @@ const route_get_block = async (
       return res.render('block', renderData);
     // default block render
     default:
-      const { tx: txs } = await lib.get_block(blockhash);
+      const { tx: txs, height } = await lib.get_block(blockhash);
       renderData.txs = await db.get_txs(txs);
-      renderData.block = await db.get_block(blockhash);
+      renderData.block = await db.get_block(height);
       return res.render('block', renderData);
   }
 
