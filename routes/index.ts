@@ -48,7 +48,7 @@ const route_get_block = async (
 ): Promise<void> => {
   const renderData: {
     active: string,
-    block: BlockInfo,
+    block: BlockDocument,
     confirmations: number,
     txs: TransactionDocument[] | string
   } = {
@@ -64,8 +64,8 @@ const route_get_block = async (
     return res.redirect('/block/' + hash);
   }
   // get block from daemon
-  renderData.block = await lib.get_block(blockhash);
-  if (!renderData.block) {
+  const block = await lib.get_block(blockhash);
+  if (!block) {
     return route_get_index(res, 'Block not found: ' + blockhash);
   }
   // process block
@@ -78,12 +78,12 @@ const route_get_block = async (
     default:
       const dbBlock = await db.get_block(renderData.block.height);
       // create dbTxs if it doesn't exist
-      const coinbaseTxExists = await db.get_tx(renderData.block.tx[0]);
+      const coinbaseTxExists = await db.get_tx(block.tx[0]);
       if (!coinbaseTxExists) {
-        await db.create_txs(renderData.block);
+        await db.create_txs(block);
       }
-      renderData.block = { ...dbBlock, ...renderData.block };
-      renderData.txs = await db.get_txs(renderData.block);
+      renderData.block = {  ...block, ...dbBlock,};
+      renderData.txs = await db.get_txs(block.tx);
       return res.render('block', renderData);
   }
 
