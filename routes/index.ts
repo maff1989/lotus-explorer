@@ -7,7 +7,7 @@ import {
 } from '../lib/database';
 import {
   Explorer,
-  BlockInfo,
+  BlockDocument,
   RawTransaction,
   TransactionDocument
 } from '../lib/explorer';
