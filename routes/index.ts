@@ -72,8 +72,12 @@ const route_get_block = async (
     // default block render
     default:
       const { tx: txs, height } = await lib.get_block(blockhash);
+      const dbBlock = await db.get_block(height);
       renderData.txs = await db.get_txs(txs);
-      renderData.block = await db.get_block(height);
+      renderData.block = {
+        ...dbBlock,
+        burned: lib.convert_to_xpi(dbBlock.burned)
+      };
       return res.render('block', renderData);
   }
 
