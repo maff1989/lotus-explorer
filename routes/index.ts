@@ -50,11 +50,13 @@ const route_get_block = async (
     active: string,
     block: BlockDocument,
     confirmations: number,
+    blockcount: number,
     txs: TransactionDocument[] | string
   } = {
     active: 'block',
     block: null,
     confirmations: settings.confirmations,
+    blockcount: null,
     txs: null
   };
   // process height
@@ -73,6 +75,7 @@ const route_get_block = async (
     default:
       const { tx: txs, height } = await lib.get_block(blockhash);
       const dbBlock = await db.get_block(height);
+      renderData.blockcount = await lib.get_blockcount();
       renderData.txs = await db.get_txs(txs);
       renderData.block = {
         height: height,

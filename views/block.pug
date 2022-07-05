@@ -1,8 +1,9 @@
 extends layout
 
 block content
-  - var time = new Date((block.time) * 1000).toUTCString();
-  - var block_difficulty = parseFloat(block.difficulty).toFixed(6);
+  - const time = new Date((block.timestamp) * 1000).toUTCString();
+  - const block_difficulty = parseFloat(block.difficulty).toFixed(6);
+  - const confirmations = parseInt(blockcount) - parseInt(block.height);
   .col-xs-12.col-md-12
     .card.card-default
       .card-header(style='padding-left:25px;padding-right:25px;')          
@@ -35,14 +36,14 @@ block content
             th.d-none.d-sm-table-cell.d-table-cell #{settings.locale.block_burned} (#{settings.symbol})
             th.d-none.d-sm-table-cell.d-table-cell #{settings.locale.timestamp}
         tbody
-          - var fees_burned = parseFloat(block.burned).toFixed(6);
-          - var block_size = parseFloat(block.size / 1000).toFixed(3) + ' KB';
+          - const fees_burned = parseFloat(block.burned).toFixed(6);
+          - const block_size = parseFloat(block.size / 1000).toFixed(3) + ' KB';
           
           if block.confirmations >= confirmations
             tr.table-success
               td=block.height
               //td=Number(block.difficulty).toFixed(4)
-              td=block.confirmations
+              td=confirmations
               td.d-none.d-lg-table-cell=block_difficulty
               if settings.heavy == true
                 td=block.vote
@@ -55,7 +56,7 @@ block content
             tr.table-danger
               td=block.height
               //td=Number(block.difficulty).toFixed(4)
-              td=block.confirmations
+              td=confirmations
               td.d-none.d-lg-table-cell=block_difficulty
               if settings.heavy == true
                 td=block.vote
@@ -68,7 +69,7 @@ block content
             tr.table-warning
               td=block.height
               //td=Number(block.difficulty).toFixed(4)
-              td=block.confirmations
+              td=confirmations
               td.d-none.d-lg-table-cell=block_difficulty
               if settings.heavy == true
                 td=block.vote
