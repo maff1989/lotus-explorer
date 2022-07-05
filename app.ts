@@ -92,46 +92,46 @@ app.use('/ext/gettx/:txid', async (req, res) => {
     confirmations: settings.confirmations,
     blockcount: null
   };
-  // process db tx
-  const dbTx = await db.get_tx(txid);
-  if (dbTx) {
+    // process db tx
+    const dbTx = await db.get_tx(txid);
+    if (dbTx) {
+      renderData.tx = {
+        txid: dbTx.txid,
+        timestamp: dbTx.timestamp,
+        size: dbTx.size,
+        fee: dbTx.fee,
+        blockhash: dbTx.blockhash,
+        blockindex: dbTx.blockindex,
+        vin: dbTx.vin,
+        vout: dbTx.vout,
+      };
+      // get last block height from Stats db
+      const stats = await db.get_stats(settings.coin);
+      renderData.blockcount = stats.last;
+      return res.send(renderData);
+    }
+    // check mempool for tx
+    // if tx isn't there either, assume invalid
+    const mempool = await lib.get_rawmempool();
+    if (!mempool.includes(txid)) {
+      return res.send({ error: `transaction not found`, txid });
+    }
+    // process mempool tx
+    const tx = await lib.get_rawtransaction(txid);
+    const { vin } = await lib.prepare_vin(tx);
+    const { vout } = await lib.prepare_vout(tx.vout);
+    const fee = await lib.calculate_fee(vout, vin);
+    renderData.blockcount = await lib.get_blockcount();
     renderData.tx = {
-      txid: dbTx.txid,
-      timestamp: dbTx.timestamp,
-      size: dbTx.size,
-      fee: dbTx.fee,
-      blockhash: dbTx.blockhash,
-      blockindex: dbTx.blockindex,
-      vin: dbTx.vin,
-      vout: dbTx.vout,
+      txid: tx.txid,
+      size: tx.size,
+      fee: fee,
+      vin: vin,
+      vout: vout,
+      timestamp: tx.time,
+      blockhash: tx.blockhash,
+      blockindex: 0
     };
-    // get last block height from Stats db
-    const stats = await db.get_stats(settings.coin);
-    renderData.blockcount = stats.last;
-    return res.send(renderData);
-  }
-  // check mempool for tx
-  // if tx isn't there either, assume invalid
-  const mempool = await lib.get_rawmempool();
-  if (!mempool.includes(txid)) {
-    return res.send({ error: `transaction not found`, txid });
-  }
-  // process mempool tx
-  const tx = await lib.get_rawtransaction(txid);
-  const { vin } = await lib.prepare_vin(tx);
-  const { vout } = await lib.prepare_vout(tx.vout);
-  const fee = await lib.calculate_fee(vout, vin);
-  renderData.blockcount = await lib.get_blockcount();
-  renderData.tx = {
-    txid: tx.txid,
-    size: tx.size,
-    fee: fee,
-    vin: vin,
-    vout: vout,
-    timestamp: tx.time,
-    blockhash: tx.blockhash,
-    blockindex: 0
-  };
 });
 app.use('/ext/getbalance/:address', async (req, res) => {
   const { address } = req.params;
@@ -177,7 +177,7 @@ app.use('/ext/getlastblocksajax', async (req, res) => {
       block.minedby,
       block.size,
       block.txcount,
-      block.burned,
+      lib.convert_to_xpi(block.burned),
       new Date((block.timestamp) * 1000).toUTCString()
     ]));
     return res.json({
