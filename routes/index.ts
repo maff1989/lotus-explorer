@@ -63,11 +63,6 @@ const route_get_block = async (
     const hash = await lib.get_blockhash(height);
     return res.redirect('/block/' + hash);
   }
-  // get block from daemon
-  const block = await lib.get_block(blockhash);
-  if (!block) {
-    return route_get_index(res, 'Block not found: ' + blockhash);
-  }
   // process block
   switch (true) {
     // genesis block handler
@@ -76,14 +71,9 @@ const route_get_block = async (
       return res.render('block', renderData);
     // default block render
     default:
-      const dbBlock = await db.get_block(block.height);
-      // create dbTxs if it doesn't exist
-      const coinbaseTxExists = await db.get_tx(block.tx[0]);
-      if (!coinbaseTxExists) {
-        await db.create_txs(block);
-      }
-      renderData.block = {  ...block, ...dbBlock,};
-      renderData.txs = await db.get_txs(block.tx);
+      const { tx: txs } = await lib.get_block(blockhash);
+      renderData.txs = await db.get_txs(txs);
+      renderData.block = await db.get_block(blockhash);
       return res.render('block', renderData);
   }
 
