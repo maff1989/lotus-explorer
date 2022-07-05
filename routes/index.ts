@@ -9,7 +9,8 @@ import {
   Explorer,
   BlockDocument,
   RawTransaction,
-  TransactionDocument
+  TransactionDocument,
+  BlockInfo
 } from '../lib/explorer';
 
 const settings = require('../lib/settings')
@@ -75,12 +76,13 @@ const route_get_block = async (
       return res.render('block', renderData);
     // default block render
     default:
-      const { tx: txs, height } = await lib.get_block(blockhash);
+      renderData.blockInfo = await lib.get_block(blockhash);
+      const { tx: txs, height } = renderData.blockInfo;
       const dbBlock = await db.get_block(height);
       const stats = await db.get_stats(settings.coin);
       renderData.blockcount = stats.last;
       renderData.txs = await db.get_txs(txs);
-      renderData.block = {
+      renderData.blockDocument = {
         height: height,
         difficulty: dbBlock.difficulty,
         fees: dbBlock.fees,
