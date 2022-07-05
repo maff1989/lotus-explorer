@@ -1,4 +1,3 @@
-const settings = require('./settings');
 import Address from '../models/address';
 import Block from '../models/block';
 import Tx from '../models/tx';
@@ -93,8 +92,9 @@ export type RawTransaction = {
 export type PreparedTransactionInputs = TransactionDocument['vin'];
 export type PreparedTransactionOutputs = TransactionDocument['vout'];
 
-const XPI_DIVISOR = 1000000;
-const rpc = new BitcoinRpc('http://'
+const settings = require('./settings')
+  , XPI_DIVISOR = 1000000
+  , rpc = new BitcoinRpc('http://'
   + `${settings.wallet.username}:`
   + `${settings.wallet.password}@`
   + `${settings.wallet.host}:`
