@@ -75,7 +75,14 @@ const route_get_block = async (
       const dbBlock = await db.get_block(height);
       renderData.txs = await db.get_txs(txs);
       renderData.block = {
-        ...dbBlock,
+        height: height,
+        difficulty: dbBlock.difficulty,
+        fees: dbBlock.fees,
+        localeTimestamp: dbBlock.localeTimestamp,
+        minedby: dbBlock.minedby,
+        size: dbBlock.size,
+        timestamp: dbBlock.timestamp,
+        txcount: dbBlock.txcount,
         burned: lib.convert_to_xpi(dbBlock.burned)
       };
       return res.render('block', renderData);
