@@ -75,7 +75,8 @@ const route_get_block = async (
     default:
       const { tx: txs, height } = await lib.get_block(blockhash);
       const dbBlock = await db.get_block(height);
-      renderData.blockcount = await lib.get_blockcount();
+      const stats = await db.get_stats(settings.coin);
+      renderData.blockcount = stats.last;
       renderData.txs = await db.get_txs(txs);
       renderData.block = {
         height: height,
