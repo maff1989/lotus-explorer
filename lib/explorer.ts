@@ -107,10 +107,10 @@ const settings = require('./settings')
  */
 const rpcCommand = async (
   command: string,
-  params: Array<string | number | boolean> = []
+  ...params: Array<string | number | boolean>
 ): Promise<any> => {
   try {
-    return await rpc.call(command, ...params);
+    return await rpc.call(command, params);
   } catch (e: any) {
     return new Error(`RPC error: ${e.message}`);
   }
@@ -167,7 +167,7 @@ export class Explorer {
    * @returns {Promise<string[]>} Array of txids
    */
   async get_rawmempool(): Promise<string[]> {
-    return await rpcCommand('getrawmempool', [ true ]);
+    return await rpcCommand('getrawmempool', true);
   };
   /**
    * RPC command - `getblockcount`
@@ -182,7 +182,7 @@ export class Explorer {
    * @returns {Promise<string>} Raw block hash
    */
   async get_blockhash(height: number): Promise<string> {
-    return await rpcCommand('getblockhash', [ height ]);
+    return await rpcCommand('getblockhash', height);
   };
   /**
    * RPC command - `getblock`
@@ -190,7 +190,7 @@ export class Explorer {
    * @returns {Promise<BlockInfo>} Raw block info
    */
   async get_block(hash: string): Promise<BlockInfo> {
-    return await rpcCommand('getblock', [ hash ]);
+    return await rpcCommand('getblock', hash);
   };
   /**
    * RPC command - `getrawtransaction`
@@ -198,7 +198,7 @@ export class Explorer {
    * @returns {Promise<RawTransaction} Raw transaction info
    */
   async get_rawtransaction(txid: string): Promise<RawTransaction> {
-    return await rpcCommand('getrawtransaction', [ txid, true ]);
+    return await rpcCommand('getrawtransaction', txid, true);
   };
   /**
    * RPC command - `getmininginfo`
