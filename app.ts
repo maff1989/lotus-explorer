@@ -94,7 +94,9 @@ app.use('/ext/gettx/:txid', async (req, res) => {
   const dbTx = await db.get_tx(txid);
   if (dbTx) {
     renderData.tx = dbTx;
-    renderData.blockcount = await lib.get_blockcount();
+    // get last block height from Stats db
+    const stats = await db.get_stats(settings.coin);
+    renderData.blockcount = stats.last;
     return res.send(renderData);
   }
   // check mempool for tx
