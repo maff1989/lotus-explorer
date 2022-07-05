@@ -588,9 +588,9 @@ export class Database {
     }
   };
 
-  async get_txs(block: BlockInfo) {
+  async get_txs(txids: string[]) {
     const txs: TransactionDocument[] = [];
-    for (const txid of block.tx) {
+    for (const txid of txids) {
       try {
         const tx = await this.get_tx(txid);
         txs.push(tx);
@@ -598,7 +598,7 @@ export class Database {
         // couldn't find txid in db
         throw new Error(
           e.message
-          + ` -- block data at height ${block.height} didn't save to db?`
+          + ` -- data for txid ${txid} didn't save to db?`
         );
       }
     }
