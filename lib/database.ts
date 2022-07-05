@@ -1,5 +1,8 @@
-const settings = require('./settings');
-import { connect, disconnect } from 'mongoose';
+import {
+  connect,
+  disconnect,
+  PipelineStage,
+} from 'mongoose';
 import * as fs from 'fs/promises';
 import * as Explorer from './explorer';
 import {
@@ -15,7 +18,8 @@ import Richlist from '../models/richlist';
 import Stats from '../models/stats';
 import Tx from '../models/tx';
 
-const lib = new Explorer.Explorer();
+const settings = require('./settings')
+  , lib = new Explorer.Explorer();
 /*
 set('useCreateIndex', true);
 set('useUnifiedTopology', true);
