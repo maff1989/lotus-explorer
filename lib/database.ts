@@ -367,7 +367,7 @@ export class Database {
 
   async create_richlist(coin: string): Promise<RichlistDocument> {
     try {
-      const richlist = new Richlist({ coin: coin });
+      const richlist = new Richlist({ coin: coin, received: [], balance: [] });
       return await richlist.save();
     } catch (e: any) {
       return null;
@@ -376,7 +376,14 @@ export class Database {
 
   async create_stats(coin: string): Promise<StatsDocument> {
     try {
-      const create = new Stats({ coin: coin, last: 0 });
+      const create = new Stats({
+        coin: coin,
+        count: 0,
+        last: 0,
+        supply: 0,
+        burned: 0,
+        connections: 0,
+      });
       return await create.save();
     } catch (e: any) {
       console.log(`error saving Stats for ${coin}:`, e.message);
@@ -612,10 +619,11 @@ export class Database {
       count: number
     } = { blocks: [], count: 0 };
     try {
-      data.blocks = await Block.find({})
-        .sort({ 'height': -1 })
-        .skip(start)
-        .limit(length);
+      data.blocks = await Block.aggregate([
+        { $sort: { height: -1 }},
+        { $skip: start },
+        { $limit: length }
+      ]);
       data.count = await Block.find({}).count();
     } catch (e: any) {
       console.log(`get_last_blocks_ajax: failed to poll blocks collection: ${e.message}`);
@@ -634,10 +642,12 @@ export class Database {
       count: number
     } = { txs: [], count: 0 };
     try {
-      data.txs = await Tx.find({ 'total': { $gte: min }})
-        .sort({ blockindex: -1 })
-        .skip(start)
-        .limit(length);
+      data.txs = await Tx.aggregate([
+        { $match: { total: { $gte: min }}},
+        { $sort: { blockindexx: -1 }},
+        { $skip: start },
+        { $limit: length }
+      ]);
       data.count = await Tx.find({}).count();
     } catch (e: any) {
       console.log(`get_last_txs_ajax: failed to poll txs collection: ${e.message}`);
@@ -647,7 +657,7 @@ export class Database {
   };
 
   async get_address_txs_ajax(
-    hash: string,
+    address: string,
     start: number,
     length: number
   ) {
@@ -656,15 +666,15 @@ export class Database {
       count: number
     } = { txs: [], count: 0 };
     try {
-      const addressTxs: AddressTransactionDocument[] = await AddressTx.find({ a_id: hash })
-        .sort({ blockindex: -1 })
-        // BUG: Order parent->child transactions properly in address history (prevent negative Balance)
-        // add sort for ascending amount
-        .sort({ amount: 1 })
-        .skip(start)
-        .limit(length);
+      const addressTxs: AddressTransactionDocument[] = await AddressTx.aggregate([
+        { $match: { a_id: address }},
+        { $sort: { blockindex: -1 }},
+        { $sort: { amount: 1 }},
+        { $skip: start },
+        { $limit: length }
+      ]);
       const aggResult = await AddressTx.aggregate([
-        { $match: { a_id: hash }},
+        { $match: { a_id: address }},
         { $sort: { blockindex: -1 }},
         { $skip: start },
         {
@@ -704,7 +714,7 @@ export class Database {
     } = { plot: [] };
     try {
       const [ dbBlock ] = await this.get_latest_block();
-      const agg: Array<{}> = [
+      const agg: Array<PipelineStage> = [
         { '$match': {
           'timestamp': { '$gte': (dbBlock.timestamp - seconds) }
         }},
