@@ -238,7 +238,9 @@ export class Explorer {
    */
   async balance_supply(): Promise<number> {
     const data = { totalBalance: 0 };
-    const docs: AddressDocument[] = await Address.find({}, 'balance').where('balance').gt(0);
+    const docs: AddressDocument[] = await Address.aggregate([
+      { $match: { balance: { $gt: 0 }}}
+    ]);
     docs.forEach(doc => data.totalBalance += doc.balance);
     return data.totalBalance;
   };
@@ -263,7 +265,9 @@ export class Explorer {
    */
   async get_burned_supply(): Promise<number> {
     const data = { totalBurned: 0 };
-    const docs: BlockDocument[] = await Block.find({}, 'burned').where('burned').gt(0);
+    const docs: BlockDocument[] = await Block.aggregate([
+      { $match: { burned: { $gt: 0 }}}
+    ]);
     docs.forEach(doc => data.totalBurned += doc.burned);
     return data.totalBurned;
   };

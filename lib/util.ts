@@ -1,5 +1,7 @@
+import { PipelineStage } from "mongoose";
+
 export const getChartsDifficultyAggregation: {
-  [timespan: string]: {}
+  [timespan: string]: PipelineStage
 } = {
   week: {
     '$project': {
