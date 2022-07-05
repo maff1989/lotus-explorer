@@ -646,7 +646,7 @@ export class Database {
         { $match: { total: { $gte: min }}},
         { $sort: { blockindexx: -1 }},
         { $skip: Number(start) },
-        { $limit: length }
+        { $limit: Number(length) }
       ]);
       data.count = await Tx.find({}).count();
     } catch (e: any) {
