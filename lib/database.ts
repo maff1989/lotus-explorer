@@ -125,41 +125,6 @@ const BLOCKSPANS: {
   quarter: 65700,
   year: 262800
 };
-const find_address = async (hash: string): Promise<AddressDocument> => {
-  try {
-    return (await Address.findOne({ a_id: hash }))._doc;
-  } catch (e: any) {
-    throw new Error(`find_address: ${e.message}`);
-  }
-};
-const find_richlist = async (coin: string): Promise<RichlistDocument> => {
-  try {
-    return (await Richlist.findOne({ coin: coin }))._doc;
-  } catch (e: any) {
-    throw new Error(`find_richlist: ${e.message}`);
-  }
-};
-const find_tx = async (txid: string): Promise<TransactionDocument> => {
-  try {
-    return (await Tx.findOne({ txid: txid }))._doc;
-  } catch (e: any) {
-    throw new Error(`find_tx: ${e.message}`);
-  }
-};
-const find_block = async (height: number): Promise<BlockDocument> => {
-  try {
-    return (await Block.findOne({ height: height }))._doc;
-  } catch (e: any) {
-    throw new Error(`find_block: ${e.message}`);
-  }
-};
-const find_latest_block = async (): Promise<BlockDocument[]> => {
-  try {
-    return await Block.find().sort({'timestamp': -1}).limit(1);
-  } catch (e: any) {
-    throw new Error(`find_latest_block: ${e.message}`);
-  }
-};
 const save_tx = async (txid: string, height: number) => {
   const tx = await lib.get_rawtransaction(txid);
   const { vin } = await lib.prepare_vin(tx);
@@ -474,19 +439,30 @@ export class Database {
    *    Get Database Entries
    * 
    */
-  async get_address(hash: string) {
+  async get_address(hash: string): Promise<AddressDocument> {
     try {
-      return await find_address(hash);
+      return await Address.findOne({ a_id: hash });
     } catch (e: any) {
-      return null;
+      throw new Error(`Database.get_address: ${e.message}`);
     }
   };
 
-  async get_block(height: number) {
+  async get_block(height: number): Promise<BlockDocument> {
     try {
-      return await find_block(height);
+      return await Block.findOne({ height: height });
     } catch (e: any) {
-      return null;
+      throw new Error(`Database.get_block: ${e.message}`);
+    }
+  };
+
+  async get_latest_block(): Promise<BlockDocument[]> {
+    try {
+      return await Block.aggregate([
+        { $sort: { timestamp: -1 }},
+        { $limit: 1 }
+      ]);
+    } catch (e: any) {
+      throw new Error(`Database.get_latest_block: ${e.message}`);
     }
   };
 
@@ -581,11 +557,11 @@ export class Database {
     }
   }
   
-  async get_richlist(coin: string) {
+  async get_richlist(coin: string): Promise<RichlistDocument> {
     try {
-      return await find_richlist(coin);  
+      return await Richlist.findOne({ coin: coin });
     } catch (e: any) {
-      return null;
+      throw new Error(`Database.get_richlist: ${e.message}`);
     }    
   };
   
@@ -597,15 +573,19 @@ export class Database {
     }
   };
   
-  async get_tx(txid: string) {
-    return await find_tx(txid);
+  async get_tx(txid: string): Promise<TransactionDocument> {
+    try {
+      return await Tx.findOne({ txid: txid });
+    } catch (e: any) {
+      throw new Error(`Database.get_tx: ${e.message}`);
+    }
   };
 
   async get_txs(block: BlockInfo) {
     const txs: TransactionDocument[] = [];
     for (const txid of block.tx) {
       try {
-        const tx = await find_tx(txid);
+        const tx = await this.get_tx(txid);
         txs.push(tx);
       } catch (e: any) {
         // couldn't find txid in db
@@ -698,7 +678,7 @@ export class Database {
       data.count = aggResult[0].count;
       let runningBalance = aggResult[0].balance ?? 0;
       for (const addressTx of addressTxs) {
-        const tx = await find_tx(addressTx.txid);
+        const tx = await this.get_tx(addressTx.txid);
         data.txs.push({
           ...tx,
           balance: runningBalance
@@ -723,7 +703,7 @@ export class Database {
       plot: Array<(string | number)[]>
     } = { plot: [] };
     try {
-      const [ dbBlock ] = await find_latest_block();
+      const [ dbBlock ] = await this.get_latest_block();
       const agg: Array<{}> = [
         { '$match': {
           'timestamp': { '$gte': (dbBlock.timestamp - seconds) }
@@ -757,7 +737,7 @@ export class Database {
     const seconds = TIMESPANS[timespan];
     const blockspan = BLOCKSPANS[timespan];
     try {
-      const [ dbBlock ] = await find_latest_block();
+      const [ dbBlock ] = await this.get_latest_block();
       const result: Array<{
         _id: null,
         blocks: Array<{ minedby: string }>
@@ -801,7 +781,7 @@ export class Database {
     txTotal: number
   }> {
     const seconds = TIMESPANS[timespan];
-    const [ dbBlock ] = await find_latest_block();
+    const [ dbBlock ] = await this.get_latest_block();
     const result: Array<{
       blocks: BlockDocument[],
       txtotal: number
@@ -883,7 +863,7 @@ export class Database {
   };
   
   async update_label(hash: string, message: string): Promise<void> {
-    const address = await find_address(hash);
+    const address = await this.get_address(hash);
     if (address) {
       try {
         await Address.updateOne({ a_id: hash }, { name: message });
