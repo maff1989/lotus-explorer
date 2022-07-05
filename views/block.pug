@@ -1,26 +1,26 @@
 extends layout
 
 block content
-  - const time = new Date((block.timestamp) * 1000).toUTCString();
-  - const block_difficulty = parseFloat(block.difficulty).toFixed(6);
-  - const confirmations = parseInt(blockcount) - parseInt(block.height) + 1;
+  - const time = new Date((blockDocument.timestamp) * 1000).toUTCString();
+  - const block_difficulty = parseFloat(blockDocument.difficulty).toFixed(6);
+  - const confirmations = parseInt(blockcount) - parseInt(blockDocument.height) + 1;
   .col-xs-12.col-md-12
     .card.card-default
       .card-header(style='padding-left:25px;padding-right:25px;')          
-        a(href=`/api/getblock?hash=` + block.hash)
+        a(href=`/api/getblock?hash=` + blockInfo.hash)
           span.fa.fa-info-circle.iquidus.pull-right       
-        if block.previousblockhash != null
-          a(href='/block/'+ block.previousblockhash)
+        if blockInfo.previousblockhash != null
+          a(href='/block/'+ blockInfo.previousblockhash)
             span.fa.fa-chevron-left.iquidus.block-last(data-toggle='tooltip', data-placement='top', title=settings.locale.block_previous)
-        if block.nextblockhash != null 
-          a(href='/block/'+ block.nextblockhash)
+        if blockInfo.nextblockhash != null 
+          a(href='/block/'+ blockInfo.nextblockhash)
             span.fa.fa-chevron-right.iquidus.block-next(data-toggle='tooltip', data-placement='top', title=settings.locale.block_next)
         br
-        strong #{settings.locale.tx_block_hash}: #{block.hash}
+        strong #{settings.locale.tx_block_hash}: #{blockInfo.hash}
         br
         br
         strong #{settings.locale.block_mined_by}: 
-          a(href='/address/' + block.minedby) #{block.minedby}
+          a(href='/address/' + blockDocument.minedby) #{blockDocument.minedby}
       table.table.table-bordered.summary-table 
         thead
           tr
@@ -36,56 +36,47 @@ block content
             th.d-none.d-sm-table-cell.d-table-cell #{settings.locale.block_burned} (#{settings.symbol})
             th.d-none.d-sm-table-cell.d-table-cell #{settings.locale.timestamp}
         tbody
-          - const fees_burned = parseFloat(block.burned).toFixed(6);
-          - const block_size = parseFloat(block.size / 1000).toFixed(3) + ' KB';
+          - const fees_burned = parseFloat(blockDocument.burned).toFixed(6);
+          - const block_size = parseFloat(blockDocument.size / 1000).toFixed(3) + ' KB';
           
-          if block.confirmations >= confirmations
+          if confirmations >= confirmations
             tr.table-success
-              td=block.height
-              //td=Number(block.difficulty).toFixed(4)
+              td=blockDocument.height
               td=confirmations
               td.d-none.d-lg-table-cell=block_difficulty
-              if settings.heavy == true
-                td=block.vote
-              td.d-none.d-lg-table-cell=block.bits
-              td.d-none.d-lg-table-cell=block.nonce
+              td.d-none.d-lg-table-cell=blockInfo.bits
+              td.d-none.d-lg-table-cell=blockInfo.nonce
               td.d-none.d-sm-table-cell.d-table-cell=block_size
               td.d-none.d-sm-table-cell.d-table-cell=fees_burned
               td.d-none.d-sm-table-cell.d-table-cell=time
-          else if block.confirmations < (confirmations / 2)
+          else if confirmations < (confirmations / 2)
             tr.table-danger
-              td=block.height
-              //td=Number(block.difficulty).toFixed(4)
+              td=blockDocument.height
               td=confirmations
               td.d-none.d-lg-table-cell=block_difficulty
-              if settings.heavy == true
-                td=block.vote
-              td.d-none.d-lg-table-cell=block.bits
-              td.d-none.d-lg-table-cell=block.nonce
+              td.d-none.d-lg-table-cell=blockInfo.bits
+              td.d-none.d-lg-table-cell=blockInfo.nonce
               td.d-none.d-sm-table-cell.d-table-cell=block_size
               td.d-none.d-sm-table-cell.d-table-cell=fees_burned
               td.d-none.d-sm-table-cell.d-table-cell=time
           else
             tr.table-warning
-              td=block.height
-              //td=Number(block.difficulty).toFixed(4)
+              td=blockDocument.height
               td=confirmations
               td.d-none.d-lg-table-cell=block_difficulty
-              if settings.heavy == true
-                td=block.vote
-              td.d-none.d-lg-table-cell=block.bits
-              td.d-none.d-lg-table-cell=block.nonce
+              td.d-none.d-lg-table-cell=blockInfo.bits
+              td.d-none.d-lg-table-cell=blockInfo.nonce
               td.d-none.d-sm-table-cell.d-table-cell=block_size
               td.d-none.d-sm-table-cell.d-table-cell=fees_burned
               td.d-none.d-sm-table-cell.d-table-cell=time
 
-    if block.hash == settings.genesis_block
+    if blockInfo.hash == settings.genesis_block
       .alert.alert-info(role='alert', style='text-align:center;')   
         strong #{settings.locale.block_genesis}
     else
       .card.card-default
         .card-header
-          strong Transactions (#{block.txcount} Total)
+          strong Transactions (#{blockDocument.txcount} Total)
         table.table.table-bordered.table-striped.summary-table 
           thead
             tr

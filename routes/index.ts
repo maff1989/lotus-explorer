@@ -46,25 +46,27 @@ const route_get_block = async (
   res: Response,
   blockhash: string
 ): Promise<void> => {
-  const renderData: {
-    active: string,
-    block: BlockDocument,
-    confirmations: number,
-    blockcount: number,
-    txs: TransactionDocument[] | string
-  } = {
-    active: 'block',
-    block: null,
-    confirmations: settings.confirmations,
-    blockcount: null,
-    txs: null
-  };
   // process height
   const height = Number(blockhash);
   if (!isNaN(height)) {
     const hash = await lib.get_blockhash(height);
     return res.redirect('/block/' + hash);
   }
+  const renderData: {
+    active: string,
+    confirmations: number,
+    blockcount: number,
+    blockDocument: BlockDocument,
+    blockInfo: BlockInfo,
+    txs: TransactionDocument[] | string
+  } = {
+    active: 'block',
+    confirmations: settings.confirmations,
+    blockcount: null,
+    blockDocument: null,
+    blockInfo: null,
+    txs: null
+  };
   // process block
   switch (true) {
     // genesis block handler
