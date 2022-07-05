@@ -3,7 +3,7 @@ extends layout
 block content
   - const time = new Date((block.timestamp) * 1000).toUTCString();
   - const block_difficulty = parseFloat(block.difficulty).toFixed(6);
-  - const confirmations = parseInt(blockcount) - parseInt(block.height);
+  - const confirmations = parseInt(blockcount) - parseInt(block.height) + 1;
   .col-xs-12.col-md-12
     .card.card-default
       .card-header(style='padding-left:25px;padding-right:25px;')          
