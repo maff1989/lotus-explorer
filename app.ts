@@ -153,6 +153,45 @@ app.use('/ext/getdistribution', async (req, res) => {
     return res.send({ error: `distribution for ${settings.coin} not found` });
   }
 });
+app.use('/ext/getlastblocksajax', async (req, res) => {
+  const rowData: Array<[number, string, number, number, number, string]> = [];
+  let {
+    start,
+    length,
+    draw
+  }: {
+    start: number,
+    length: number,
+    draw: boolean
+  } = req.query as any;
+  if (!length || isNaN(length) || length > settings.index.last_txs) {
+    length = settings.index.last_blocks;
+  }
+  if (!start || isNaN(start) || start < 0) {
+    start = 0;
+  }
+  try {
+    const { blocks, count } = await db.get_last_blocks_ajax(start, length);
+    blocks.forEach(block => rowData.push([
+      block.height,
+      block.minedby,
+      block.size,
+      block.txcount,
+      block.burned,
+      new Date((block.timestamp) * 1000).toUTCString()
+    ]));
+    return res.json({
+      draw,
+      data: rowData,
+      recordsTotal: count,
+      recordsFiltered: count
+    });
+  } catch (e: any) {
+    console.log(`/ext/getlastblocksajax: ${e.message}`);
+    return res.send({ error: `failed to get last blocks via AJAX` });
+  }
+
+});
 
 // Locals
 app.set('title', settings.title);
