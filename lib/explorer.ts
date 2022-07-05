@@ -269,7 +269,7 @@ export class Explorer {
       { $match: { burned: { $gt: 0 }}}
     ]);
     docs.forEach(doc => data.totalBurned += doc.burned);
-    return data.totalBurned;
+    return this.convert_to_xpi(data.totalBurned);
   };
   /**
    * Fetch the available supply
