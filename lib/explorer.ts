@@ -269,7 +269,7 @@ export class Explorer {
       { $match: { burned: { $gt: 0 }}}
     ]);
     docs.forEach(doc => data.totalBurned += doc.burned);
-    return this.convert_to_xpi(data.totalBurned);
+    return data.totalBurned;
   };
   /**
    * Fetch the available supply
@@ -278,7 +278,7 @@ export class Explorer {
   async get_supply(): Promise<number> {
     // only supports BALANCE supply
     const supply = await this.balance_supply();
-    return this.convert_to_xpi(supply);
+    return supply;
   };
   /**
    * Check if block at specified height has been orphaned by the network

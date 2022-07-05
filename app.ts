@@ -37,11 +37,13 @@ app.use('/api', bitcoinapi.app);
 app.use('/', router);
 app.use('/ext/getmoneysupply', async (req, res) => {
   const stats = await db.get_stats(settings.coin);
-  return res.send(` ${stats.supply}`);
+  const supplyXPI = lib.convert_to_xpi(stats.supply)
+  return res.send(` ${supplyXPI}`);
 });
 app.use('/ext/getburnedsupply', async (req, res) => {
   const stats = await db.get_stats(settings.coin);
-  return res.send(` ${stats.burned}`);
+  const burnedXPI = lib.convert_to_xpi(stats.burned);
+  return res.send(` ${burnedXPI}`);
 });
 app.use('/ext/getaddress/:address', async (req, res) => {
   const last_txs: Array<{
@@ -93,7 +95,16 @@ app.use('/ext/gettx/:txid', async (req, res) => {
   // process db tx
   const dbTx = await db.get_tx(txid);
   if (dbTx) {
-    renderData.tx = dbTx;
+    renderData.tx = {
+      txid: dbTx.txid,
+      timestamp: dbTx.timestamp,
+      size: dbTx.size,
+      fee: dbTx.fee,
+      blockhash: dbTx.blockhash,
+      blockindex: dbTx.blockindex,
+      vin: dbTx.vin,
+      vout: dbTx.vout,
+    };
     // get last block height from Stats db
     const stats = await db.get_stats(settings.coin);
     renderData.blockcount = stats.last;
