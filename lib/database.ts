@@ -454,9 +454,12 @@ export class Database {
     }
   };
 
-  async get_block(height: number): Promise<BlockDocument> {
+  async get_block(hashOrHeight: string | number): Promise<BlockDocument> {
     try {
-      return await Block.findOne({ height: height });
+      return isNaN(Number(hashOrHeight))
+        ? await Block.findOne({ hash: hashOrHeight })
+        : await Block.findOne({ height: hashOrHeight });
+      
     } catch (e: any) {
       throw new Error(`Database.get_block: ${e.message}`);
     }
