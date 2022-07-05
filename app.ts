@@ -41,7 +41,7 @@ app.use('/ext/getmoneysupply', async (req, res) => {
 });
 app.use('/ext/getburnedsupply', async (req, res) => {
   const burned = await lib.get_burned_supply();
-  return res.send(burned);
+  return res.send(` ${burned}`);
 });
 app.use('/ext/getaddress/:address', async (req, res) => {
   const last_txs: Array<{
