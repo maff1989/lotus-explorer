@@ -110,7 +110,7 @@ const rpcCommand = async (
   ...params: Array<string | number | boolean>
 ): Promise<any> => {
   try {
-    return await rpc.call(command, params);
+    return await rpc.call(command, ...params);
   } catch (e: any) {
     return new Error(`RPC error: ${e.message}`);
   }
