@@ -266,8 +266,8 @@ router.get('/ext/summary', async (req, res) => {
   const dbStats = await db.get_stats(settings.coin);
   return res.send({ data: [{
     difficulty: difficulty,
-    supply: dbStats.supply,
-    burned: dbStats.burned,
+    supply: lib.convert_to_xpi(dbStats.supply),
+    burned: lib.convert_to_xpi(dbStats.burned),
     hashrate: hashrate,
     // lastPrice: dbStats.last_price,
     connections: connections,
