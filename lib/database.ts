@@ -690,7 +690,9 @@ export class Database {
       for (const addressTx of addressTxs) {
         const tx = await this.get_tx(addressTx.txid);
         data.txs.push({
-          ...tx,
+          txid: tx.txid,
+          vin: tx.vin,
+          vout: tx.vout,
           balance: runningBalance
         } as TransactionDocument);
         runningBalance -= addressTx.amount;
