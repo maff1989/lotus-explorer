@@ -625,11 +625,11 @@ export class Database {
         { $limit: Number(length) }
       ]);
       data.count = await Block.find({}).count();
+      return data;
     } catch (e: any) {
       console.log(`get_last_blocks_ajax: failed to poll blocks collection: ${e.message}`);
       return null;
     }
-    return data;
   };
 
   async get_last_txs_ajax(
@@ -649,11 +649,11 @@ export class Database {
         { $limit: Number(length) }
       ]);
       data.count = await Tx.find({}).count();
+      return data;
     } catch (e: any) {
       console.log(`get_last_txs_ajax: failed to poll txs collection: ${e.message}`);
       return null;
     }
-    return data;
   };
 
   async get_address_txs_ajax(
@@ -695,11 +695,11 @@ export class Database {
         } as TransactionDocument);
         runningBalance -= addressTx.amount;
       }
+      return data;
     } catch (e: any) {
       console.log(`get_address_txs_ajax: failed to poll addresstxs collection: ${e.message}`);
       return null;
     }
-    return data;
   };
 
   /*
