@@ -167,7 +167,7 @@ export class Explorer {
    * @returns {Promise<string[]>} Array of txids
    */
   async get_rawmempool(): Promise<string[]> {
-    return await rpcCommand('getrawmempool', true);
+    return await rpcCommand('getrawmempool');
   };
   /**
    * RPC command - `getblockcount`
