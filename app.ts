@@ -116,7 +116,7 @@ app.use('/ext/gettx/:txid', async (req, res) => {
     // if tx isn't there either, assume invalid
     const mempool = await lib.get_rawmempool();
     if (!mempool.includes(txid)) {
-      return res.send({ error: `transaction not found`, txid });
+      throw new Error(`non-database tx not found in mempool: ${txid}`);
     }
     // process mempool tx
     const tx = await lib.get_rawtransaction(txid);
