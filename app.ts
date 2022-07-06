@@ -134,6 +134,7 @@ app.use('/ext/gettx/:txid', async (req, res) => {
       blockhash: tx.blockhash,
       blockindex: 0
     };
+    return res.send(renderData);
   } catch (e: any) {
     console.log(`/ext/gettx/${txid}: ${e.message}`);
     return res.send({ error: `tx not found`, txid });
