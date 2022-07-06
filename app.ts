@@ -76,6 +76,7 @@ app.use('/ext/getaddress/:address', async (req, res) => {
       last_txs
     });
   } catch (e: any) {
+    console.log(`/ext/getaddress/${address}: ${e.message}`);
     return res.send({ error: 'address not found', address });
   }
 });
@@ -92,6 +93,7 @@ app.use('/ext/gettx/:txid', async (req, res) => {
     confirmations: settings.confirmations,
     blockcount: null
   };
+  try {
     // process db tx
     const dbTx = await db.get_tx(txid);
     if (dbTx) {
@@ -132,6 +134,10 @@ app.use('/ext/gettx/:txid', async (req, res) => {
       blockhash: tx.blockhash,
       blockindex: 0
     };
+  } catch (e: any) {
+    console.log(`/ext/gettx/${txid}: ${e.message}`);
+    return res.send({ error: `tx not found`, txid });
+  }
 });
 app.use('/ext/getbalance/:address', async (req, res) => {
   const { address } = req.params;
@@ -141,6 +147,7 @@ app.use('/ext/getbalance/:address', async (req, res) => {
       .toString()
       .replace(/(^-+)/mg, ''));
   } catch (e: any) {
+    console.log(`/ext/getbalance/${address}: ${e.message}`);
     return res.send({ error: 'address not found', address });
   }
 });
@@ -150,6 +157,7 @@ app.use('/ext/getdistribution', async (req, res) => {
     const dbStats = await db.get_stats(settings.coin);
     return res.send(await db.get_distribution(dbRichlist, dbStats));
   } catch (e: any) {
+    console.log(`/ext/getdistribution: ${e.message}`);
     return res.send({ error: `distribution for ${settings.coin} not found` });
   }
 });
