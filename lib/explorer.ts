@@ -338,7 +338,7 @@ export class Explorer {
 
     for (const output of vout) {
       const amount = this.convert_to_satoshi(output.value);
-      const { addresses, type } = output.scriptPubKey;
+      const { addresses, type, asm } = output.scriptPubKey;
       switch (type) {
         case 'nonstandard':
           continue;
@@ -352,7 +352,8 @@ export class Explorer {
       index < 0
         ? data.vout.push({
             addresses: address,
-            amount
+            amount,
+            asm: (type == 'nulldata' && amount > 0 ? asm: undefined)
           })
         : data.vout[index].amount += amount;
     }
