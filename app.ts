@@ -56,8 +56,8 @@ app.use('/ext/getaddress/:address', async (req, res) => {
     const { txs } = await db.get_address_txs_ajax(address, 0, settings.txcount);
     for (const tx of txs) {
       const value = { vin: 0, vout: 0 };
-      value.vin += tx.vin?.find(vin => vin.addresses == address).amount ?? 0;
-      value.vout += tx.vout?.find(vout => vout.addresses == address).amount ?? 0;
+      value.vin += tx.vin?.find(vin => vin.addresses == address)?.amount ?? 0;
+      value.vout += tx.vout?.find(vout => vout.addresses == address)?.amount ?? 0;
       const type = value.vin > value.vout ? 'vin': 'vout';
       dataTableRows.push({ txid: tx.txid, type });
     }
@@ -210,7 +210,6 @@ app.set('youtube', settings.youtube);
 app.set('genesis_block', settings.genesis_block);
 app.set('index', settings.index);
 app.set('use_rpc', settings.use_rpc);
-app.set('heavy', settings.heavy);
 app.set('lock_during_index', settings.lock_during_index);
 app.set('txcount', settings.txcount);
 app.set('txcount_per_page', settings.txcount_per_page);
