@@ -117,7 +117,7 @@ const TIMESPANS: {
   quarter: 7776000,
 };
 const BLOCKSPANS: {
-  [timespan: string]: number
+  [blockspan: string]: number
 } = {
   day: 720,
   week: 5040,
