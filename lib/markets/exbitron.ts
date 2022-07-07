@@ -37,7 +37,7 @@ export const get_data = async (settings: Exchange['Settings']) => {
 };
 
 const get_summary = async () => {
-  const { ticker: { vol, volume, high, low, last}} = await request({
+  const { ticker: { vol, volume, high, low, last }} = await request.get({
     uri: BASE_URL + 'xpiusdt/tickers',
     json: true,
   });
