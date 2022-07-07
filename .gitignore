@@ -40,4 +40,5 @@ scripts/*.js
 settings.json
 package-lock.json
 spec/
-test*
+test/
+test.*
