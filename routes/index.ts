@@ -130,7 +130,11 @@ const route_get_richlist = async (
     active: 'richlist',
     balance: dbRichlist.balance,
     received: dbRichlist.received,
-    stats: dbStats,
+    stats: {
+      ...dbStats,
+      supply: lib.convert_to_xpi(dbStats.supply),
+      burned: lib.convert_to_xpi(dbStats.burned)
+    },
     dista: dbDistribution.t_1_25,
     distb: dbDistribution.t_26_50,
     distc: dbDistribution.t_51_75,
