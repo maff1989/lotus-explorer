@@ -20,7 +20,7 @@
     "intl": "^1.2.5",
     "jsonminify": "0.2.3",
     "jstransformer-markdown-it": "^2.1.0",
-    "mongoose": "^6.4.0",
+    "mongoose": "6.4.0",
     "morgan": "~1.9.1",
     "path": "^0.12.7",
     "pug": "^2.0.3",
