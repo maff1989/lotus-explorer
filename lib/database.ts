@@ -669,7 +669,7 @@ export class Database {
       const addressTxs: AddressTransactionDocument[] = await AddressTx.aggregate([
         { $match: { a_id: address }},
         { $sort: { blockindex: -1 }},
-        { $sort: { amount: 1 }},
+        //{ $sort: { amount: 1 }},
         { $skip: Number(start) },
         { $limit: Number(length) }
       ]);
