@@ -122,9 +122,6 @@ const route_get_richlist = async (
 ): Promise<void> => {
   const dbStats = await db.get_stats(settings.coin);
   const dbRichlist = await db.get_richlist(settings.coin);
-  if (!dbRichlist) {
-    return route_get_index(res, null);
-  }
   const dbDistribution = await db.get_distribution(dbRichlist, dbStats);
   return res.render('richlist', {
     active: 'richlist',
