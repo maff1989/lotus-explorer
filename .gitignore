@@ -38,6 +38,5 @@ scripts/*.js
 
 # Production
 settings.json
-package-lock.json
 spec/
 test.*
