@@ -7,7 +7,7 @@ An open source Lotus block explorer written in TypeScript for node.js
 
 *  node.js >= 16.14.1
 *  mongodb 4.2.x
-*  *coind
+*  lotusd (latest version)
 
 ### Create database
 
@@ -125,7 +125,7 @@ Where [SIZE] is an integer higher than the default.
 
 ### License
 
-Copyright (c) 2021-2022 maff1989
+Copyright (c) 2021-2022 maff1989  
 Copyright (c) 2015, Iquidus Technology  
 Copyright (c) 2015, Luke Williams  
 All rights reserved.
