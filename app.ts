@@ -162,7 +162,7 @@ app.use('/ext/getlastblocksajax', async (req, res) => {
     return {
       start: Number(params.start),
       length: Number(params.length),
-      draw: Boolean(params.draw),
+      draw: Number(params.draw),
     };
   };
   let { start, length, draw } = converter(req.query);
@@ -199,7 +199,7 @@ app.use('/ext/getlasttxsajax/:min', async (req, res) => {
     return {
       start: Number(params.start),
       length: Number(params.length),
-      draw: Boolean(params.draw),
+      draw: Number(params.draw),
     };
   };
   let { start, length, draw } = converter(req.query);
@@ -240,7 +240,7 @@ app.use('/ext/getaddresstxsajax/:address', async (req, res) => {
     return {
       start: Number(params.start),
       length: Number(params.length),
-      draw: Boolean(params.draw),
+      draw: Number(params.draw),
     };
   };
   let { start, length, draw } = converter(req.query);
