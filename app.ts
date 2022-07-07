@@ -14,6 +14,13 @@ const settings = require('./lib/settings')
   , db = new Database()
   , lib = new Explorer()
   , locale = require('./lib/locale');
+const ajaxParamTypeConverter = (params: any) => {
+  return {
+    start: Number(params.start),
+    length: Number(params.length),
+    draw: Number(params.draw),
+  };
+};
 // Set Up BitcoinAPI
 bitcoinapi.setWalletDetails(settings.wallet);
 bitcoinapi.setAccess('only', [
@@ -149,14 +156,7 @@ app.use('/ext/getdistribution', async (req, res) => {
 });
 app.use('/ext/getlastblocksajax', async (req, res) => {
   const rowData: Array<[number, string, number, number, number, string]> = [];
-  const converter = (params: any) => {
-    return {
-      start: Number(params.start),
-      length: Number(params.length),
-      draw: Number(params.draw),
-    };
-  };
-  let { start, length, draw } = converter(req.query);
+  let { start, length, draw } = ajaxParamTypeConverter(req.query);
   if (!length || isNaN(length) || length > settings.index.last_txs) {
     length = settings.index.last_blocks;
   }
@@ -186,14 +186,7 @@ app.use('/ext/getlastblocksajax', async (req, res) => {
 });
 app.use('/ext/getlasttxsajax/:min', async (req, res) => {
   const rowData: Array<[number, string, string, number, number, string]> = [];
-  const converter = (params: any) => {
-    return {
-      start: Number(params.start),
-      length: Number(params.length),
-      draw: Number(params.draw),
-    };
-  };
-  let { start, length, draw } = converter(req.query);
+  let { start, length, draw } = ajaxParamTypeConverter(req.query);
   let min = Number(req.params.min);
   if (!length || isNaN(length) || length > settings.index.last_txs) {
     length = settings.index.last_blocks;
@@ -227,14 +220,7 @@ app.use('/ext/getlasttxsajax/:min', async (req, res) => {
 });
 app.use('/ext/getaddresstxsajax/:address', async (req, res) => {
   const rowData: Array<[string, string, number, number, number]> = [];
-  const converter = (params: any) => {
-    return {
-      start: Number(params.start),
-      length: Number(params.length),
-      draw: Number(params.draw),
-    };
-  };
-  let { start, length, draw } = converter(req.query);
+  let { start, length, draw } = ajaxParamTypeConverter(req.query);
   const { address }: { address: string } = req.params;
   if (!length || isNaN(length) || length > settings.index.last_txs) {
     length = settings.index.last_blocks;
