@@ -149,7 +149,8 @@ app.use('/ext/getdistribution', async (req, res) => {
   try {
     const dbRichlist = await db.get_richlist(settings.coin);
     const dbStats = await db.get_stats(settings.coin);
-    return res.send(await db.get_distribution(dbRichlist, dbStats));
+    const dbDistribution = await db.get_distribution(dbRichlist, dbStats);
+    return res.send(dbDistribution);
   } catch (e: any) {
     console.log(`/ext/getdistribution: ${e.message}`);
     return res.send({ error: `distribution for ${settings.coin} not found` });
