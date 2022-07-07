@@ -496,8 +496,9 @@ export class Database {
     for (let i = 0; i < richlist.balance.length; i++) {
       const addressDoc = richlist.balance[i];
       const addressBalanceXpi = lib.convert_to_xpi(addressDoc.balance);
+      const supplyXPI = lib.convert_to_xpi(stats.supply);
       const count = i + 1;
-      const percent = (addressBalanceXpi / stats.supply) * 100;
+      const percent = (addressBalanceXpi / supplyXPI) * 100;
       switch (true) {
         case count <= 25:
           distribution.t_1_25.percent = distribution.t_1_25.percent + percent;
