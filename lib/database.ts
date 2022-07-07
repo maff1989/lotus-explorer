@@ -691,6 +691,7 @@ export class Database {
         const tx = await this.get_tx(addressTx.txid);
         data.txs.push({
           txid: tx.txid,
+          timestamp: tx.timestamp,
           vin: tx.vin,
           vout: tx.vout,
           balance: runningBalance
