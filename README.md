@@ -1,18 +1,11 @@
-Iquidus Explorer - 1.7.4
+Lotus Explorer - 2.0.0
 ================
 
-An open source block explorer written in node.js.
-
-### See it in action
-
-*  [List of live explorers running Iquidus](https://github.com/iquidus/explorer/wiki/Live-Explorers)
-
-
-*Note: If you would like your instance mentioned here contact me*
+An open source Lotus block explorer written in TypeScript for node.js
 
 ### Requires
 
-*  node.js >= 8.17.0 (12.14.0 is advised for updated dependencies)
+*  node.js >= 16.14.1
 *  mongodb 4.2.x
 *  *coind
 
@@ -28,7 +21,7 @@ Create databse:
 
 Create user with read/write access:
 
-    > db.createUser( { user: "iquidus", pwd: "3xp!0reR", roles: [ "readWrite" ] } )
+    > db.createUser( { user: "explorer", pwd: "3xp!0reR", roles: [ "readWrite" ] } )
 
 *Note: If you're using mongo shell 4.2.x, use the following to create your user:
 
@@ -36,11 +29,11 @@ Create user with read/write access:
 
 ### Get the source
 
-    git clone https://github.com/iquidus/explorer explorer
+    git clone https://github.com/maff1989/lotus-explorer
 
 ### Install node modules
 
-    cd explorer && npm install --production
+    cd lotus-explorer && npm install --production
 
 ### Configure
 
@@ -48,15 +41,19 @@ Create user with read/write access:
 
 *Make required changes in settings.json*
 
+### Compile TypeScript to JavaScript
+
+    ./node_modules/typescript/bin/tsc
+
 ### Start Explorer
 
     npm start
 
 *Note: mongod must be running to start the explorer*
 
-As of version 1.4.0 the explorer defaults to cluster mode, forking an instance of its process to each cpu core. This results in increased performance and stability. Load balancing gets automatically taken care of and any instances that for some reason die, will be restarted automatically. For testing/development (or if you just wish to) a single instance can be launched with
+As of Iquidus version 1.4.0 the explorer defaults to cluster mode, forking an instance of its process to each cpu core. This results in increased performance and stability. Load balancing gets automatically taken care of and any instances that for some reason die, will be restarted automatically. For testing/development (or if you just wish to) a single instance can be launched with
 
-    node --stack-size=10000 bin/instance
+    node --stack-size=10000 bin/instance.js
 
 To stop the cluster you can use
 
@@ -64,7 +61,7 @@ To stop the cluster you can use
 
 ### Syncing databases with the blockchain
 
-sync.js (located in scripts/) is used for updating the local databases. This script must be called from the explorers root directory.
+sync.js (located in scripts/) is used for updating the local databases. This script must be called from the explorer's root directory.
 
     Usage: node scripts/sync.js [database] [mode]
 
@@ -74,31 +71,26 @@ sync.js (located in scripts/) is used for updating the local databases. This scr
 
     mode: (required for index database only)
     update       Updates index from last sync to current block
-    check        checks index for (and adds) any missing transactions/addresses
     reindex      Clears index then resyncs from genesis to current block
 
     notes:
     * 'current block' is the latest created block when script is executed.
     * The market database only supports (& defaults to) reindex mode.
-    * If check mode finds missing data(ignoring new data since last sync),
-      index_timeout in settings.json is set too low.
+**ZMQ**
+
+It is recommended to use the ZeroMQ on your lotusd in order to detect and process new blocks in the database. Be sure that your working directory is the explorer's root directory when you call `node scripts/sync.js`!
 
 
-*It is recommended to have this script launched via a cronjob at 1+ min intervals.*
-
-**crontab**
-
-*Example crontab; update index every minute and market data every 2 minutes*
-
-    */1 * * * * cd /path/to/explorer && /usr/bin/nodejs scripts/sync.js index update > /dev/null 2>&1
-    */2 * * * * cd /path/to/explorer && /usr/bin/nodejs scripts/sync.js market > /dev/null 2>&1
-    */5 * * * * cd /path/to/explorer && /usr/bin/nodejs scripts/peers.js > /dev/null 2>&1
 
 ### Wallet
 
-Iquidus Explorer is intended to be generic, so it can be used with any wallet following the usual standards. The wallet must be running with atleast the following flags
+Lotus Explorer is intended to be generic, so it can be used with any wallet following the usual standards. The wallet must be running with atleast the following flags
 
     -daemon -txindex
+
+It is also heavily advised against running lotusd with the wallet functionality enabled. In order to disable, simply add the following line to your `~/.lotus/lotus.conf` file:
+
+    disablewallet = 1
     
 ### Security
 
@@ -133,6 +125,7 @@ Where [SIZE] is an integer higher than the default.
 
 ### License
 
+Copyright (c) 2021-2022 maff1989
 Copyright (c) 2015, Iquidus Technology  
 Copyright (c) 2015, Luke Williams  
 All rights reserved.
