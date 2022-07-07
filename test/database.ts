@@ -1,5 +1,5 @@
 const settings = require('../lib/settings');
-import { Database } from '../lib/database';
+import { Database, is_locked } from '../lib/database';
 import { Explorer } from '../lib/explorer';
 
 /*
@@ -7,15 +7,10 @@ import { Explorer } from '../lib/explorer';
  *    Initialization
  * 
  */
-const address = 'lotus_16PSJMPL9PB7v6md8mbnHsQAZC1RXEs92uZFRRcWq';
-const height = 123456;
-const dbString = 'mongodb://' + settings.dbsettings.user
-  + ':' + settings.dbsettings.password
-  + '@' + settings.dbsettings.address
-  + ':' + settings.dbsettings.port
-  + '/' + settings.dbsettings.database;
 const db = new Database();
 const lib = new Explorer();
+const address = 'lotus_16PSJMPL9PB7v6md8mbnHsQAZC1RXEs92uZFRRcWq';
+const height = 123456;
 /*
  *
  *    Main runner
@@ -23,9 +18,9 @@ const lib = new Explorer();
  */
 const main = async () => {
   // Setup
-  await db.connect(dbString);
+  await db.connect();
   // Checkers
-  const isLocked = await db.is_locked();
+  const isLocked = await is_locked('index');
   const checkMarket = await db.check_market('exbitron');
   const checkRichlist = await db.check_richlist('Lotus');
   const checkStats = await db.check_stats('Lotus');
@@ -85,6 +80,7 @@ const main = async () => {
   console.log('createTxs', createTxs);
   // Updaters
   const chartsUpdated = await db.update_charts_db();
+  console.log('chartsUpdated', chartsUpdated);
   // Deleters
   // Errors
   const checkMarketBad = await db.check_market('sexbitron');
