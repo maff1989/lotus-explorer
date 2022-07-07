@@ -895,8 +895,12 @@ export class Database {
   async update_richlist(list: string): Promise<void> {
     try {
       const addresses = list == 'received'
-        ? await Address.find({}, 'a_id balance received name').sort({ received: 'desc' }).limit(100)
-        : await Address.find({}, 'a_id balance received name').sort({ balance: 'desc' }).limit(100);
+        ? await Address.find({}, 'a_id balance received name')
+          .sort({ received: 'desc' })
+          .limit(100)
+        : await Address.find({}, 'a_id balance received name')
+          .sort({ balance: 'desc' })
+          .limit(100);
       list == 'received'
         ? await Richlist.updateOne({ coin: settings.coin }, { received: addresses })
         : await Richlist.updateOne({ coin: settings.coin }, { balance: addresses });
