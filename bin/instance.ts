@@ -2,8 +2,8 @@
 import app from '../app';
 import debug from 'debug';
 import { Database } from '../lib/database';
-const settings = require('../lib/settings');
-const db = new Database();
+const settings = require('../lib/settings')
+  , db = new Database();
 
 const main = async () => {
   // Initialize instance
@@ -26,7 +26,7 @@ const main = async () => {
     await db.create_richlist(settings.coin);
   }
   // Start the listener
-  const server = app.listen(app.get('port'), '::', function() {
+  const server = app.listen(app.get('port'), '::', () => {
     debug('Express server listening on port ' + server.address());
   });
 };
