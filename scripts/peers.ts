@@ -1,4 +1,3 @@
-const settings = require('../lib/settings');
 import request from 'request-promise';
 import { Database } from '../lib/database';
 import { Explorer } from '../lib/explorer';

@@ -8,8 +8,9 @@ import cookieParser from 'cookie-parser';
 import router from './routes';
 import { Explorer, TransactionDocument } from './lib/explorer';
 import { Database } from './lib/database';
+import Settings from './lib/settings';
 
-const settings = require('./lib/settings')
+const settings = new Settings()
   , package_metadata = require('./package.json')
   , db = new Database()
   , lib = new Explorer()

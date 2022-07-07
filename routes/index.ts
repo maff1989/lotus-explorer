@@ -11,8 +11,9 @@ import {
   TransactionDocument,
   BlockInfo
 } from '../lib/explorer';
+import Settings from '../lib/settings';
 
-const settings = require('../lib/settings')
+const settings = new Settings()
   , locale = require('../lib/locale')
   , db = new Database()
   , lib = new Explorer();

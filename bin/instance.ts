@@ -2,7 +2,8 @@
 import app from '../app';
 import debug from 'debug';
 import { Database } from '../lib/database';
-const settings = require('../lib/settings')
+import Settings from '../lib/settings';
+const settings = new Settings()
   , db = new Database();
 
 const main = async () => {

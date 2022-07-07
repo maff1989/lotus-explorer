@@ -5,6 +5,7 @@ import {
 } from 'mongoose';
 import * as fs from 'fs/promises';
 import * as Explorer from './explorer';
+import Settings from './settings';
 import {
   getChartsDifficultyAggregation,
 } from './util';
@@ -18,7 +19,7 @@ import Richlist from '../models/richlist';
 import Stats from '../models/stats';
 import Tx from '../models/tx';
 
-const settings = require('./settings')
+const settings = new Settings()
   , lib = new Explorer.Explorer();
 /*
 set('useCreateIndex', true);

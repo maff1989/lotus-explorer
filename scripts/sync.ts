@@ -1,7 +1,5 @@
-const settings = require('../lib/settings');
-import {
-  Explorer
-} from '../lib/explorer';
+import { Explorer } from '../lib/explorer';
+import Settings from '../lib/settings';
 import {
   is_locked,
   create_lock,
@@ -71,6 +69,7 @@ if (process.argv[2] == 'index') {
 
 const db = new Database();
 const lib = new Explorer();
+const settings = new Settings();
 
 const main = async () => {
   // exit if already running
