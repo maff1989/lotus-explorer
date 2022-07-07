@@ -157,15 +157,14 @@ app.use('/ext/getdistribution', async (req, res) => {
 });
 app.use('/ext/getlastblocksajax', async (req, res) => {
   const rowData: Array<[number, string, number, number, number, string]> = [];
-  let {
-    start,
-    length,
-    draw
-  }: {
-    start: number,
-    length: number,
-    draw: boolean
-  } = req.query as any;
+  const converter = (params: any) => {
+    return {
+      start: Number(params.start),
+      length: Number(params.length),
+      draw: Boolean(params.draw),
+    };
+  };
+  let { start, length, draw } = converter(req.params);
   if (!length || isNaN(length) || length > settings.index.last_txs) {
     length = settings.index.last_blocks;
   }
@@ -186,7 +185,7 @@ app.use('/ext/getlastblocksajax', async (req, res) => {
       draw,
       data: rowData,
       recordsTotal: count,
-      recordsFiltered: count
+      recordsFiltered: count,
     });
   } catch (e: any) {
     console.log(`/ext/getlastblocksajax: ${e.message}`);
