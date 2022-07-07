@@ -100,7 +100,7 @@ const route_get_block = async (
 const route_get_charts = async (
   res: Response
 ): Promise<void> => {
-  const dbCharts = db.get_charts();
+  const dbCharts = await db.get_charts();
   return dbCharts
     ? res.render('charts', {
         active: 'charts',
