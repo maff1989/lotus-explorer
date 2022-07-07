@@ -1,5 +1,4 @@
-import express from 'express';
-import { Response } from 'express';
+import express, { Response } from 'express';
 import qr from 'qr-image';
 import {
   Database,
@@ -34,14 +33,17 @@ const route_get_address = async (
   res: Response,
   address: string
 ): Promise<void> => {
-  const dbAddress = await db.get_address(address);
-  return dbAddress
-    ? res.render('address', {
-        active: 'address',
-        address: dbAddress,
-        txs: []
-      })
-    : route_get_index(res, `${address} not found`);
+  try {
+    const dbAddress = await db.get_address(address);
+    return res.render('address', {
+      active: 'address',
+      address: dbAddress,
+      txs: []
+    });
+  } catch (e: any) {
+    console.log(`route_get_address: ${address}: ${e.message}`);
+    return route_get_index(res, `Address not found: ${address}`);
+  }
 };
 const route_get_block = async (
   res: Response,
@@ -76,81 +78,97 @@ const route_get_block = async (
       return res.render('block', renderData);
     // default block render
     default:
-      renderData.blockInfo = await lib.get_block(blockhash);
-      const { tx: txs, height } = renderData.blockInfo;
-      const dbBlock = await db.get_block(height);
-      const stats = await db.get_stats(settings.coin);
-      renderData.blockcount = stats.last;
-      renderData.txs = await db.get_txs(txs);
-      renderData.blockDocument = {
-        height: height,
-        ...dbBlock,
-        burned: lib.convert_to_xpi(dbBlock.burned)
-      };
-      return res.render('block', renderData);
+      try {
+        const block = await lib.get_block(blockhash);
+        const dbBlock = await db.get_block(block.height);
+        const stats = await db.get_stats(settings.coin);
+        renderData.txs = await db.get_txs(block.tx);
+        renderData.blockcount = stats.last;
+        renderData.blockDocument = {
+          ...dbBlock,
+          burned: lib.convert_to_xpi(dbBlock.burned)
+        };
+        return res.render('block', renderData);
+      } catch (e: any) {
+        console.log(`route_get_block: ${blockhash}: ${e.message}`);
+        return route_get_index(res, `Block not found: ${blockhash}`);
+      }
   }
 
 };
 const route_get_charts = async (
   res: Response
 ): Promise<void> => {
-  const dbCharts = await db.get_charts();
-  return dbCharts
-    ? res.render('charts', {
-        active: 'charts',
-        ...dbCharts
-      })
-    : route_get_index(res, null);
+  try {
+    const dbCharts = await db.get_charts();
+    return res.render('charts', {
+      active: 'charts',
+      ...dbCharts
+    });
+  } catch (e: any) {
+    console.log(`route_get_charts: ${e.message}`);
+    return route_get_index(res, null);
+  }
 };
 const route_get_market = async (
   res: Response,
   market: string
 ): Promise<void> => {
-  const dbMarket = await db.get_market(market);
-  return res.render(`./markets/${market}`, {
-    active: 'markets',
-    marketdata: {
-      coin: settings.markets.coin,
-      exchange: settings.markets.exchange,
-      data: dbMarket,
-    },
-    market: market
-  });
+  try {
+    const dbMarket = await db.get_market(market);
+    return res.render(`./markets/${market}`, {
+      active: 'markets',
+      marketdata: {
+        coin: settings.markets.coin,
+        exchange: settings.markets.exchange,
+        data: dbMarket,
+      },
+      market: market
+    });
+  } catch (e: any) {
+    console.log(`route_get_market: ${market}: ${e.message}`);
+    return route_get_index(res, `Market not found: ${market}`);
+  }
 };
 const route_get_richlist = async (
   res: Response
 ): Promise<void> => {
-  const dbStats = await db.get_stats(settings.coin);
-  const dbRichlist = await db.get_richlist(settings.coin);
-  const dbDistribution = await db.get_distribution(dbRichlist, dbStats);
-  return res.render('richlist', {
-    active: 'richlist',
-    balance: dbRichlist.balance.map(doc => {
-      return {
-        ...doc,
-        balance: lib.convert_to_xpi(doc.balance)
-      };
-    }),
-    received: dbRichlist.received.map(doc => {
-      return {
-        ...doc,
-        received: lib.convert_to_xpi(doc.received)
-      };
-    }),
-    stats: {
-      ...dbStats,
-      supply: lib.convert_to_xpi(dbStats.supply),
-      burned: lib.convert_to_xpi(dbStats.burned)
-    },
-    dista: dbDistribution.t_1_25,
-    distb: dbDistribution.t_26_50,
-    distc: dbDistribution.t_51_75,
-    distd: dbDistribution.t_76_100,
-    diste: dbDistribution.t_101plus,
-    show_dist: settings.richlist.distribution,
-    show_received: settings.richlist.received,
-    show_balance: settings.richlist.balance,
-  });
+  try {
+    const dbStats = await db.get_stats(settings.coin);
+    const dbRichlist = await db.get_richlist(settings.coin);
+    const dbDistribution = await db.get_distribution(dbRichlist, dbStats);
+    return res.render('richlist', {
+      active: 'richlist',
+      balance: dbRichlist.balance.map(doc => {
+        return {
+          ...doc,
+          balance: lib.convert_to_xpi(doc.balance)
+        };
+      }),
+      received: dbRichlist.received.map(doc => {
+        return {
+          ...doc,
+          received: lib.convert_to_xpi(doc.received)
+        };
+      }),
+      stats: {
+        ...dbStats,
+        supply: lib.convert_to_xpi(dbStats.supply),
+        burned: lib.convert_to_xpi(dbStats.burned)
+      },
+      dista: dbDistribution.t_1_25,
+      distb: dbDistribution.t_26_50,
+      distc: dbDistribution.t_51_75,
+      distd: dbDistribution.t_76_100,
+      diste: dbDistribution.t_101plus,
+      show_dist: settings.richlist.distribution,
+      show_received: settings.richlist.received,
+      show_balance: settings.richlist.balance,
+    });
+  } catch (e: any) {
+    console.log(`route_get_richlist: ${settings.coin}: ${e.message}`);
+    return route_get_index(res, `Richlist not found for coin ${settings.coin}`);
+  }
 };
 const route_get_tx = async (
   res: Response,
@@ -171,36 +189,41 @@ const route_get_tx = async (
   if (txid == settings.genesis_block) {
     return route_get_block(res, settings.genesis_block);
   }
-  // process db tx
-  const { last: blockcount } = await db.get_stats(settings.coin);
-  renderData.blockcount = blockcount;
-  const dbTx = await db.get_tx(txid);
-  if (dbTx) {
-    renderData.tx = dbTx;
+  try {
+    // process db tx
+    const { last: blockcount } = await db.get_stats(settings.coin);
+    renderData.blockcount = blockcount;
+    const dbTx = await db.get_tx(txid);
+    if (dbTx) {
+      renderData.tx = dbTx;
+      return res.render('tx', renderData);
+    }
+    // check mempool for tx
+    // if tx isn't there either, assume invalid
+    const mempool = await lib.get_rawmempool();
+    if (!mempool.includes(txid)) {
+      return route_get_index(res, `Transaction not found: ${txid}`);
+    }
+    // process mempool tx
+    const tx = await lib.get_rawtransaction(txid);
+    const { vin } = await lib.prepare_vin(tx);
+    const { vout } = await lib.prepare_vout(tx.vout);
+    const fee = await lib.calculate_fee(vout, vin);
+    renderData.tx = {
+      txid: tx.txid,
+      size: tx.size,
+      timestamp: tx.time,
+      blockhash: tx.blockhash,
+      fee: fee,
+      vin: vin,
+      vout: vout,
+      blockindex: 0
+    };
     return res.render('tx', renderData);
-  }
-  // check mempool for tx
-  // if tx isn't there either, assume invalid
-  const mempool = await lib.get_rawmempool();
-  if (!mempool.includes(txid)) {
+  } catch (e: any) {
+    console.log(`route_get_tx: ${txid}: ${e.message}`);
     return route_get_index(res, `Transaction not found: ${txid}`);
   }
-  // process mempool tx
-  const tx = await lib.get_rawtransaction(txid);
-  const { vin } = await lib.prepare_vin(tx);
-  const { vout } = await lib.prepare_vout(tx.vout);
-  const fee = await lib.calculate_fee(vout, vin);
-  renderData.tx = {
-    txid: tx.txid,
-    size: tx.size,
-    timestamp: tx.time,
-    blockhash: tx.blockhash,
-    fee: fee,
-    vin: vin,
-    vout: vout,
-    blockindex: 0
-  };
-  return res.render('tx', renderData);
 }
 /*
  *
@@ -263,22 +286,27 @@ router.get('/qr/:string', async (req, res) => {
   }
 });
 router.get('/ext/summary', async (req, res) => {
-  const difficulty = await lib.get_difficulty();
-  const hashrate = await lib.get_hashrate();
-  const connections = await lib.get_connectioncount();
-  const blockcount = await lib.get_blockcount();
-  const mempool = await lib.get_mempoolinfo();
-  const dbStats = await db.get_stats(settings.coin);
-  return res.send({ data: [{
-    difficulty: difficulty,
-    supply: lib.convert_to_xpi(dbStats.supply),
-    burned: lib.convert_to_xpi(dbStats.burned),
-    hashrate: hashrate,
-    // lastPrice: dbStats.last_price,
-    connections: connections,
-    blockcount: blockcount,
-    mempoolinfo: mempool
-  }]});
+  try {
+    const difficulty = await lib.get_difficulty();
+    const hashrate = await lib.get_hashrate();
+    const connections = await lib.get_connectioncount();
+    const blockcount = await lib.get_blockcount();
+    const mempool = await lib.get_mempoolinfo();
+    const dbStats = await db.get_stats(settings.coin);
+    return res.send({ data: [{
+      difficulty: difficulty,
+      supply: lib.convert_to_xpi(dbStats.supply),
+      burned: lib.convert_to_xpi(dbStats.burned),
+      hashrate: hashrate,
+      // lastPrice: dbStats.last_price,
+      connections: connections,
+      blockcount: blockcount,
+      mempoolinfo: mempool
+    }]});
+  } catch (e: any) {
+    console.log(`/ext/summary: ${e.message}`);
+    return res.send({ error: `failed to fetch summary data` });
+  }
 });
 router.post('/search', async (req, res) => {
   const search = String(req.body);
