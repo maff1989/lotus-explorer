@@ -125,8 +125,18 @@ const route_get_richlist = async (
   const dbDistribution = await db.get_distribution(dbRichlist, dbStats);
   return res.render('richlist', {
     active: 'richlist',
-    balance: dbRichlist.balance,
-    received: dbRichlist.received,
+    balance: dbRichlist.balance.map(doc => {
+      return {
+        ...doc,
+        balance: lib.convert_to_xpi(doc.balance)
+      };
+    }),
+    received: dbRichlist.received.map(doc => {
+      return {
+        ...doc,
+        received: lib.convert_to_xpi(doc.received)
+      };
+    }),
     stats: {
       ...dbStats,
       supply: lib.convert_to_xpi(dbStats.supply),

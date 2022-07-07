@@ -13,7 +13,7 @@
       - var count = 0
       each item in balance
         - count = count + 1
-        - var itemFixed = (parseInt(item.balance) / 1000000)
+        - var itemFixed = item.balance;
         - var itemFixedParts = itemFixed.toLocaleString('en',{'minimumFractionDigits':6,'maximumFractionDigits':6,'useGrouping':true}).split(".");
         - var percentage = (itemFixed / stats.supply) * 100;
         tr
