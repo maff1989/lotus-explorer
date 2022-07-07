@@ -622,8 +622,8 @@ export class Database {
     try {
       data.blocks = await Block.aggregate([
         { $sort: { height: -1 }},
-        { $skip: Number(start) },
-        { $limit: Number(length) }
+        { $skip: start },
+        { $limit: length }
       ]);
       data.count = await Block.find({}).count();
       return data;
@@ -646,8 +646,8 @@ export class Database {
       data.txs = await Tx.aggregate([
         { $match: { total: { $gte: min }}},
         { $sort: { blockindexx: -1 }},
-        { $skip: Number(start) },
-        { $limit: Number(length) }
+        { $skip: start },
+        { $limit: length }
       ]);
       data.count = await Tx.find({}).count();
       return data;
@@ -671,13 +671,13 @@ export class Database {
         { $match: { a_id: address }},
         { $sort: { blockindex: -1 }},
         //{ $sort: { amount: 1 }},
-        { $skip: Number(start) },
-        { $limit: Number(length) }
+        { $skip: start },
+        { $limit: length }
       ]);
       const aggResult = await AddressTx.aggregate([
         { $match: { a_id: address }},
         { $sort: { blockindex: -1 }},
-        { $skip: Number(start) },
+        { $skip: start },
         {
           $group: {
             _id: '',
