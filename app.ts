@@ -165,7 +165,7 @@ app.use('/ext/getlastblocksajax', async (req, res) => {
       draw: Boolean(params.draw),
     };
   };
-  let { start, length, draw } = converter(req.params);
+  let { start, length, draw } = converter(req.query);
   if (!length || isNaN(length) || length > settings.index.last_txs) {
     length = settings.index.last_blocks;
   }
@@ -199,11 +199,11 @@ app.use('/ext/getlasttxsajax/:min', async (req, res) => {
     return {
       start: Number(params.start),
       length: Number(params.length),
-      min: Number(params.min),
       draw: Boolean(params.draw),
     };
   };
-  let { start, length, min, draw } = converter(req.params);
+  let { start, length, draw } = converter(req.query);
+  let min = Number(req.params.min);
   if (!length || isNaN(length) || length > settings.index.last_txs) {
     length = settings.index.last_blocks;
   }
@@ -243,7 +243,7 @@ app.use('/ext/getaddresstxsajax/:address', async (req, res) => {
       draw: Boolean(params.draw),
     };
   };
-  let { start, length, draw } = converter(req.params);
+  let { start, length, draw } = converter(req.query);
   const { address }: { address: string } = req.params;
   if (!length || isNaN(length) || length > settings.index.last_txs) {
     length = settings.index.last_blocks;
