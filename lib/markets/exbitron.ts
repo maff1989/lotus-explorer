@@ -1,5 +1,7 @@
 import request from 'request-promise';
-const settings = require('./settings');
+import Settings from '../settings';
+const settings = new Settings();
+settings.reloadSettings();
 
 type Exchange = {
   Orders: {},
@@ -30,7 +32,7 @@ type ExchangeTrades = {
 
 const BASE_URL = 'https://www.exbitron.com/api/v2/peatio/public/markets/';
 const COIN = settings.coin;
-const EXCHANGE = settings.exchange;
+const EXCHANGE = settings.markets.exchange;
 
 export const get_data = async (settings: Exchange['Settings']) => {
     

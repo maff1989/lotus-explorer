@@ -6,6 +6,8 @@ import Settings from '../lib/settings';
 const settings = new Settings()
   , db = new Database();
 
+settings.reloadSettings();
+
 const main = async () => {
   // Initialize instance
   app.set('port', process.env.PORT || settings.port);

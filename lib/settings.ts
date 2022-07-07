@@ -4,10 +4,10 @@
 *
 * Refer to the settings.json.template file for more details
 */
-import * as fs from 'fs/promises';
+import * as fs from 'fs';
 import jsonminify from 'jsonminify';
 
-export default class {  
+export default class {
   //The app title, visible e.g. in the browser window
   title = "blockchain";
   //The url it will be accessed from
@@ -118,12 +118,12 @@ export default class {
   nethash_units = "G";
   labels = {};
 
-  reloadSettings = async () => {
+  reloadSettings = () => {
     // Discover where the settings file lives
     const settingsFilename = "./settings.json";  
     try {
       // read the settings
-      const settingsStr = (await fs.readFile(settingsFilename)).toString();
+      const settingsStr = fs.readFileSync(settingsFilename).toString();
       const settingsJsonminify = jsonminify(settingsStr).replace(",]","]").replace(",}","}");
       const settingsParsed = JSON.parse(settingsJsonminify);
       for (const i in settingsParsed) {
@@ -155,9 +155,5 @@ export default class {
     } catch (e: any) {
       return console.warn('Unable to find/load settings.json. Continuing using defaults!');
     }
-  };
-
-  constructor() {
-    this.reloadSettings();
   };
 };

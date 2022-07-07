@@ -100,6 +100,7 @@ const settings = new Settings()
   + `${settings.wallet.password}@`
   + `${settings.wallet.host}:`
   + `${settings.wallet.port}`);
+settings.reloadSettings();
 /**
  * Run command with params against Lotus RPC daemon
  * @param command - RPC command

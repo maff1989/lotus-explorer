@@ -21,6 +21,7 @@ import Tx from '../models/tx';
 
 const settings = new Settings()
   , lib = new Explorer.Explorer();
+settings.reloadSettings();
 /*
 set('useCreateIndex', true);
 set('useUnifiedTopology', true);

@@ -70,6 +70,7 @@ if (process.argv[2] == 'index') {
 const db = new Database();
 const lib = new Explorer();
 const settings = new Settings();
+settings.reloadSettings();
 
 const main = async () => {
   // exit if already running

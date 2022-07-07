@@ -4,6 +4,7 @@ import { connect, disconnect } from 'mongoose';
 const BLOCK_HEIGHT = 252648
 const lib = new Explorer();
 const settings = new Settings();
+settings.reloadSettings();
 const main = async () => {
   /**
    * RPC calls

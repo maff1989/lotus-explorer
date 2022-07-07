@@ -17,6 +17,7 @@ const settings = new Settings()
   , locale = require('../lib/locale')
   , db = new Database()
   , lib = new Explorer();
+settings.reloadSettings();
 /*
  *
  *      Handler Functions

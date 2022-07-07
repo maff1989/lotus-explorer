@@ -15,6 +15,7 @@ const settings = new Settings()
   , db = new Database()
   , lib = new Explorer()
   , locale = require('./lib/locale');
+settings.reloadSettings();
 const ajaxParamTypeConverter = (params: any) => {
   return {
     start: Number(params.start),
