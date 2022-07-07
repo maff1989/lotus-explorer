@@ -417,7 +417,7 @@ export class Database {
   async check_market(market: string): Promise<MarketDocument> {
     try {
       // returns either full document or null
-      return await Markets.findOne({ market: market });
+      return await Markets.findOne({ market: market }).lean();
     } catch (e: any) {
       return null;
     }
@@ -426,7 +426,7 @@ export class Database {
   async check_richlist(coin: string): Promise<RichlistDocument> {
     try {
       // returns either full document or null
-      return await Richlist.findOne({ coin: coin });
+      return await Richlist.findOne({ coin: coin }).lean();
     } catch (e: any) {
       return null;
     }
@@ -435,7 +435,7 @@ export class Database {
   async check_stats(coin: string): Promise<StatsDocument> {
     try {
       // returns either full document or null
-      return await Stats.findOne({ coin: coin });
+      return await Stats.findOne({ coin: coin }).lean();
     } catch (e: any) {
       return null;
     }
@@ -448,7 +448,7 @@ export class Database {
    */
   async get_address(hash: string): Promise<AddressDocument> {
     try {
-      return await Address.findOne({ a_id: hash });
+      return await Address.findOne({ a_id: hash }).lean();
     } catch (e: any) {
       throw new Error(`Database.get_address: ${e.message}`);
     }
@@ -456,7 +456,7 @@ export class Database {
 
   async get_block(height: number): Promise<BlockDocument> {
     try {
-      return await Block.findOne({ height: height });
+      return await Block.findOne({ height: height }).lean();
     } catch (e: any) {
       throw new Error(`Database.get_block: ${e.message}`);
     }
@@ -476,7 +476,7 @@ export class Database {
   // Polls the Charts db for latest aggregate data
   async get_charts(): Promise<ChartsDocument> {
     try {
-      return await Charts.findOne();
+      return await Charts.findOne().lean();
     } catch (e: any) {
       return null;
     }
@@ -543,7 +543,7 @@ export class Database {
 
   async get_market(market: string) {
     try {
-      return await Markets.findOne({ market: market });
+      return await Markets.findOne({ market: market }).lean();
     } catch (e: any) {
       return null;
     }
@@ -551,7 +551,7 @@ export class Database {
 
   async get_peer(address: string): Promise<PeerDocument> {
     try {
-      return await Peers.findOne({ address: address });
+      return await Peers.findOne({ address: address }).lean();
     } catch (e: any) {
       return null;
     }
@@ -559,7 +559,7 @@ export class Database {
 
   async get_peers(): Promise<PeerDocument[]> {
     try {
-      return await Peers.find({});
+      return await Peers.find({}).lean();
     } catch (e: any) {
       return null;
     }
@@ -567,7 +567,7 @@ export class Database {
   
   async get_richlist(coin: string): Promise<RichlistDocument> {
     try {
-      return await Richlist.findOne({ coin: coin });
+      return await Richlist.findOne({ coin: coin }).lean();
     } catch (e: any) {
       throw new Error(`Database.get_richlist: ${e.message}`);
     }    
@@ -575,7 +575,7 @@ export class Database {
   
   async get_stats(coin: string): Promise<StatsDocument> {
     try {
-      return await Stats.findOne({ coin: coin });;
+      return await Stats.findOne({ coin: coin }).lean();
     } catch (e: any) {
       return null;
     }
@@ -583,7 +583,7 @@ export class Database {
   
   async get_tx(txid: string): Promise<TransactionDocument> {
     try {
-      return await Tx.findOne({ txid: txid });
+      return await Tx.findOne({ txid: txid }).lean();
     } catch (e: any) {
       throw new Error(`Database.get_tx: ${e.message}`);
     }

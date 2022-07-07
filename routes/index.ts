@@ -84,13 +84,7 @@ const route_get_block = async (
       renderData.txs = await db.get_txs(txs);
       renderData.blockDocument = {
         height: height,
-        difficulty: dbBlock.difficulty,
-        fees: dbBlock.fees,
-        localeTimestamp: dbBlock.localeTimestamp,
-        minedby: dbBlock.minedby,
-        size: dbBlock.size,
-        timestamp: dbBlock.timestamp,
-        txcount: dbBlock.txcount,
+        ...dbBlock,
         burned: lib.convert_to_xpi(dbBlock.burned)
       };
       return res.render('block', renderData);
@@ -188,11 +182,11 @@ const route_get_tx = async (
   renderData.tx = {
     txid: tx.txid,
     size: tx.size,
+    timestamp: tx.time,
+    blockhash: tx.blockhash,
     fee: fee,
     vin: vin,
     vout: vout,
-    timestamp: tx.time,
-    blockhash: tx.blockhash,
     blockindex: 0
   };
   return res.render('tx', renderData);

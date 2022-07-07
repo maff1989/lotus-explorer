@@ -90,16 +90,7 @@ app.use('/ext/gettx/:txid', async (req, res) => {
     // process db tx
     const dbTx = await db.get_tx(txid);
     if (dbTx) {
-      renderData.tx = {
-        txid: dbTx.txid,
-        timestamp: dbTx.timestamp,
-        size: dbTx.size,
-        fee: dbTx.fee,
-        blockhash: dbTx.blockhash,
-        blockindex: dbTx.blockindex,
-        vin: dbTx.vin,
-        vout: dbTx.vout,
-      };
+      renderData.tx = dbTx;
       // get last block height from Stats db
       const stats = await db.get_stats(settings.coin);
       renderData.blockcount = stats.last;
@@ -120,11 +111,11 @@ app.use('/ext/gettx/:txid', async (req, res) => {
     renderData.tx = {
       txid: tx.txid,
       size: tx.size,
+      timestamp: tx.time,
+      blockhash: tx.blockhash,
       fee: fee,
       vin: vin,
       vout: vout,
-      timestamp: tx.time,
-      blockhash: tx.blockhash,
       blockindex: 0
     };
     return res.send(renderData);
