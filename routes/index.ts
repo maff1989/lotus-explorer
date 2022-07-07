@@ -167,10 +167,11 @@ const route_get_tx = async (
     return route_get_block(res, settings.genesis_block);
   }
   // process db tx
+  const { last: blockcount } = await db.get_stats(settings.coin);
+  renderData.blockcount = blockcount;
   const dbTx = await db.get_tx(txid);
   if (dbTx) {
     renderData.tx = dbTx;
-    renderData.blockcount = await lib.get_blockcount();
     return res.render('tx', renderData);
   }
   // check mempool for tx
@@ -184,7 +185,6 @@ const route_get_tx = async (
   const { vin } = await lib.prepare_vin(tx);
   const { vout } = await lib.prepare_vout(tx.vout);
   const fee = await lib.calculate_fee(vout, vin);
-  renderData.blockcount = await lib.get_blockcount();
   renderData.tx = {
     txid: tx.txid,
     size: tx.size,
