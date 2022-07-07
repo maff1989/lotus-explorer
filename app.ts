@@ -192,7 +192,98 @@ app.use('/ext/getlastblocksajax', async (req, res) => {
     console.log(`/ext/getlastblocksajax: ${e.message}`);
     return res.send({ error: `failed to get last blocks via AJAX` });
   }
-
+});
+app.use('/ext/getlasttxsajax/:min', async (req, res) => {
+  const rowData: Array<[number, string, string, number, number, string]> = [];
+  const converter = (params: any) => {
+    return {
+      start: Number(params.start),
+      length: Number(params.length),
+      min: Number(params.min),
+      draw: Boolean(params.draw),
+    };
+  };
+  let { start, length, min, draw } = converter(req.params);
+  if (!length || isNaN(length) || length > settings.index.last_txs) {
+    length = settings.index.last_blocks;
+  }
+  if (!start || isNaN(start) || start < 0) {
+    start = 0;
+  }
+  if (!min || isNaN(min) || min < 0) {
+    min = 0;
+  }
+  try {
+    const { txs, count } = await db.get_last_txs_ajax(start, length, min);
+    txs.forEach(tx => rowData.push([
+      tx.blockindex,
+      tx.blockhash,
+      tx.txid,
+      tx.vout.length,
+      tx.total,
+      new Date((tx.timestamp) * 1000).toUTCString()
+    ]));
+    return res.json({
+      draw,
+      data: rowData,
+      recordsTotal: count,
+      recordsFiltered: count,
+    });
+  } catch (e: any) {
+    console.log(`/ext/getlasttxsajax/${min}: ${e.message}`);
+    return res.send({ error: `failed to get last txs via AJAX` });
+  }
+});
+app.use('/ext/getaddresstxsajax/:address', async (req, res) => {
+  const rowData: Array<[string, string, number, number, number]> = [];
+  const converter = (params: any) => {
+    return {
+      start: Number(params.start),
+      length: Number(params.length),
+      draw: Boolean(params.draw),
+    };
+  };
+  let { start, length, draw } = converter(req.params);
+  const { address }: { address: string } = req.params;
+  if (!length || isNaN(length) || length > settings.index.last_txs) {
+    length = settings.index.last_blocks;
+  }
+  if (!start || isNaN(start) || start < 0) {
+    start = 0;
+  }
+  try {
+    const { txs, count } = await db.get_address_txs_ajax(address, start, length);
+    txs.forEach(tx => {
+      const value = { vin: 0, vout: 0 };
+      value.vin = tx.vin?.find(vin => vin.addresses == address)?.amount ?? 0;
+      value.vout = tx.vout?.find(vout => vout.addresses == address)?.amount ?? 0;
+      rowData.push([
+        new Date((tx.timestamp) * 1000).toUTCString(),
+        tx.txid,
+        value.vout,
+        value.vin,
+        tx.balance
+      ]);
+    });
+    return res.json({
+      draw,
+      data: rowData,
+      recordsTotal: count,
+      recordsFiltered: count,
+    });
+  } catch (e: any) {
+    console.log(`/ext/getaddresstxsajax/${address}: ${e.message}`);
+    return res.send({ error: `failed to get last address txs via AJAX` });
+  }
+});
+app.use('/ext/connections', async (req, res) => {
+  try {
+    const dbPeers = await db.get_peers();
+    return res.send({ data: dbPeers });
+  } catch (e: any) {
+    console.log(`/ext/connections: ${e.message}`);
+    return res.send({ error: `failed to get peers` });
+  }
 });
 
 // Locals
