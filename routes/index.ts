@@ -21,6 +21,11 @@ const db = new Database()
  *      Handler Functions
  * 
  */
+/**
+ * Render the main index page, optionally with a warning/error
+ * @param res - Response instance from Express router
+ * @param error - Error string to display, or null
+ */
 const route_get_index = async (
   res: Response,
   error: string
@@ -29,31 +34,161 @@ const route_get_index = async (
     ? res.render('index', { active: 'home', error: error, warning: locale.initial_index_alert })
     : res.render('index', { active: 'home', error: error, warning: null });
 };
-const route_get_address = async (
-  res: Response,
-  address: string
-): Promise<void> => {
+/*
+ *
+ *      Routes
+ * 
+ */
+const router = express.Router();
+router.get('/', async (req, res) => {
+  return route_get_index(res, null);
+});
+router.get('/info', async (req, res) => {
+  return res.render('info', {
+    active: 'info',
+    address: settings.address,
+    hashes: settings.api
+  });
+});
+router.get('/markets/:market', async (req, res) => {
+  const { market } = req.params;
+  // render market if it is enabled
+  if (!settings.markets.enabled.includes(market)) {
+    console.log(`/markets/${market}: Market ${market} not enabled`);
+    return route_get_index(res, `Market not found: ${market}`);
+  }
   try {
-    const dbAddress = await db.get_address(address);
-    return res.render('address', {
-      active: 'address',
-      address: dbAddress,
-      txs: []
+    const dbMarket = await db.get_market(market);
+    return res.render(`./markets/${market}`, {
+      active: 'markets',
+      marketdata: {
+        coin: settings.markets.coin,
+        exchange: settings.markets.exchange,
+        data: dbMarket,
+      },
+      market: market
     });
   } catch (e: any) {
-    console.log(`route_get_address: ${address}: ${e.message}`);
-    return route_get_index(res, `Address not found: ${address}`);
+    console.log(`/markets/${market}: ${e.message}`);
+    return route_get_index(res, `Market not found: ${market}`);
   }
-};
-const route_get_block = async (
-  res: Response,
-  blockhash: string
-): Promise<void> => {
+});
+router.get('/richlist', async (req, res) => {
+  if (!settings.display.richlist) {
+    return route_get_index(res, null);
+  }
+  try {
+    const dbStats = await db.get_stats(settings.coin);
+    const dbRichlist = await db.get_richlist(settings.coin);
+    const dbDistribution = await db.get_distribution(dbRichlist, dbStats);
+    return res.render('richlist', {
+      active: 'richlist',
+      balance: dbRichlist.balance.map(doc => {
+        return {
+          ...doc,
+          balance: lib.convert_to_xpi(doc.balance)
+        };
+      }),
+      received: dbRichlist.received.map(doc => {
+        return {
+          ...doc,
+          received: lib.convert_to_xpi(doc.received)
+        };
+      }),
+      stats: {
+        ...dbStats,
+        supply: lib.convert_to_xpi(dbStats.supply),
+        burned: lib.convert_to_xpi(dbStats.burned)
+      },
+      dista: dbDistribution.t_1_25,
+      distb: dbDistribution.t_26_50,
+      distc: dbDistribution.t_51_75,
+      distd: dbDistribution.t_76_100,
+      diste: dbDistribution.t_101plus,
+      show_dist: settings.richlist.distribution,
+      show_received: settings.richlist.received,
+      show_balance: settings.richlist.balance,
+    });
+  } catch (e: any) {
+    console.log(`/richlist: ${settings.coin}: ${e.message}`);
+    return route_get_index(res, `Richlist not found for coin ${settings.coin}`);
+  }
+});
+router.get('/charts', async (req, res) => {
+  if (!settings.display.charts) {
+    return route_get_index(res, null);
+  }
+  try {
+    const dbCharts = await db.get_charts();
+    return res.render('charts', {
+      active: 'charts',
+      ...dbCharts
+    });
+  } catch (e: any) {
+    console.log(`/charts: ${e.message}`);
+    return route_get_index(res, `Failed to render Charts page, please contact the site admin`);
+  }
+});
+router.get('/network', async (req, res) => {
+  return res.render('network', { active: 'network' });
+});
+router.get('/tx/:txid', async (req, res) => {
+  const { txid } = req.params;
+  const renderData: {
+    active: string,
+    tx: TransactionDocument,
+    confirmations: number,
+    blockcount: number
+  } = {
+    active: 'tx',
+    tx: null,
+    confirmations: settings.confirmations,
+    blockcount: null
+  };
+  try {
+    // process db tx
+    const { last: blockcount } = await db.get_stats(settings.coin);
+    renderData.blockcount = blockcount;
+    const dbTx = await db.get_tx(txid);
+    if (dbTx) {
+      renderData.tx = dbTx;
+      return res.render('tx', renderData);
+    }
+    // check mempool for tx
+    const mempool = await lib.get_rawmempool();
+    // if tx isn't there either, assume invalid
+    if (!mempool.includes(txid)) {
+      return route_get_index(res, `Transaction not found: ${txid}`);
+    }
+    // process mempool tx
+    const tx = await lib.get_rawtransaction(txid);
+    const { vin } = await lib.prepare_vin(tx);
+    const { vout } = await lib.prepare_vout(tx.vout);
+    const fee = await lib.calculate_fee(vout, vin);
+    renderData.tx = {
+      txid: tx.txid,
+      size: tx.size,
+      timestamp: tx.time,
+      blockhash: '-',
+      fee: fee,
+      vin: vin,
+      vout: vout,
+      blockindex: null
+    };
+    renderData.blockcount = -1;
+    return res.render('tx', renderData);
+  } catch (e: any) {
+    console.log(`/tx/${txid}: ${e.message}`);
+    return route_get_index(res, `Transaction not found: ${txid}`);
+  }
+});
+router.get('/block/:blockhash', async (req, res) => {
+  const { blockhash } = req.params;
   // process height
   const height = Number(blockhash);
   if (!isNaN(height)) {
     const hash = await lib.get_blockhash(height);
-    return res.redirect('/block/' + hash);
+    return res.redirect(`/block/${hash}`);
   }
   const renderData: {
     active: string,
@@ -91,188 +226,24 @@ const route_get_block = async (
         };
         return res.render('block', renderData);
       } catch (e: any) {
-        console.log(`route_get_block: ${blockhash}: ${e.message}`);
+        console.log(`/block/${blockhash}: ${e.message}`);
         return route_get_index(res, `Block not found: ${blockhash}`);
       }
   }
-
-};
-const route_get_charts = async (
-  res: Response
-): Promise<void> => {
-  try {
-    const dbCharts = await db.get_charts();
-    return res.render('charts', {
-      active: 'charts',
-      ...dbCharts
-    });
-  } catch (e: any) {
-    console.log(`route_get_charts: ${e.message}`);
-    return route_get_index(res, null);
-  }
-};
-const route_get_market = async (
-  res: Response,
-  market: string
-): Promise<void> => {
-  try {
-    const dbMarket = await db.get_market(market);
-    return res.render(`./markets/${market}`, {
-      active: 'markets',
-      marketdata: {
-        coin: settings.markets.coin,
-        exchange: settings.markets.exchange,
-        data: dbMarket,
-      },
-      market: market
-    });
-  } catch (e: any) {
-    console.log(`route_get_market: ${market}: ${e.message}`);
-    return route_get_index(res, `Market not found: ${market}`);
-  }
-};
-const route_get_richlist = async (
-  res: Response
-): Promise<void> => {
-  try {
-    const dbStats = await db.get_stats(settings.coin);
-    const dbRichlist = await db.get_richlist(settings.coin);
-    const dbDistribution = await db.get_distribution(dbRichlist, dbStats);
-    return res.render('richlist', {
-      active: 'richlist',
-      balance: dbRichlist.balance.map(doc => {
-        return {
-          ...doc,
-          balance: lib.convert_to_xpi(doc.balance)
-        };
-      }),
-      received: dbRichlist.received.map(doc => {
-        return {
-          ...doc,
-          received: lib.convert_to_xpi(doc.received)
-        };
-      }),
-      stats: {
-        ...dbStats,
-        supply: lib.convert_to_xpi(dbStats.supply),
-        burned: lib.convert_to_xpi(dbStats.burned)
-      },
-      dista: dbDistribution.t_1_25,
-      distb: dbDistribution.t_26_50,
-      distc: dbDistribution.t_51_75,
-      distd: dbDistribution.t_76_100,
-      diste: dbDistribution.t_101plus,
-      show_dist: settings.richlist.distribution,
-      show_received: settings.richlist.received,
-      show_balance: settings.richlist.balance,
-    });
-  } catch (e: any) {
-    console.log(`route_get_richlist: ${settings.coin}: ${e.message}`);
-    return route_get_index(res, `Richlist not found for coin ${settings.coin}`);
-  }
-};
-const route_get_tx = async (
-  res: Response,
-  txid: string
-): Promise<void> => {
-  const renderData: {
-    active: string,
-    tx: TransactionDocument,
-    confirmations: number,
-    blockcount: number
-  } = {
-    active: 'tx',
-    tx: null,
-    confirmations: settings.confirmations,
-    blockcount: null
-  };
-  // process genesis block
-  if (txid == settings.genesis_block) {
-    return route_get_block(res, settings.genesis_block);
-  }
-  try {
-    // process db tx
-    const { last: blockcount } = await db.get_stats(settings.coin);
-    renderData.blockcount = blockcount;
-    const dbTx = await db.get_tx(txid);
-    if (dbTx) {
-      renderData.tx = dbTx;
-      return res.render('tx', renderData);
-    }
-    // check mempool for tx
-    // if tx isn't there either, assume invalid
-    const mempool = await lib.get_rawmempool();
-    if (!mempool.includes(txid)) {
-      return route_get_index(res, `Transaction not found: ${txid}`);
-    }
-    // process mempool tx
-    const tx = await lib.get_rawtransaction(txid);
-    const { vin } = await lib.prepare_vin(tx);
-    const { vout } = await lib.prepare_vout(tx.vout);
-    const fee = await lib.calculate_fee(vout, vin);
-    renderData.tx = {
-      txid: tx.txid,
-      size: tx.size,
-      timestamp: tx.time,
-      blockhash: '-',
-      fee: fee,
-      vin: vin,
-      vout: vout,
-      blockindex: null
-    };
-    renderData.blockcount = -1;
-    return res.render('tx', renderData);
-  } catch (e: any) {
-    console.log(`route_get_tx: ${txid}: ${e.message}`);
-    return route_get_index(res, `Transaction not found: ${txid}`);
-  }
-}
-/*
- *
- *      Routes
- * 
- */
-const router = express.Router();
-router.get('/', async (req, res) => {
-  return route_get_index(res, null);
-});
-router.get('/info', async (req, res) => {
-  return res.render('info', {
-    active: 'info',
-    address: settings.address,
-    hashes: settings.api
-  });
-});
-router.get('/markets/:market', async (req, res) => {
-  const { market } = req.params;
-  // render market if it is enabled
-  return settings.markets.enabled.includes(market)
-    ? route_get_market(res, market)
-    : route_get_index(res, null);
-});
-router.get('/richlist', async (req, res) => {
-  if (!settings.display.richlist) {
-    return route_get_index(res, null);
-  }
-  return route_get_richlist(res);
-});
-router.get('/charts', async (req, res) => {
-  if (!settings.display.charts) {
-    return route_get_index(res, null);
-  }
-  return route_get_charts(res);
-});
-router.get('/network', async (req, res) => {
-  return res.render('network', { active: 'network' });
-});
-router.get('/tx/:txid', async (req, res) => {
-  return route_get_tx(res, req.params.txid);
-});
-router.get('/block/:hash', async (req, res) => {
-  return route_get_block(res, req.params.hash);
 });
 router.get('/address/:address', async (req, res) => {
-  return route_get_address(res, req.params.address);
+  const { address } = req.params;
+  try {
+    const dbAddress = await db.get_address(address);
+    return res.render('address', {
+      active: 'address',
+      address: dbAddress,
+      txs: []
+    });
+  } catch (e: any) {
+    console.log(`route_get_address: ${address}: ${e.message}`);
+    return route_get_index(res, `Address not found: ${address}`);
+  }
 });
 router.get('/qr/:string', async (req, res) => {
   const { string } = req.params;
