@@ -9,11 +9,11 @@ import router from './routes';
 import { Explorer, TransactionDocument } from './lib/explorer';
 import { Database } from './lib/database';
 import settings from './lib/settings';
+import locale from './lib/locale';
 
 const package_metadata = require('./package.json')
   , db = new Database()
-  , lib = new Explorer()
-  , locale = require('./lib/locale');
+  , lib = new Explorer();
 const ajaxParamTypeConverter = (params: any) => {
   return {
     start: Number(params.start),

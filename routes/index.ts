@@ -12,9 +12,9 @@ import {
   BlockInfo
 } from '../lib/explorer';
 import settings from '../lib/settings';
+import locale from '../lib/locale';
 
-const locale = require('../lib/locale')
-  , db = new Database()
+const db = new Database()
   , lib = new Explorer();
 /*
  *
