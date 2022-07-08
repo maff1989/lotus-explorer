@@ -134,22 +134,6 @@ class Settings {
         }
         // we know this setting, so we overwrite it
         if (this[i] !== undefined) {
-          // 1.6.2 -> 1.7.X we switched to a new coin RPC with different auth methods
-          // This check uses old .user and .pass config strings if they exist, and .username, .password don't.
-          if (i == 'wallet') {
-            if (
-              !settingsParsed.wallet.hasOwnProperty('username')
-              && settingsParsed.wallet.hasOwnProperty('user')
-            ) {
-              settingsParsed.wallet.username = settingsParsed.wallet.user;
-            }
-            if (
-              !settingsParsed.wallet.hasOwnProperty('password')
-              && settingsParsed.wallet.hasOwnProperty('pass')
-            ) {
-              settingsParsed.wallet.password = settingsParsed.wallet.pass;
-            }
-          }
           this[i] = settingsParsed[i];
         }
       }
