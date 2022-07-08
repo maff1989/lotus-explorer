@@ -20,7 +20,7 @@ do {
     $socket->recvMulti();
     //print(d()." Message: ".json_encode($msg)."\r\n");
     d("New block detected, syncing lotus-explorer db...");
-    exec("node scripts/sync.js index update", $output, $status);
+    exec("ts-node scripts/sync.ts index update", $output, $status);
     if($status !== 0) {
       d("Error: '{$on_message}' failed: {$output}");
     }
