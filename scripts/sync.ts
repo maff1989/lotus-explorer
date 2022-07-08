@@ -133,7 +133,7 @@ const main = async () => {
             console.log("update_richlist (received) complete");
             await db.update_richlist('balance');
             console.log("update_richlist (balance) complete");
-            await db.update_stats(settings.coin);
+            await db.update_stats(settings.coin, blockcount);
             console.log("update_stats complete");
             console.log('reindex complete (block: %s)', blockcount);
             break;
@@ -149,7 +149,7 @@ const main = async () => {
             console.log("update_richlist (received) complete");
             await db.update_richlist('balance');
             console.log("update_richlist (balance) complete");
-            await db.update_stats(settings.coin);
+            await db.update_stats(settings.coin, blockcount);
             console.log("update_stats complete");
             console.log('update complete (block: %s)', blockcount);
             break;

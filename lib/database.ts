@@ -890,16 +890,6 @@ export class Database {
     startBlockHeight: number,
     endBlockHeight: number
   ): Promise<void> {
-    /*
-    // return if locked
-    if (await is_locked('db_index')) {
-      return console.log('db_index lock file exists...');
-    }
-    // return if cannot create lock
-    if (!(await create_lock('db_index'))) {
-      return console.log('failed to create lock for db_index');
-    }
-    */
     const counter = { currentBlockHeight: startBlockHeight };
     while (counter.currentBlockHeight <= endBlockHeight) {
       let blockBurned = 0;
@@ -914,30 +904,28 @@ export class Database {
         }
         // save block
         await save_block(block, blockBurned);
-        console.log('-- Block %s saved', block.height);
+        console.log('%s: block saved', block.height);
       } catch (e: any) {
         throw new Error(`update_tx_db: ${e.message}`);
       }
       counter.currentBlockHeight++;
     }
-
-    // update Stats collection
-    try {
-      await Stats.updateOne({ coin: coin }, { last: endBlockHeight });
-    } catch (e: any) {
-      throw new Error(`update_tx_db: Stats.updateOne: ${e.message}`);
-    }
-    // await remove_lock('db_index');
   };
 
-  async update_stats(coin: string): Promise<void> {
-    const count = await lib.get_blockcount();
+  async update_stats(coin: string, blockcount: number): Promise<void> {
     const supply = await lib.get_supply();
     const burned = await lib.get_burned_supply();
     const connections = await lib.get_connectioncount();
     try {
       await Stats.findOneAndUpdate({ coin: coin }, {
-        $set: { coin, count, supply, burned, connections }
+        $set: {
+          last: blockcount,
+          count: blockcount,
+          coin,
+          supply,
+          burned,
+          connections
+        }
       }, {
         // return new, updated document
         new: true
