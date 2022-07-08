@@ -177,7 +177,7 @@ const route_get_tx = async (
 ): Promise<void> => {
   const renderData: {
     active: string,
-    tx: TransactionDocument | RawTransaction,
+    tx: TransactionDocument,
     confirmations: number,
     blockcount: number
   } = {
@@ -213,13 +213,14 @@ const route_get_tx = async (
     renderData.tx = {
       txid: tx.txid,
       size: tx.size,
-      timestamp: tx.time,
-      blockhash: tx.blockhash,
+      timestamp: (tx.time / 1000), // convert to ms
+      blockhash: '-',
       fee: fee,
       vin: vin,
       vout: vout,
-      blockindex: 0
+      blockindex: null
     };
+    renderData.blockcount = -1;
     return res.render('tx', renderData);
   } catch (e: any) {
     console.log(`route_get_tx: ${txid}: ${e.message}`);
