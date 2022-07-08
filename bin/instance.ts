@@ -2,11 +2,9 @@
 import app from '../app';
 import debug from 'debug';
 import { Database } from '../lib/database';
-import Settings from '../lib/settings';
-const settings = new Settings()
-  , db = new Database();
+import settings from '../lib/settings';
+const db = new Database();
 
-settings.reloadSettings();
 
 const main = async () => {
   // Initialize instance

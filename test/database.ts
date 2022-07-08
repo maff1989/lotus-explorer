@@ -1,6 +1,6 @@
 import { Database, is_locked } from '../lib/database';
 import { Explorer } from '../lib/explorer';
-import Settings from '../lib/settings';
+import settings from '../lib/settings';
 
 /*
  *
@@ -9,8 +9,6 @@ import Settings from '../lib/settings';
  */
 const db = new Database();
 const lib = new Explorer();
-const settings = new Settings();
-settings.reloadSettings();
 const address = 'lotus_16PSJMPL9PB7v6md8mbnHsQAZC1RXEs92uZFRRcWq';
 const height = 123456;
 /*

@@ -11,13 +11,11 @@ import {
   TransactionDocument,
   BlockInfo
 } from '../lib/explorer';
-import Settings from '../lib/settings';
+import settings from '../lib/settings';
 
-const settings = new Settings()
-  , locale = require('../lib/locale')
+const locale = require('../lib/locale')
   , db = new Database()
   , lib = new Explorer();
-settings.reloadSettings();
 /*
  *
  *      Handler Functions

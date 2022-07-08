@@ -1,10 +1,8 @@
 import { Explorer } from '../lib/explorer';
-import Settings from '../lib/settings';
+import settings from '../lib/settings';
 import { connect, disconnect } from 'mongoose';
 const BLOCK_HEIGHT = 252648
 const lib = new Explorer();
-const settings = new Settings();
-settings.reloadSettings();
 const main = async () => {
   /**
    * RPC calls

@@ -7,7 +7,7 @@
 import * as fs from 'fs';
 import jsonminify from 'jsonminify';
 
-export default class {
+class Settings {
   //The app title, visible e.g. in the browser window
   title = "blockchain";
   //The url it will be accessed from
@@ -34,7 +34,8 @@ export default class {
     "port" : 27017
   };
   //This setting is passed to the wallet
-  wallet = { "host" : "127.0.0.1",
+  wallet = {
+    "host" : "127.0.0.1",
     "port" : 8669,
     "username" : "bitcoinrpc",
     "password" : "password"
@@ -157,3 +158,7 @@ export default class {
     }
   };
 };
+const settings = new Settings();
+settings.reloadSettings();
+
+export default settings;
