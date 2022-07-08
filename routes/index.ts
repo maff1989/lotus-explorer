@@ -213,7 +213,7 @@ const route_get_tx = async (
     renderData.tx = {
       txid: tx.txid,
       size: tx.size,
-      timestamp: (tx.time / 1000), // convert to ms
+      timestamp: tx.time,
       blockhash: '-',
       fee: fee,
       vin: vin,
