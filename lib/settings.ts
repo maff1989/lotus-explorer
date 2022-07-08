@@ -119,7 +119,7 @@ class Settings {
   nethash_units = "G";
   labels = {};
 
-  reloadSettings = () => {
+  reload = () => {
     // Discover where the settings file lives
     const settingsFilename = "./settings.json";  
     try {
@@ -143,6 +143,6 @@ class Settings {
   };
 };
 const settings = new Settings();
-settings.reloadSettings();
+settings.reload();
 
 export default settings;
