@@ -321,13 +321,13 @@ router.post('/search', async (req, res) => {
   // process block/tx
   if (search.length == 64) {
     const block = await lib.get_block(search);
-    if (block) {
-      return res.redirect(`/block/${search}`);
+    if (block.hash) {
+      return res.redirect(`/block/${block.hash}`);
     }
     // check db/mempool for tx
     const dbTx = await db.get_tx(search);
     const mempool = await lib.get_rawmempool();
-    if (dbTx || mempool.includes(search)) {
+    if (dbTx.txid || mempool.includes(search)) {
       return res.redirect(`/tx/${search}`);;
     }
   }
