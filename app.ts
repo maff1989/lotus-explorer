@@ -184,40 +184,6 @@ app.use('/ext/getlastblocksajax', async (req, res) => {
     return res.send({ error: `failed to get last blocks via AJAX` });
   }
 });
-app.use('/ext/getlasttxsajax/:min', async (req, res) => {
-  const rowData: Array<[number, string, string, number, number, string]> = [];
-  let { start, length, draw } = ajaxParamTypeConverter(req.query);
-  let min = Number(req.params.min);
-  if (!length || isNaN(length) || length > settings.index.last_txs) {
-    length = settings.index.last_blocks;
-  }
-  if (!start || isNaN(start) || start < 0) {
-    start = 0;
-  }
-  if (!min || isNaN(min) || min < 0) {
-    min = 0;
-  }
-  try {
-    const { txs, count } = await db.get_last_txs_ajax(start, length, min);
-    txs.forEach(tx => rowData.push([
-      tx.blockindex,
-      tx.blockhash,
-      tx.txid,
-      tx.vout.length,
-      tx.total,
-      new Date((tx.timestamp) * 1000).toUTCString()
-    ]));
-    return res.json({
-      draw,
-      data: rowData,
-      recordsTotal: count,
-      recordsFiltered: count,
-    });
-  } catch (e: any) {
-    console.log(`/ext/getlasttxsajax/${min}: ${e.message}`);
-    return res.send({ error: `failed to get last txs via AJAX` });
-  }
-});
 app.use('/ext/getaddresstxsajax/:address', async (req, res) => {
   const rowData: Array<[string, string, number, number, number]> = [];
   let { start, length, draw } = ajaxParamTypeConverter(req.query);

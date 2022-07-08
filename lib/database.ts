@@ -633,30 +633,6 @@ export class Database {
     }
   };
 
-  async get_last_txs_ajax(
-    start: number,
-    length: number,
-    min: number
-  ) {
-    const data: {
-      txs: TransactionDocument[],
-      count: number
-    } = { txs: [], count: 0 };
-    try {
-      data.txs = await Tx.aggregate([
-        { $match: { total: { $gte: min }}},
-        { $sort: { blockindexx: -1 }},
-        { $skip: start },
-        { $limit: length }
-      ]);
-      data.count = await Tx.find({}).count();
-      return data;
-    } catch (e: any) {
-      console.log(`get_last_txs_ajax: failed to poll txs collection: ${e.message}`);
-      return null;
-    }
-  };
-
   async get_address_txs_ajax(
     address: string,
     start: number,
