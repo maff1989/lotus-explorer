@@ -1,10 +1,11 @@
 import { Schema, model } from 'mongoose';
-const TxSchema = new Schema({
+import { TransactionDocument } from '../lib/explorer';
+const TxSchema = new Schema<TransactionDocument>({
   txid: { type: String, lowercase: true, unique: true, index: true},
   size: { type: Number, default: 0 },
   fee: { type: Number, default: 0 },
-  vin: { type: Array, default: [] },
-  vout: { type: Array, default: [] },
+  vin: { default: [] },
+  vout: { default: [] },
   total: { type: Number, default: 0, index: true },
   timestamp: { type: Number, default: 0, index: true },
   localeTimestamp: { type: String }, // for jqPlot charts

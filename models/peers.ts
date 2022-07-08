@@ -1,6 +1,7 @@
 import { Schema, model } from 'mongoose';
+import { PeerDocument } from '../lib/database';
 export default model('Peers',
-  new Schema({
+  new Schema<PeerDocument>({
     createdAt: { type: Date, expires: 86400, default: Date.now()},
     address: { type: String, default: "", index: true },
     port: { type: String, default: "" },

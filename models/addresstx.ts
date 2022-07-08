@@ -1,5 +1,6 @@
 import { Schema, model } from 'mongoose';
-const AddressTXSchema = new Schema({
+import { AddressTransactionDocument } from '../lib/database';
+const AddressTXSchema = new Schema<AddressTransactionDocument>({
   a_id: { type: String, index: true},
   blockindex: {type: Number, default: 0, index: true},
   txid: { type: String, lowercase: true, index: true},

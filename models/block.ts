@@ -1,5 +1,6 @@
 import { Schema, model } from 'mongoose';
-const BlockSchema = new Schema({
+import { BlockDocument } from '../lib/explorer';
+const BlockSchema = new Schema<BlockDocument>({
   height: {type: Number, default: 0, unique: true, index: true},
   //hash: { type: String, index: true },
   minedby: { type: String, default: "", index: true },

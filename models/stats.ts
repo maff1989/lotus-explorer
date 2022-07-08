@@ -1,6 +1,7 @@
 import { Schema, model } from 'mongoose';
+import { StatsDocument } from '../lib/database';
 export default model('coinstats',
-  new Schema({
+  new Schema<StatsDocument>({
     coin: { type: String },
     count: { type: Number, default: 1 },
     last: { type: Number, default: 1 },
