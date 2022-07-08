@@ -1,7 +1,5 @@
 import request from 'request-promise';
-import Settings from '../settings';
-const settings = new Settings();
-settings.reloadSettings();
+import settings from '../settings';
 
 type Exchange = {
   Orders: {},
