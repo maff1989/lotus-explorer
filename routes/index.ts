@@ -84,6 +84,7 @@ const route_get_block = async (
         const stats = await db.get_stats(settings.coin);
         renderData.txs = await db.get_txs(block.tx);
         renderData.blockcount = stats.last;
+        renderData.blockInfo = block;
         renderData.blockDocument = {
           ...dbBlock,
           burned: lib.convert_to_xpi(dbBlock.burned)
