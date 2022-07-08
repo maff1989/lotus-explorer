@@ -310,7 +310,7 @@ router.get('/ext/summary', async (req, res) => {
   }
 });
 router.post('/search', async (req, res) => {
-  const search = String(req.body.search);
+  const search = String(req.body.search).trim();
   // process block height
   const height = Number(search);
   if (!isNaN(height)) {
