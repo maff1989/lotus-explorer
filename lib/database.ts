@@ -31,39 +31,35 @@ type BlockInfo = Explorer.BlockInfo;
 type BlockDocument = Explorer.BlockDocument;
 type TransactionDocument = Explorer.TransactionDocument;
 type AddressDocument = Explorer.AddressDocument;
-type AddressTransactionDocument = {
+export type AddressTransactionDocument = {
   a_id: string,
   blockindex: number,
   txid: string,
   amount: number,
 };
-type Charts = 
-  // Transactions
-  'txsDay'
-  | 'txsWeek'
-  | 'txsMonth'
-  | 'txsQuarter'
-  // Difficulty
-  | 'difficultyWeek'
-  | 'difficultyMonth'
-  | 'difficultyQuarter'
-  | 'difficultyYear'
-  // Block reward distribution
-  | 'miningDistDay'
-  | 'miningDistWeek'
-  | 'miningDistMonth'
-  // Counters
-  | 'txsDay_count'
-  | 'txsWeek_count'
-  | 'txsMonth_count'
-  | 'txsQuarter_count'
-  | 'totalMinersDay'
-  | 'totalMinersWeek'
-  | 'totalMinersMonth';
-type ChartsDocument = {
-  [type in Charts]: Array<(string | number)[]> | number
+export type ChartsPlot = Array<(string | number)[]>;
+export type ChartsDocument = {
+  txsDay: ChartsPlot,
+  txsWeek: ChartsPlot,
+  txsMonth: ChartsPlot,
+  txsQuarter: ChartsPlot,
+  txsAll: ChartsPlot,
+  difficultyWeek: ChartsPlot,
+  difficultyMonth: ChartsPlot,
+  difficultyQuarter: ChartsPlot,
+  difficultyYear: ChartsPlot,
+  miningDistDay: ChartsPlot,
+  miningDistWeek: ChartsPlot,
+  miningDistMonth: ChartsPlot,
+  txsDay_count: number,
+  txsWeek_count: number,
+  txsMonth_count: number,
+  txsQuarter_count: number,
+  totalMinersDay: number,
+  totalMinersWeek: number,
+  totalMinersMonth: number,
 };
-type MarketDocument = {
+export type MarketDocument = {
   market: string,
   summary: object,
   //chartData: Array,
@@ -71,7 +67,7 @@ type MarketDocument = {
   //sells: Array,
   //history: Array
 };
-type PeerDocument = {
+export type PeerDocument = {
   createdAt?: Date,
   address: string,
   port: string,
@@ -80,12 +76,12 @@ type PeerDocument = {
   country: string,
   country_code: string,
 };
-type RichlistDocument = {
+export type RichlistDocument = {
   coin: string,
   received: AddressDocument[],
   balance: AddressDocument[],
 };
-type StatsDocument = {
+export type StatsDocument = {
   coin: string,
   count: number,
   last: number,
