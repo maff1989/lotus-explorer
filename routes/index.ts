@@ -310,7 +310,13 @@ router.get('/ext/summary', async (req, res) => {
   }
 });
 router.post('/search', async (req, res) => {
-  const search = String(req.body);
+  const search = String(req.body.search);
+  // process block height
+  const height = Number(search);
+  if (!isNaN(height)) {
+    const blockhash = await lib.get_blockhash(height);
+    return res.redirect(`/block/${blockhash}`);
+  }
   // process block/tx
   if (search.length == 64) {
     const block = await lib.get_block(search);
@@ -323,6 +329,11 @@ router.post('/search', async (req, res) => {
     if (dbTx || mempool.includes(search)) {
       return res.redirect(`/tx/${search}`);;
     }
+  }
+  // process address
+  const address = await db.get_address(search);
+  if (address) {
+    return res.redirect(`/address/${address.a_id}`);
   }
   return route_get_index(res, locale.ex_search_error + search);
 });
