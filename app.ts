@@ -6,8 +6,9 @@ import logger from 'morgan';
 import bodyParser from 'body-parser';
 import cookieParser from 'cookie-parser';
 import router from './routes';
-import { Explorer, TransactionDocument } from './lib/explorer';
+import { Explorer } from './lib/explorer';
 import { Database } from './lib/database';
+import * as Tx from './models/tx';
 import settings from './lib/settings';
 import locale from './lib/locale';
 
@@ -84,7 +85,7 @@ app.use('/ext/gettx/:txid', async (req, res) => {
   const { txid } = req.params;
   const renderData: {
     active: string,
-    tx: TransactionDocument,
+    tx: Tx.Document,
     confirmations: number,
     blockcount: number
   } = {

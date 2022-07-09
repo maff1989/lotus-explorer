@@ -1,7 +1,14 @@
 import { Schema, model } from 'mongoose';
-import { MarketDocument } from '../lib/database';
-export default model('Markets',
-  new Schema<MarketDocument>({
+export type Document = {
+  market: string,
+  summary: object,
+  //chartData: Array,
+  //buys: Array,
+  //sells: Array,
+  //history: Array
+};
+export const Model = model('Markets',
+  new Schema<Document>({
     market: { type: String, index: true },
     summary: { type: Object, default: {} },
     //chartdata: { type: Array, default: [] },

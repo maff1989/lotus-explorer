@@ -9,15 +9,15 @@ import settings from './settings';
 import {
   getChartsDifficultyAggregation,
 } from './util';
-import Address from '../models/address';
-import AddressTx from '../models/addresstx';
-import Block from '../models/block';
-import Charts from '../models/charts';
-import Markets from '../models/markets';
-import Peers from '../models/peers';
-import Richlist from '../models/richlist';
-import Stats from '../models/stats';
-import Tx from '../models/tx';
+import * as Address from '../models/address';
+import * as AddressTx from '../models/addresstx';
+import * as Block from '../models/block';
+import * as Charts from '../models/charts';
+import * as Markets from '../models/markets';
+import * as Peers from '../models/peers';
+import * as Richlist from '../models/richlist';
+import * as Stats from '../models/stats';
+import * as Tx from '../models/tx';
 
 const lib = new Explorer.Explorer();
 /*
@@ -27,68 +27,6 @@ set('useNewUrlParser', true);
 set('useFindAndModify', false);
 */
 
-type BlockInfo = Explorer.BlockInfo;
-type BlockDocument = Explorer.BlockDocument;
-type TransactionDocument = Explorer.TransactionDocument;
-type AddressDocument = Explorer.AddressDocument;
-export type AddressTransactionDocument = {
-  a_id: string,
-  blockindex: number,
-  txid: string,
-  amount: number,
-};
-export type ChartsPlot = Array<(string | number)[]>;
-export type ChartsDocument = {
-  txsDay: ChartsPlot,
-  txsWeek: ChartsPlot,
-  txsMonth: ChartsPlot,
-  txsQuarter: ChartsPlot,
-  txsAll: ChartsPlot,
-  difficultyWeek: ChartsPlot,
-  difficultyMonth: ChartsPlot,
-  difficultyQuarter: ChartsPlot,
-  difficultyYear: ChartsPlot,
-  miningDistDay: ChartsPlot,
-  miningDistWeek: ChartsPlot,
-  miningDistMonth: ChartsPlot,
-  txsDay_count: number,
-  txsWeek_count: number,
-  txsMonth_count: number,
-  txsQuarter_count: number,
-  totalMinersDay: number,
-  totalMinersWeek: number,
-  totalMinersMonth: number,
-};
-export type MarketDocument = {
-  market: string,
-  summary: object,
-  //chartData: Array,
-  //buys: Array,
-  //sells: Array,
-  //history: Array
-};
-export type PeerDocument = {
-  createdAt?: Date,
-  address: string,
-  port: string,
-  protocol: string,
-  version: string,
-  country: string,
-  country_code: string,
-};
-export type RichlistDocument = {
-  coin: string,
-  received: AddressDocument[],
-  balance: AddressDocument[],
-};
-export type StatsDocument = {
-  coin: string,
-  count: number,
-  last: number,
-  supply: number,
-  burned: number,
-  connections: number,
-};
 type SupplyDistributionTier =
   't_1_25'
   | 't_26_50'
@@ -154,7 +92,7 @@ const save_tx = async (txid: string, height: number) => {
     }
   }
   // save Tx
-  const newTx = new Tx({
+  const newTx = new Tx.Model({
     txid: tx.txid,
     vin,
     vout,
@@ -174,7 +112,7 @@ const save_tx = async (txid: string, height: number) => {
   return { burned };
 };
 const save_block = async (
-  block: BlockInfo,
+  block: Explorer.BlockInfo,
   txburned: number
 ): Promise<void> => {
   const { blockFees, blockFeesBurned } = await lib.get_block_fees(block.height);
@@ -183,7 +121,7 @@ const save_block = async (
   const coinbaseTx = await lib.get_rawtransaction(block.tx[0]);
   const miner = coinbaseTx.vout[1].scriptPubKey.addresses[0];
   // save block
-  const newBlock = new Block({
+  const newBlock = new Block.Model({
     height: block.height,
     minedby: miner,
     //hash: block.hash,
@@ -234,7 +172,7 @@ const update_address = async (
     }
   }
   try {
-    await Address.findOneAndUpdate(
+    await Address.Model.findOneAndUpdate(
       { a_id: hash },
       { $inc: addr_inc },
       { new: true, upsert: true },
@@ -244,7 +182,7 @@ const update_address = async (
   }
   if (hash != 'coinbase') {
     try {
-      await AddressTx.findOneAndUpdate(
+      await AddressTx.Model.findOneAndUpdate(
         { a_id: hash, txid: txid },
         { $inc: {
           amount: addr_inc.balance
@@ -343,36 +281,36 @@ export class Database {
   async create_market(
     coin: string,
     market: string
-  ): Promise<MarketDocument> {
+  ): Promise<Markets.Document> {
     try {
-      const create = new Markets({ coin, market });
+      const create = new Markets.Model({ coin, market });
       await create.save();
     } catch (e: any) {
       return null;
     }
   };
   
-  async create_peer(params: PeerDocument): Promise<PeerDocument> {
+  async create_peer(params: Peers.Document): Promise<Peers.Document> {
     try {
-      const peer = new Peers(params);
+      const peer = new Peers.Model(params);
       return await peer.save();
     } catch (e: any) {
       return null;
     }
   };
 
-  async create_richlist(coin: string): Promise<RichlistDocument> {
+  async create_richlist(coin: string): Promise<Richlist.Document> {
     try {
-      const richlist = new Richlist({ coin: coin, received: [], balance: [] });
+      const richlist = new Richlist.Model({ coin: coin, received: [], balance: [] });
       return await richlist.save();
     } catch (e: any) {
       return null;
     }
   };
 
-  async create_stats(coin: string): Promise<StatsDocument> {
+  async create_stats(coin: string): Promise<Stats.Document> {
     try {
-      const create = new Stats({
+      const create = new Stats.Model({
         coin: coin,
         count: 0,
         last: 0,
@@ -387,7 +325,7 @@ export class Database {
     }
   };
 
-  async create_txs(block: BlockInfo): Promise<boolean> {
+  async create_txs(block: Explorer.BlockInfo): Promise<boolean> {
     /*
     if (await is_locked('db_index')) {
       console.log('db_index lock file exists...');
@@ -410,28 +348,28 @@ export class Database {
    *    Check Database Entries
    *
    */
-  async check_market(market: string): Promise<MarketDocument> {
+  async check_market(market: string): Promise<Markets.Document> {
     try {
       // returns either full document or null
-      return await Markets.findOne({ market: market }).lean();
+      return await Markets.Model.findOne({ market: market }).lean();
     } catch (e: any) {
       return null;
     }
   };
 
-  async check_richlist(coin: string): Promise<RichlistDocument> {
+  async check_richlist(coin: string): Promise<Richlist.Document> {
     try {
       // returns either full document or null
-      return await Richlist.findOne({ coin: coin }).lean();
+      return await Richlist.Model.findOne({ coin: coin }).lean();
     } catch (e: any) {
       return null;
     }
   };
 
-  async check_stats(coin: string): Promise<StatsDocument> {
+  async check_stats(coin: string): Promise<Stats.Document> {
     try {
       // returns either full document or null
-      return await Stats.findOne({ coin: coin }).lean();
+      return await Stats.Model.findOne({ coin: coin }).lean();
     } catch (e: any) {
       return null;
     }
@@ -442,45 +380,45 @@ export class Database {
    *    Get Database Entries
    * 
    */
-  async get_address(hash: string): Promise<AddressDocument> {
+  async get_address(hash: string): Promise<Address.Document> {
     try {
-      return await Address.findOne({ a_id: hash }).lean();
+      return await Address.Model.findOne({ a_id: hash }).lean();
     } catch (e: any) {
       throw new Error(`Database.get_address: ${e.message}`);
     }
   };
 
-  async get_block(height: number): Promise<BlockDocument> {
+  async get_block(height: number): Promise<Block.Document> {
     try {
-      return await Block.findOne({ height: height }).lean();
+      return await Block.Model.findOne({ height: height }).lean();
     } catch (e: any) {
       throw new Error(`Database.get_block: ${e.message}`);
     }
   };
 
-  async get_latest_block(): Promise<BlockDocument[]> {
+  async get_latest_block(): Promise<Block.Document> {
     try {
-      return await Block.aggregate([
-        { $sort: { timestamp: -1 }},
-        { $limit: 1 }
-      ]);
+      const result = await Block.Model.find()
+        .sort({ timestamp: -1 })
+        .limit(1);
+      return <Block.Document>result.pop();
     } catch (e: any) {
       throw new Error(`Database.get_latest_block: ${e.message}`);
     }
   };
 
   // Polls the Charts db for latest aggregate data
-  async get_charts(): Promise<ChartsDocument> {
+  async get_charts(): Promise<Charts.Document> {
     try {
-      return await Charts.findOne().lean();
+      return await Charts.Model.findOne().lean();
     } catch (e: any) {
       return null;
     }
   };
 
   async get_distribution(
-    richlist: RichlistDocument,
-    stats: StatsDocument
+    richlist: Richlist.Document,
+    stats: Stats.Document
   ): Promise<SupplyDistribution> {
     const distribution = {
       t_1_25: { percent: 0, total: 0 },
@@ -539,54 +477,54 @@ export class Database {
 
   async get_market(market: string) {
     try {
-      return await Markets.findOne({ market: market }).lean();
+      return await Markets.Model.findOne({ market: market }).lean();
     } catch (e: any) {
       return null;
     }
   };
 
-  async get_peer(address: string): Promise<PeerDocument> {
+  async get_peer(address: string): Promise<Peers.Document> {
     try {
-      return await Peers.findOne({ address: address }).lean();
+      return await Peers.Model.findOne({ address: address }).lean();
     } catch (e: any) {
       return null;
     }
   };
 
-  async get_peers(): Promise<PeerDocument[]> {
+  async get_peers(): Promise<Peers.Document[]> {
     try {
-      return await Peers.find({}).lean();
+      return await Peers.Model.find({}).lean();
     } catch (e: any) {
       return null;
     }
   }
   
-  async get_richlist(coin: string): Promise<RichlistDocument> {
+  async get_richlist(coin: string): Promise<Richlist.Document> {
     try {
-      return await Richlist.findOne({ coin: coin }).lean();
+      return await Richlist.Model.findOne({ coin: coin }).lean();
     } catch (e: any) {
       throw new Error(`Database.get_richlist: ${e.message}`);
     }    
   };
   
-  async get_stats(coin: string): Promise<StatsDocument> {
+  async get_stats(coin: string): Promise<Stats.Document> {
     try {
-      return await Stats.findOne({ coin: coin }).lean();
+      return await Stats.Model.findOne({ coin: coin }).lean();
     } catch (e: any) {
       return null;
     }
   };
   
-  async get_tx(txid: string): Promise<TransactionDocument> {
+  async get_tx(txid: string): Promise<Tx.Document> {
     try {
-      return await Tx.findOne({ txid: txid }).lean();
+      return await Tx.Model.findOne({ txid: txid }).lean();
     } catch (e: any) {
       throw new Error(`Database.get_tx: ${e.message}`);
     }
   };
 
   async get_txs(txids: string[]) {
-    const txs: TransactionDocument[] = [];
+    const txs: Tx.Document[] = [];
     for (const txid of txids) {
       try {
         const tx = await this.get_tx(txid);
@@ -612,16 +550,16 @@ export class Database {
     length: number
   ) {
     const data: {
-      blocks: BlockDocument[],
+      blocks: Block.Document[],
       count: number
     } = { blocks: [], count: 0 };
     try {
-      data.blocks = await Block.aggregate([
+      data.blocks = await Block.Model.aggregate([
         { $sort: { height: -1 }},
         { $skip: start },
         { $limit: length }
       ]);
-      data.count = await Block.find({}).count();
+      data.count = await Block.Model.find({}).count();
       return data;
     } catch (e: any) {
       console.log(`get_last_blocks_ajax: failed to poll blocks collection: ${e.message}`);
@@ -635,18 +573,18 @@ export class Database {
     length: number
   ) {
     const data: {
-      txs: TransactionDocument[],
+      txs: Tx.Document[],
       count: number
     } = { txs: [], count: 0 };
     try {
-      const addressTxs: AddressTransactionDocument[] = await AddressTx.aggregate([
+      const addressTxs: AddressTx.Document[] = await AddressTx.Model.aggregate([
         { $match: { a_id: address }},
         { $sort: { blockindex: -1 }},
         //{ $sort: { amount: 1 }},
         { $skip: start },
         { $limit: length }
       ]);
-      const aggResult = await AddressTx.aggregate([
+      const aggResult = await AddressTx.Model.aggregate([
         { $match: { a_id: address }},
         { $sort: { blockindex: -1 }},
         { $skip: start },
@@ -668,7 +606,7 @@ export class Database {
           vin: tx.vin,
           vout: tx.vout,
           balance: runningBalance
-        } as TransactionDocument);
+        } as Tx.Document);
         runningBalance -= addressTx.amount;
       }
       return data;
@@ -689,7 +627,7 @@ export class Database {
       plot: Array<(string | number)[]>
     } = { plot: [] };
     try {
-      const [ dbBlock ] = await this.get_latest_block();
+      const dbBlock = await this.get_latest_block();
       const agg: Array<PipelineStage> = [
         { '$match': {
           'timestamp': { '$gte': (dbBlock.timestamp - seconds) }
@@ -708,7 +646,7 @@ export class Database {
           localeTimestamp: string,
           difficulty: number
         }>
-      }> = await Block.aggregate(agg);
+      }> = await Block.Model.aggregate(agg);
       data.plot = result[0].blocks.map((block) => Object.values(block));
     } catch (e: any) {
       
@@ -723,11 +661,11 @@ export class Database {
     const seconds = TIMESPANS[timespan];
     const blockspan = BLOCKSPANS[timespan];
     try {
-      const [ dbBlock ] = await this.get_latest_block();
+      const dbBlock = await this.get_latest_block();
       const result: Array<{
         _id: null,
         blocks: Array<{ minedby: string }>
-      }> = await Block.aggregate([
+      }> = await Block.Model.aggregate([
         { '$match': {
           'timestamp': { '$gte': (dbBlock.timestamp - seconds) }
         }},
@@ -767,11 +705,11 @@ export class Database {
     txTotal: number
   }> {
     const seconds = TIMESPANS[timespan];
-    const [ dbBlock ] = await this.get_latest_block();
+    const dbBlock = await this.get_latest_block();
     const result: Array<{
-      blocks: BlockDocument[],
+      blocks: Block.Document[],
       txtotal: number
-    }> = await Block.aggregate([
+    }> = await Block.Model.aggregate([
       { '$match': {
         'timestamp': { '$gte': (dbBlock.timestamp - seconds) },
         'txcount': { $gt: 1 } 
@@ -799,7 +737,7 @@ export class Database {
       },
     ]);
     const arranged_data: { [x: string]: number } = {};
-    result[0].blocks.forEach((block: BlockDocument) => {
+    result[0].blocks.forEach((block: Block.Document) => {
       arranged_data[block.localeTimestamp] = block.txcount;
     });
 
@@ -829,7 +767,7 @@ export class Database {
       const { plot: difficultyMonth } = await this.get_charts_difficulty('month');
       const { plot: difficultyQuarter } = await this.get_charts_difficulty('quarter');
       const { plot: difficultyYear } = await this.get_charts_difficulty('year');
-      await Charts.findOneAndUpdate({}, {
+      await Charts.Model.findOneAndUpdate({}, {
         // txs
         txsDay, txsDay_count,
         txsWeek, txsWeek_count,
@@ -852,7 +790,7 @@ export class Database {
     const address = await this.get_address(hash);
     if (address) {
       try {
-        await Address.updateOne({ a_id: hash }, { name: message });
+        await Address.Model.updateOne({ a_id: hash }, { name: message });
       } catch (e: any) {
         throw new Error(`update_label: ${e.message}`)
       }
@@ -867,15 +805,15 @@ export class Database {
   async update_richlist(list: string): Promise<void> {
     try {
       const addresses = list == 'received'
-        ? await Address.find({}, 'a_id balance received name')
+        ? await Address.Model.find({}, 'a_id balance received name')
           .sort({ received: 'desc' })
           .limit(100)
-        : await Address.find({}, 'a_id balance received name')
+        : await Address.Model.find({}, 'a_id balance received name')
           .sort({ balance: 'desc' })
           .limit(100);
       list == 'received'
-        ? await Richlist.updateOne({ coin: settings.coin }, { received: addresses })
-        : await Richlist.updateOne({ coin: settings.coin }, { balance: addresses });
+        ? await Richlist.Model.updateOne({ coin: settings.coin }, { received: addresses })
+        : await Richlist.Model.updateOne({ coin: settings.coin }, { balance: addresses });
     } catch (e: any) {
       throw new Error(`update_richlist: ${e.message}`);
     }
@@ -913,7 +851,7 @@ export class Database {
     const burned = await lib.get_burned_supply();
     const connections = await lib.get_connectioncount();
     try {
-      await Stats.findOneAndUpdate({ coin: coin }, {
+      await Stats.Model.findOneAndUpdate({ coin: coin }, {
         $set: {
           last: blockcount,
           count: blockcount,
@@ -938,7 +876,7 @@ export class Database {
    */
   async drop_peer(address: string): Promise<void> {
     try {
-      await Peers.deleteOne({ address: address });
+      await Peers.Model.deleteOne({ address: address });
     } catch (e: any) {
       throw new Error(`drop_peer: ${e.message}`);
     }
@@ -946,7 +884,7 @@ export class Database {
 
   async drop_peers(): Promise<void> {
     try {
-      await Peers.deleteMany({});
+      await Peers.Model.deleteMany({});
     } catch (e: any) {
       throw new Error(`drop_peers: ${e.message}`);
     }
@@ -954,7 +892,7 @@ export class Database {
 
   async delete_richlist(coin: string): Promise<void> {
     try {
-      await Richlist.findOneAndRemove({ coin: coin });
+      await Richlist.Model.findOneAndRemove({ coin: coin });
     } catch (e: any) {
       throw new Error(`delete_richlist: ${e.message}`);
     }

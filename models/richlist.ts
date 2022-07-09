@@ -1,10 +1,14 @@
 import { Schema, model } from 'mongoose';
-import { RichlistDocument } from '../lib/database';
-import { AddressDocument } from '../lib/explorer';
-export default model('Richlist',
-  new Schema<RichlistDocument>({
+import * as Address from './address';
+export type Document = {
+  coin: string,
+  received: Address.Document[],
+  balance: Address.Document[],
+};
+export const Model = model('Richlist',
+  new Schema<Document>({
     coin: { type: String },	
-    received: { type: <AddressDocument[]>[], default: [] },
-    balance: { type: <AddressDocument[]>[], default: [] },
+    received: { type: <Address.Document[]>[], default: [] },
+    balance: { type: <Address.Document[]>[], default: [] },
   })
 );

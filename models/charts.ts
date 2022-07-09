@@ -1,28 +1,49 @@
 import { Schema, model } from 'mongoose';
-import { ChartsPlot, ChartsDocument } from '../lib/database';
-const ChartsSchema = new Schema<ChartsDocument>({
-  // Non-coinbase Transactions
-  txsDay: { type: <ChartsPlot>[], default: [] },
-  txsWeek: { type: <ChartsPlot>[], default: [] },
-  txsMonth: { type: <ChartsPlot>[], default: [] },
-  txsQuarter: { type: <ChartsPlot>[], default: [] },
-  txsAll: { type: <ChartsPlot>[], default: [] },
-  txsDay_count: { type: Number, default: 0 },
-  txsWeek_count: { type: Number, default: 0 },
-  txsMonth_count: { type: Number, default: 0 },
-  txsQuarter_count: { type: Number, default: 0 },
-  // Block Difficulty
-  difficultyWeek: { type: <ChartsPlot>[], default: [] },
-  difficultyMonth: { type: <ChartsPlot>[], default: [] },
-  difficultyQuarter: { type: <ChartsPlot>[], default: [] },
-  difficultyYear: { type: <ChartsPlot>[], default: [] },
-  // Block Distribution
-  miningDistDay: { type: <ChartsPlot>[], default: [] },
-  miningDistWeek: { type: <ChartsPlot>[], default: [] },
-  miningDistMonth: { type: <ChartsPlot>[], default: [] },
-  totalMinersDay: { type: Number, default: 0 },
-  totalMinersWeek: { type: Number, default: 0 },
-  totalMinersMonth: { type: Number, default: 0 },
-});
-
-export default model('Charts', ChartsSchema);
+export type PlotData = Array<(string | number)[]>;
+export type Document = {
+  txsDay: PlotData,
+  txsWeek: PlotData,
+  txsMonth: PlotData,
+  txsQuarter: PlotData,
+  txsAll: PlotData,
+  difficultyWeek: PlotData,
+  difficultyMonth: PlotData,
+  difficultyQuarter: PlotData,
+  difficultyYear: PlotData,
+  miningDistDay: PlotData,
+  miningDistWeek: PlotData,
+  miningDistMonth: PlotData,
+  txsDay_count: number,
+  txsWeek_count: number,
+  txsMonth_count: number,
+  txsQuarter_count: number,
+  totalMinersDay: number,
+  totalMinersWeek: number,
+  totalMinersMonth: number,
+};
+export const Model = model('Charts',
+  new Schema<Document>({
+    // Non-coinbase Transactions
+    txsDay: { type: <PlotData>[], default: [] },
+    txsWeek: { type: <PlotData>[], default: [] },
+    txsMonth: { type: <PlotData>[], default: [] },
+    txsQuarter: { type: <PlotData>[], default: [] },
+    txsAll: { type: <PlotData>[], default: [] },
+    txsDay_count: { type: Number, default: 0 },
+    txsWeek_count: { type: Number, default: 0 },
+    txsMonth_count: { type: Number, default: 0 },
+    txsQuarter_count: { type: Number, default: 0 },
+    // Block Difficulty
+    difficultyWeek: { type: <PlotData>[], default: [] },
+    difficultyMonth: { type: <PlotData>[], default: [] },
+    difficultyQuarter: { type: <PlotData>[], default: [] },
+    difficultyYear: { type: <PlotData>[], default: [] },
+    // Block Distribution
+    miningDistDay: { type: <PlotData>[], default: [] },
+    miningDistWeek: { type: <PlotData>[], default: [] },
+    miningDistMonth: { type: <PlotData>[], default: [] },
+    totalMinersDay: { type: Number, default: 0 },
+    totalMinersWeek: { type: Number, default: 0 },
+    totalMinersMonth: { type: Number, default: 0 },
+  })
+);

@@ -1,47 +1,12 @@
 import settings from './settings';
-import Address from '../models/address';
-import Block from '../models/block';
-import Tx from '../models/tx';
+import * as Address from '../models/address';
+import * as Block from '../models/block';
+import * as Tx from '../models/tx';
 import BitcoinRpc from 'bitcoin-rpc-promise';
+// import { Tx } from 'chronik-client';
 
-export type AddressDocument = {
-  a_id: string,
-  balance: number,
-  received: number,
-  sent: number,
-};
-export type TransactionDocument = {
-  txid: string,
-  size: number,
-  fee: number,
-  vin: Array<{
-    addresses: string,
-    amount: number,
-    num_inputs: number
-  }>,
-  vout: Array<{
-    addresses: string,
-    amount: number,
-    asm?: string,
-  }>,
-  total?: number,
-  timestamp: number,
-  localeTimestamp?: string,
-  blockhash: string,
-  blockindex: number,
-  balance?: number,
-};
-export type BlockDocument = {
-  height: number,
-  minedby: string,
-  timestamp: number,
-  localeTimestamp: string,
-  difficulty: number,
-  size: number,
-  fees: number,
-  burned: number,
-  txcount: number,
-};
+type PreparedTransactionInputs = Tx.Document['vin'];
+type PreparedTransactionOutputs = Tx.Document['vout'];
 export type BlockInfo = {
   hash: string,
   confirmations: number,
@@ -90,8 +55,6 @@ export type RawTransaction = {
   blocktime: number,
   blockhash: string,
 };
-export type PreparedTransactionInputs = TransactionDocument['vin'];
-export type PreparedTransactionOutputs = TransactionDocument['vout'];
 
 const XPI_DIVISOR = 1000000
   , rpc = new BitcoinRpc('http://'
@@ -238,7 +201,7 @@ export class Explorer {
    */
   async balance_supply(): Promise<number> {
     const data = { totalBalance: 0 };
-    const docs: AddressDocument[] = await Address.aggregate([
+    const docs: Address.Document[] = await Address.Model.aggregate([
       { $match: { balance: { $gt: 0 }}}
     ]);
     docs.forEach(doc => data.totalBalance += doc.balance);
@@ -254,7 +217,7 @@ export class Explorer {
     blockFeesBurned: number,
   }> {
     const data = { blockFees: 0, blockFeesBurned: 0 };
-    const docs: TransactionDocument[] = await Tx.find({ 'blockindex': height }, 'fee');
+    const docs: Tx.Document[] = await Tx.Model.find({ 'blockindex': height }, 'fee');
     docs.forEach(doc => data.blockFees += doc.fee);
     data.blockFeesBurned = Math.round(data.blockFees / 2);
     return data;
@@ -265,7 +228,7 @@ export class Explorer {
    */
   async get_burned_supply(): Promise<number> {
     const data = { totalBurned: 0 };
-    const docs: BlockDocument[] = await Block.aggregate([
+    const docs: Block.Document[] = await Block.Model.aggregate([
       { $match: { burned: { $gt: 0 }}}
     ]);
     docs.forEach(doc => data.totalBurned += doc.burned);

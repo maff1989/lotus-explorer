@@ -1,15 +1,31 @@
 import { Schema, model } from 'mongoose';
-import {
-  PreparedTransactionInputs,
-  PreparedTransactionOutputs,
-  TransactionDocument
-} from '../lib/explorer';
-const TxSchema = new Schema<TransactionDocument>({
+export type Document = {
+  txid: string,
+  size: number,
+  fee: number,
+  vin: Array<{
+    addresses: string,
+    amount: number,
+    num_inputs: number
+  }>,
+  vout: Array<{
+    addresses: string,
+    amount: number,
+    asm?: string,
+  }>,
+  total?: number,
+  timestamp: number,
+  localeTimestamp?: string,
+  blockhash: string,
+  blockindex: number,
+  balance?: number,
+};
+const TxSchema = new Schema<Document>({
   txid: { type: String, lowercase: true, unique: true, index: true},
   size: { type: Number, default: 0 },
   fee: { type: Number, default: 0 },
-  vin: { type: <PreparedTransactionInputs>[], default: [] },
-  vout: { type: <PreparedTransactionOutputs>[], default: [] },
+  vin: { type: <Document['vin']>[], default: [] },
+  vout: { type: <Document['vout']>[], default: [] },
   total: { type: Number, default: 0, index: true },
   timestamp: { type: Number, default: 0, index: true },
   localeTimestamp: { type: String }, // for jqPlot charts
@@ -17,4 +33,4 @@ const TxSchema = new Schema<TransactionDocument>({
   blockindex: {type: Number, default: 0, index: true},
 }, {id: false});
 TxSchema.index({ total: 1, blockindex: 1 });
-export default model('Tx', TxSchema);
+export const Model = model('Tx', TxSchema);

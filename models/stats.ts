@@ -1,7 +1,14 @@
 import { Schema, model } from 'mongoose';
-import { StatsDocument } from '../lib/database';
-export default model('coinstats',
-  new Schema<StatsDocument>({
+export type Document = {
+  coin: string,
+  count: number,
+  last: number,
+  supply: number,
+  burned: number,
+  connections: number,
+};
+export const Model = model('coinstats',
+  new Schema<Document>({
     coin: { type: String },
     count: { type: Number, default: 1 },
     last: { type: Number, default: 1 },

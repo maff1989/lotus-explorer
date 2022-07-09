@@ -6,12 +6,12 @@ import {
   remove_lock,
   Database
 } from '../lib/database';
-import Address from '../models/address';
-import AddressTx from '../models/addresstx';
-import Block from '../models/block';
-import Richlist from '../models/richlist';
-import Stats from '../models/stats';
-import Tx from '../models/tx';
+import * as Address from '../models/address';
+import * as AddressTx from '../models/addresstx';
+import * as Block from '../models/block';
+import * as Richlist from '../models/richlist';
+import * as Stats from '../models/stats';
+import * as Tx from '../models/tx';
 
 let MODE = 'update';
 let DATABASE = 'index';
@@ -26,7 +26,6 @@ const printUsageAndExit = () => {
   console.log('');
   console.log('mode: (required for index database only)');
   console.log('update       Updates index from last sync to current block');
-  console.log('check        checks index for (and adds) any missing transactions/addresses');
   console.log('reindex      Clears index then resyncs from genesis to current block');
   console.log('');
   console.log('notes:');
@@ -106,20 +105,20 @@ const main = async () => {
         switch (MODE) {
           case 'reindex':
             // Delete/reset
-            await Tx.deleteMany({});
+            await Tx.Model.deleteMany({});
             console.log('TXs cleared.');
-            await Address.deleteMany({});
+            await Address.Model.deleteMany({});
             console.log('Addresses cleared.');
-            await AddressTx.deleteMany({});
+            await AddressTx.Model.deleteMany({});
             console.log('Address TXs cleared.');
-            await Block.deleteMany({});
+            await Block.Model.deleteMany({});
             console.log('Blocks cleared');
-            await Richlist.updateOne({ coin: settings.coin }, {
+            await Richlist.Model.updateOne({ coin: settings.coin }, {
               received: [],
               balance: [],
             });
             console.log('Richlist reset.');
-            await Stats.updateOne({ coin: settings.coin }, {
+            await Stats.Model.updateOne({ coin: settings.coin }, {
               last: 0,
               count: 0,
               supply: 0,

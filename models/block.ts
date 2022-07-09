@@ -1,6 +1,16 @@
 import { Schema, model } from 'mongoose';
-import { BlockDocument } from '../lib/explorer';
-const BlockSchema = new Schema<BlockDocument>({
+export type Document = {
+  height: number,
+  minedby: string,
+  timestamp: number,
+  localeTimestamp: string,
+  difficulty: number,
+  size: number,
+  fees: number,
+  burned: number,
+  txcount: number,
+};
+const BlockSchema = new Schema<Document>({
   height: {type: Number, default: 0, unique: true, index: true},
   //hash: { type: String, index: true },
   minedby: { type: String, default: "", index: true },
@@ -12,7 +22,6 @@ const BlockSchema = new Schema<BlockDocument>({
   burned: { type: Number, default: 0, index: true },
   txcount: { type: Number, default: 1 }, // blocks always have >=1 tx
 });
+BlockSchema.index({ height: -1 });
 
-BlockSchema.index({height: -1});
-
-export default model('Block', BlockSchema);
+export const Model = model('Block', BlockSchema);

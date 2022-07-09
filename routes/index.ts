@@ -6,11 +6,10 @@ import {
 } from '../lib/database';
 import {
   Explorer,
-  BlockDocument,
-  RawTransaction,
-  TransactionDocument,
   BlockInfo
 } from '../lib/explorer';
+import * as Block from '../models/block';
+import * as Tx from '../models/tx';
 import settings from '../lib/settings';
 import locale from '../lib/locale';
 
@@ -136,7 +135,7 @@ router.get('/tx/:txid', async (req, res) => {
   const { txid } = req.params;
   const renderData: {
     active: string,
-    tx: TransactionDocument,
+    tx: Tx.Document,
     confirmations: number,
     blockcount: number
   } = {
@@ -194,9 +193,9 @@ router.get('/block/:blockhash', async (req, res) => {
     active: string,
     confirmations: number,
     blockcount: number,
-    blockDocument: BlockDocument,
+    blockDocument: Block.Document,
     blockInfo: BlockInfo,
-    txs: TransactionDocument[] | string
+    txs: Tx.Document[] | string
   } = {
     active: 'block',
     confirmations: settings.confirmations,
