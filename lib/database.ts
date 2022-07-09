@@ -4,7 +4,7 @@ import {
   PipelineStage,
 } from 'mongoose';
 import * as fs from 'fs/promises';
-import * as Explorer from './explorer';
+import { BlockInfo, Explorer } from './explorer';
 import settings from './settings';
 import {
   getChartsDifficultyAggregation,
@@ -19,7 +19,7 @@ import * as Richlist from '../models/richlist';
 import * as Stats from '../models/stats';
 import * as Tx from '../models/tx';
 
-const lib = new Explorer.Explorer();
+const lib = new Explorer();
 /*
 set('useCreateIndex', true);
 set('useUnifiedTopology', true);
@@ -112,7 +112,7 @@ const save_tx = async (txid: string, height: number) => {
   return { burned };
 };
 const save_block = async (
-  block: Explorer.BlockInfo,
+  block: BlockInfo,
   txburned: number
 ): Promise<void> => {
   const { blockFees, blockFeesBurned } = await lib.get_block_fees(block.height);
@@ -325,7 +325,7 @@ export class Database {
     }
   };
 
-  async create_txs(block: Explorer.BlockInfo): Promise<boolean> {
+  async create_txs(block: BlockInfo): Promise<boolean> {
     /*
     if (await is_locked('db_index')) {
       console.log('db_index lock file exists...');
