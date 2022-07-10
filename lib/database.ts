@@ -554,12 +554,13 @@ export class Database {
       count: number
     } = { blocks: [], count: 0 };
     try {
+      const stats = await Stats.Model.findOne();
       data.blocks = await Block.Model.aggregate([
         { $sort: { height: -1 }},
         { $skip: start },
         { $limit: length }
       ]);
-      data.count = await Block.Model.find({}).count();
+      data.count = stats.last;
       return data;
     } catch (e: any) {
       console.log(`get_last_blocks_ajax: failed to poll blocks collection: ${e.message}`);
