@@ -578,14 +578,13 @@ export class Database {
       count: number
     } = { txs: [], count: 0 };
     try {
-      const addressTxs: AddressTx.Document[] = await AddressTx.Model.aggregate([
-        { $match: { a_id: address }},
-        { $sort: { blockindex: -1 }},
-        //{ $sort: { amount: 1 }},
-        { $skip: start },
-        { $limit: length }
-      ]);
-      const aggResult = await AddressTx.Model.aggregate([
+      const addressTxs: AddressTx.Document[] = await AddressTx.Model
+        .find({ a_id: address })
+        .sort({ blockindex: -1 })
+        .sort({ amount: 1 })
+        .skip(start)
+        .limit(length);
+      const [{ balance, count }] = await AddressTx.Model.aggregate([
         { $match: { a_id: address }},
         { $sort: { blockindex: -1 }},
         { $skip: start },
@@ -597,8 +596,8 @@ export class Database {
           }
         }
       ]);
-      data.count = aggResult[0].count;
-      let runningBalance = aggResult[0].balance ?? 0;
+      data.count = count;
+      let runningBalance = balance ?? 0;
       for (const addressTx of addressTxs) {
         const tx = await this.get_tx(addressTx.txid);
         data.txs.push({
