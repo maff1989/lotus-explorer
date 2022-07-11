@@ -65,7 +65,7 @@ const save_tx = async (txid: string, height: number) => {
   const { vout, burned } = await lib.prepare_vout(tx.vout);
   const total = await lib.calculate_total(vout);
   const fee = await lib.calculate_fee(vout, vin);
-  // update vins and vouts
+  // update vins
   for (const input of vin) {
     const { addresses, amount } = input;
     try {
@@ -74,6 +74,7 @@ const save_tx = async (txid: string, height: number) => {
       throw new Error(`save_tx: update_address: vin ${input.addresses}: ${e.message}`);
     }
   }
+  // update vouts
   for (const output of vout) {
     const { addresses, amount } = output;
     const type = { output: '' };
@@ -115,25 +116,25 @@ const save_block = async (
   block: BlockInfo,
   txburned: number
 ): Promise<void> => {
-  const { blockFees, blockFeesBurned } = await lib.get_block_fees(block.height);
-  const totalFeesBurned = blockFeesBurned + txburned;
-  // gather minedby address
-  const coinbaseTx = await lib.get_rawtransaction(block.tx[0]);
-  const miner = coinbaseTx.vout[1].scriptPubKey.addresses[0];
-  // save block
-  const newBlock = new Block.Model({
-    height: block.height,
-    minedby: miner,
-    //hash: block.hash,
-    difficulty: block.difficulty,
-    timestamp: block.time,
-    localeTimestamp: new Date(block.time * 1000).toLocaleString('en-us', { timeZone:"UTC" }),
-    size: block.size,
-    fees: blockFees,
-    burned: totalFeesBurned,
-    txcount: block.nTx
-  });
   try {
+    const { blockFees, blockFeesBurned } = await lib.get_block_fees(block.height);
+    const totalFeesBurned = blockFeesBurned + txburned;
+    // gather minedby address
+    const coinbaseTx = await lib.get_rawtransaction(block.tx[0]);
+    const miner = coinbaseTx.vout[1].scriptPubKey.addresses[0];
+    // save block
+    const newBlock = new Block.Model({
+      height: block.height,
+      minedby: miner,
+      //hash: block.hash,
+      difficulty: block.difficulty,
+      timestamp: block.time,
+      localeTimestamp: new Date(block.time * 1000).toLocaleString('en-us', { timeZone:"UTC" }),
+      size: block.size,
+      fees: blockFees,
+      burned: totalFeesBurned,
+      txcount: block.nTx
+    });
     await newBlock.save();
   } catch (e: any) {
     throw new Error(`save_block: failed to save new block to db: ${e.message}`);
@@ -166,17 +167,6 @@ const update_address = async (
         addr_inc.balance = amount;
         break;
     }
-  }
-  try {
-    await Address.Model.findOneAndUpdate(
-      { a_id: address },
-      { $inc: addr_inc },
-      { new: true, upsert: true },
-    );
-  } catch (e: any) {
-    throw new Error(`update_address: ${address}: ${e.message}`);
-  }
-  if (address != 'coinbase') {
     try {
       await AddressTx.Model.findOneAndUpdate(
         { a_id: address, txid: txid },
@@ -190,8 +180,17 @@ const update_address = async (
         { new: true, upsert: true }
       );
     } catch (e: any) {
-      throw new Error(`update_address: ${txid}: ${e.message}`);
+      throw new Error(`update_address: ${address}: ${txid}: ${e.message}`);
     };
+  }
+  try {
+    await Address.Model.findOneAndUpdate(
+      { a_id: address },
+      { $inc: addr_inc },
+      { new: true, upsert: true },
+    );
+  } catch (e: any) {
+    throw new Error(`update_address: ${address}: ${e.message}`);
   }
   return;
 };
@@ -256,9 +255,7 @@ export class Database {
     try {
       await connect(this.dbString);
     } catch (e: any) {
-      console.log('Unable to connect to database: %s', this.dbString);
-      console.log('Aborting');
-      process.exit(1);
+      throw new Error(`Database.connect: ${this.dbString}: ${e.message}`);
     }
   };
 
@@ -266,8 +263,7 @@ export class Database {
     try {
       await disconnect();
     } catch (e: any) {
-      console.log('Unable to disconnect from database: %s', e.message);
-      process.exit(1);
+      throw new Error(`Database.disconnect: ${this.dbString}: ${e.message}`);
     }
   };
 
@@ -279,10 +275,13 @@ export class Database {
     market: string
   ): Promise<Markets.Document> {
     try {
-      const create = new Markets.Model({ coin, market });
-      await create.save();
+      const create = new Markets.Model({
+        coin,
+        market
+      });
+      return await create.save();
     } catch (e: any) {
-      return null;
+      throw new Error(`Database.create_market: ${e.message}`);
     }
   };
   
@@ -291,7 +290,7 @@ export class Database {
       const peer = new Peers.Model(params);
       return await peer.save();
     } catch (e: any) {
-      return null;
+      throw new Error(`Database.create_peer: ${e.message}`);
     }
   };
 
@@ -300,7 +299,7 @@ export class Database {
       const richlist = new Richlist.Model({ coin: coin, received: [], balance: [] });
       return await richlist.save();
     } catch (e: any) {
-      return null;
+      throw new Error(`Database.create_richlist: ${e.message}`);
     }
   };
 
@@ -316,27 +315,25 @@ export class Database {
       });
       return await create.save();
     } catch (e: any) {
-      console.log(`error saving Stats for ${coin}:`, e.message);
-      return null;
+      throw new Error(`Database.create_stats: ${e.message}`);
     }
   };
 
-  async create_txs(block: BlockInfo): Promise<boolean> {
-    /*
-    if (await is_locked('db_index')) {
-      console.log('db_index lock file exists...');
-      return false;
-    }
-    */
-    for (const txid of block.tx) {
+  async create_txs(block: BlockInfo): Promise<{
+    txburned: number
+  }> {
+    const { height, tx } = block;
+    const burned = { total: 0 };
+    for (const txid of tx) {
+      console.log('%s: %s', height, txid);
       try {
-        await save_tx(txid, block.height);
+        const { burned: txBurned } = await save_tx(txid, height);
+        burned.total += txBurned;
       } catch (e: any) {
-        console.log(`error saving Tx ${txid}:`, e.message);
-        return false;
+        throw new Error(`Database.create_txs: ${height}: ${txid}: ${e.message}`);
       }
     }
-    return true;
+    return { txburned: burned.total };
   };
 
   /*
@@ -475,7 +472,7 @@ export class Database {
     try {
       return await Markets.Model.findOne({ market: market }).lean();
     } catch (e: any) {
-      return null;
+      throw new Error(`Database.get_market: ${e.message}`);
     }
   };
 
@@ -483,7 +480,7 @@ export class Database {
     try {
       return await Peers.Model.findOne({ address: address }).lean();
     } catch (e: any) {
-      return null;
+      throw new Error(`Database.get_peer: ${e.message}`);
     }
   };
 
@@ -491,7 +488,7 @@ export class Database {
     try {
       return await Peers.Model.find({}).lean();
     } catch (e: any) {
-      return null;
+      throw new Error(`Database.get_peers: ${e.message}`);
     }
   }
   
@@ -507,7 +504,7 @@ export class Database {
     try {
       return await Stats.Model.findOne({ coin: coin }).lean();
     } catch (e: any) {
-      return null;
+      throw new Error(`Database.get_stats: ${e.message}`);
     }
   };
   
@@ -559,8 +556,7 @@ export class Database {
       data.count = stats.last;
       return data;
     } catch (e: any) {
-      console.log(`get_last_blocks_ajax: failed to poll blocks collection: ${e.message}`);
-      return null;
+      throw new Error(`get_last_blocks_ajax: failed to poll blocks collection: ${e.message}`);
     }
   };
 
@@ -607,8 +603,7 @@ export class Database {
       }
       return data;
     } catch (e: any) {
-      console.log(`get_address_txs_ajax: failed to poll addresstxs collection: ${e.message}`);
-      return null;
+      throw new Error(`get_address_txs_ajax: failed to poll addresstxs collection: ${e.message}`);
     }
   };
 
@@ -617,14 +612,18 @@ export class Database {
    *    Get Database Charts
    * 
    */
-  async get_charts_difficulty(timespan: ChartDifficultyTimespan) {
+  async get_charts_difficulty(
+    timespan: ChartDifficultyTimespan
+  ): Promise<{
+    plot: Charts.PlotData
+  }> {
     const seconds = TIMESPANS[timespan];
     const data: {
       plot: Charts.PlotData
     } = { plot: [] };
     try {
       const dbBlock = await this.get_latest_block();
-      const agg: Array<PipelineStage> = [
+      const agg: PipelineStage[] = [
         { '$match': {
           'timestamp': { '$gte': (dbBlock.timestamp - seconds) }
         }},
@@ -644,18 +643,24 @@ export class Database {
         }>
       }> = await Block.Model.aggregate(agg);
       data.plot = result[0].blocks.map((block) => Object.values(block));
+      return data;
     } catch (e: any) {
-      
+      throw new Error(`Database.get_charts_difficulty(${timespan}): ${e.message}`);
     }
-    return data;
   };
   
-  async get_charts_reward_distribution(timespan: ChartDistributionTimespan): Promise<{
+  async get_charts_reward_distribution(
+    timespan: ChartDistributionTimespan
+  ): Promise<{
     plot: Charts.PlotData,
     minerTotal: number
   }> {
     const seconds = TIMESPANS[timespan];
     const blockspan = BLOCKSPANS[timespan];
+    const data: {
+      plot: Charts.PlotData,
+      minerTotal: number
+    } = { plot: [], minerTotal: 0 };
     try {
       const dbBlock = await this.get_latest_block();
       const result: Array<{
@@ -688,59 +693,65 @@ export class Database {
       }
   
       const plot = Object.entries(minerFiltered).sort((a, b) => b[1] - a[1]);
-      plot.push(["Miscellaneous Miners (<= 3% hashrate each)", minerMiscBlocks]);
-      return { plot, minerTotal: Object.keys(minerBlockCounts).length };
+      data.plot.push(["Miscellaneous Miners (<= 3% hashrate each)", minerMiscBlocks]);
+      data.minerTotal = Object.keys(minerBlockCounts).length;
+      return data;
     } catch (e: any) {
-
+      throw new Error(`Database.get_charts_reward_distribution(${timespan}): ${e.message}`);
     }
   };
 
   // gather and prepare chart data for transaction count based on timespan
-  async get_charts_txs(timespan: ChartTransactionTimespan): Promise<{
+  async get_charts_txs(
+    timespan: ChartTransactionTimespan
+  ): Promise<{
     plot: Charts.PlotData,
     txTotal: number
   }> {
     const seconds = TIMESPANS[timespan];
-    const dbBlock = await this.get_latest_block();
-    const result: Array<{
-      blocks: Block.Document[],
-      txtotal: number
-    }> = await Block.Model.aggregate([
-      { '$match': {
-        'timestamp': { '$gte': (dbBlock.timestamp - seconds) },
-        'txcount': { $gt: 1 } 
-      }},
-      { "$sort": { "timestamp": 1 } },
-      //{ "$limit": blockspan },
-      { "$group":
-        {
-          _id: null,
-          "blocks": {
-            $push: {
-              localeTimestamp: "$localeTimestamp",
-              txcount: {
+    const data: {
+      plot: Charts.PlotData,
+      txTotal: number
+    } = { plot: [], txTotal: 0 };
+    try {
+      const dbBlock = await this.get_latest_block();
+      const [{ blocks, txtotal }] = await Block.Model.aggregate([
+        { '$match': {
+          'timestamp': { '$gte': (dbBlock.timestamp - seconds) },
+          'txcount': { $gt: 1 } 
+        }},
+        { "$sort": { "timestamp": 1 } },
+        //{ "$limit": blockspan },
+        { "$group":
+          {
+            _id: null,
+            "blocks": {
+              $push: {
+                localeTimestamp: "$localeTimestamp",
+                txcount: {
+                  $subtract: ["$txcount", 1] 
+                }
+              }
+            },
+            // add together all txcount minus 1; we don't include coinbase tx in count
+            'txtotal': {
+              $sum: {
                 $subtract: ["$txcount", 1] 
               }
             }
-          },
-          // add together all txcount minus 1; we don't include coinbase tx in count
-          'txtotal': {
-            $sum: {
-              $subtract: ["$txcount", 1] 
-            }
           }
-        }
-      },
-    ]);
-    const arranged_data: { [x: string]: number } = {};
-    result[0].blocks.forEach((block: Block.Document) => {
-      arranged_data[block.localeTimestamp] = block.txcount;
-    });
-
-    return {
-      plot: Object.entries(arranged_data),
-      txTotal: result[0].txtotal
-    };
+        },
+      ]);
+      const arranged_data: { [x: string]: number } = {};
+      blocks.forEach((block: Block.Document) => {
+        arranged_data[block.localeTimestamp] = block.txcount;
+      });
+      data.plot = Object.entries(arranged_data);
+      data.txTotal = txtotal;
+      return data;
+    } catch (e: any) {
+      throw new Error(`Database.get_charts_txs(${timespan}): ${e.message}`);
+    }
   };
   
   /*
@@ -778,17 +789,17 @@ export class Database {
         difficultyYear
       }, { upsert: true });
     } catch (e: any) {
-      throw new Error(`update_charts_db: ${e.message}`);
+      throw new Error(`Database.update_charts_db: ${e.message}`);
     }
   };
   
   async update_label(hash: string, message: string): Promise<void> {
     const address = await this.get_address(hash);
-    if (address) {
+    if (address?.a_id) {
       try {
         await Address.Model.updateOne({ a_id: hash }, { name: message });
       } catch (e: any) {
-        throw new Error(`update_label: ${e.message}`)
+        throw new Error(`Database.update_label: ${e.message}`)
       }
     }
   };
@@ -811,7 +822,7 @@ export class Database {
         ? await Richlist.Model.updateOne({ coin: settings.coin }, { received: addresses })
         : await Richlist.Model.updateOne({ coin: settings.coin }, { balance: addresses });
     } catch (e: any) {
-      throw new Error(`update_richlist: ${e.message}`);
+      throw new Error(`Database.update_richlist: ${e.message}`);
     }
   };
 
@@ -826,27 +837,23 @@ export class Database {
       try {
         const blockhash = await lib.get_blockhash(counter.currentBlockHeight);
         const block = await lib.get_block(blockhash);
-        // save all txs
-        for (const txid of block.tx) {
-          console.log('%s: %s', counter.currentBlockHeight, txid);
-          const { burned } = await save_tx(txid, block.height);
-          blockBurned += burned;
-        }
+        // save all txs in block
+        const { txburned } = await this.create_txs(block);
         // save block
-        await save_block(block, blockBurned);
+        await save_block(block, txburned);
         console.log('%s: block saved', block.height);
       } catch (e: any) {
-        throw new Error(`update_tx_db: ${e.message}`);
+        throw new Error(`Database.update_tx_db: ${e.message}`);
       }
       counter.currentBlockHeight++;
     }
   };
 
   async update_stats(coin: string, blockcount: number): Promise<void> {
-    const supply = await lib.get_supply();
-    const burned = await lib.get_burned_supply();
-    const connections = await lib.get_connectioncount();
     try {
+      const supply = await lib.get_supply();
+      const burned = await lib.get_burned_supply();
+      const connections = await lib.get_connectioncount();
       await Stats.Model.findOneAndUpdate({ coin: coin }, {
         $set: {
           last: blockcount,
@@ -861,7 +868,7 @@ export class Database {
         new: true
       });
     } catch (e: any) {
-      throw new Error(`update_stats: ${e.message}`);
+      throw new Error(`Database.update_stats: ${e.message}`);
     }
   };
 
