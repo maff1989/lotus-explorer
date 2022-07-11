@@ -201,9 +201,9 @@ export class Explorer {
    */
   async balance_supply(): Promise<number> {
     const data = { totalBalance: 0 };
-    const docs: Address.Document[] = await Address.Model.aggregate([
-      { $match: { balance: { $gt: 0 }}}
-    ]);
+    const docs: Address.Document[] = await Address.Model
+      .find({ balance: { $gt: 0 }})
+      .lean();
     docs.forEach(doc => data.totalBalance += doc.balance);
     return data.totalBalance;
   };
@@ -217,7 +217,9 @@ export class Explorer {
     blockFeesBurned: number,
   }> {
     const data = { blockFees: 0, blockFeesBurned: 0 };
-    const docs: Tx.Document[] = await Tx.Model.find({ 'blockindex': height }, 'fee');
+    const docs: Tx.Document[] = await Tx.Model
+      .find({ blockindex: height }, 'fee')
+      .lean();
     docs.forEach(doc => data.blockFees += doc.fee);
     data.blockFeesBurned = Math.round(data.blockFees / 2);
     return data;
