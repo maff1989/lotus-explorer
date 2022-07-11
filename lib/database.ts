@@ -194,6 +194,65 @@ const update_address = async (
   }
   return;
 };
+
+const rewind_update_address = async (
+  address: string,
+  amount: number,
+  type: string
+): Promise<void> => {
+  const addr_inc = { sent: 0, balance: 0, received: 0 };
+  switch (type) {
+    case 'rewind-vin':
+      addr_inc.sent = -amount
+      addr_inc.balance = amount;
+      break;
+    case 'rewind-vout':
+      addr_inc.received = -amount;
+      addr_inc.balance = -amount;
+      break;
+  }
+  try {
+    await Address.Model.findOneAndUpdate(
+      { a_id: address },
+      { $inc: addr_inc }
+    );
+  } catch (e: any) {
+    throw new Error(`rewind_update_address(${address}, ${amount}, ${type}): ${e.message}`);
+  }
+};
+
+const rewind_save_tx = async (
+  tx: Tx.Document,
+  height: number
+) => {
+  const { txid, vin, vout, } = tx;
+  console.log(`rewind: ${height}: ${txid}`);
+  // rewind vins, minus coinbase input
+  for (const input of vin.slice(1)) {
+    const { addresses, amount } = input;
+    try {
+      await rewind_update_address(addresses, amount, 'rewind-vin');
+    } catch (e: any) {
+      throw new Error(`rewind_save_tx: rewind_update_address: vin ${addresses}: ${e.message}`);
+    }
+  }
+  // rewind vouts
+  for (const output of vout) {
+    const { addresses, amount } = output;
+    try {
+      await rewind_update_address(addresses, amount, 'rewind-vout');
+    } catch (e: any) {
+      throw new Error(`rewind_save_tx: rewind_update_address: vout ${addresses}: ${e.message}`);
+    }
+  }
+  // Delete Tx and AddressTx entry for txid after rewinding all address updates
+  try {
+    await Tx.Model.deleteOne({ txid: txid });
+    await AddressTx.Model.deleteOne({ txid: txid });
+  } catch (e: any) {
+    throw new Error(`rewind_save_tx:: Tx/AddressTx.Model.deleteOne(${txid}): ${e.message}`);
+  }
+};
 const get_market_data = async (market: string) => {
   const exMarket = await import('./lib/markets/' + market + '.ts');
   exMarket.get_data();
@@ -874,7 +933,7 @@ export class Database {
 
   /*
    *
-   *    Delete Database Entries
+   *    Delete/Rewind Database Entries
    * 
    */
   async drop_peer(address: string): Promise<void> {
@@ -899,6 +958,28 @@ export class Database {
     } catch (e: any) {
       throw new Error(`delete_richlist: ${e.message}`);
     }
-  }; 
+  };
+
+  async rewind_db(
+    startHeight: number,
+    endHeight: number
+  ) {
+    for (let i = startHeight; i <= endHeight; i++) {
+      console.log(`${i}: rewinding index state`);
+      try {
+        // get db txes at block height
+        const txs: Tx.Document[] = await Tx.Model.find({ blockindex: i });
+        for (const tx of txs) {
+          console.log(`${i}: rewind ${tx.txid}`);
+          await rewind_save_tx(tx, i);
+        }
+        // delete saved block from db
+          console.log(`${i}: rewind block`);
+        await Block.Model.findOneAndDelete({ height: i });
+      } catch (e: any) {
+
+      }
+    }
+  };
 
 };

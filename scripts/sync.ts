@@ -97,8 +97,17 @@ const main = async () => {
         break;
       case 'index':
         const blockcount = await lib.get_blockcount();
-        // exit if already up-to-date
-        if (stats.last == blockcount) {
+        const blockLastGood = await lib.is_block_orphaned(stats.last);
+        // rewind if last good block comes before last saved block
+        if (blockLastGood < stats.last) {
+          const blockhash = await lib.get_blockhash(stats.last);
+          console.log(`ORPHAN FOUND: height: %s, hash: %s`, blockLastGood, blockhash);
+          await db.rewind_db(blockLastGood, stats.last);
+          // update indexes from the last good block height
+          stats.last = blockLastGood;
+        }
+        // exit if already up-to-date and not rewinding
+        else if (stats.last == blockcount) {
           console.log('Database is already up-to-date (block: %s)', blockcount);
           process.exit(0);
         }
