@@ -42,7 +42,6 @@ const main = async () => {
   const chartsRewards = await db.get_charts_reward_distribution('day');
   const chartsDifficulty = await db.get_charts_difficulty('week');
   const lastBlocks = await db.get_last_blocks_ajax(0, 10);
-  const lastTxs = await db.get_last_txs_ajax(0, 10, 0);
   const addressTxs = await db.get_address_txs_ajax(address, 0, 10);
   console.log('addressDocument', addressDocument);
   console.log('block', block);
@@ -57,7 +56,6 @@ const main = async () => {
   console.log('chartsRewards', chartsRewards);
   console.log('chartsDifficulty', chartsDifficulty);
   console.log('lastBlocks', lastBlocks);
-  console.log('lastTxs', lastTxs);
   console.log('addressTxs', addressTxs);
   // Creators
   const createMarket = await db.create_market(settings.coin, settings.markets.default);
