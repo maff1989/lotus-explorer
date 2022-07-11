@@ -624,7 +624,7 @@ export class Database {
   async get_charts_difficulty(timespan: ChartDifficultyTimespan) {
     const seconds = TIMESPANS[timespan];
     const data: {
-      plot: Array<(string | number)[]>
+      plot: Charts.PlotData
     } = { plot: [] };
     try {
       const dbBlock = await this.get_latest_block();
@@ -655,7 +655,7 @@ export class Database {
   };
   
   async get_charts_reward_distribution(timespan: ChartDistributionTimespan): Promise<{
-    plot: Array<[string, number]>,
+    plot: Charts.PlotData,
     minerTotal: number
   }> {
     const seconds = TIMESPANS[timespan];
@@ -701,7 +701,7 @@ export class Database {
 
   // gather and prepare chart data for transaction count based on timespan
   async get_charts_txs(timespan: ChartTransactionTimespan): Promise<{
-    plot: Array<[string, number]>,
+    plot: Charts.PlotData,
     txTotal: number
   }> {
     const seconds = TIMESPANS[timespan];
