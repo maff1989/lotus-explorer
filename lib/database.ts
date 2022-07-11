@@ -959,12 +959,19 @@ export class Database {
       throw new Error(`delete_richlist: ${e.message}`);
     }
   };
-
+  /**
+   * Rewind appropriate index states from `endHeight` to `startHeight`
+   * 
+   * `startHeight` is the last good block, plus one (i.e. oldest bad block)
+   * @param endHeight Newest orphaned block height to rewind
+   * @param startHeight Oldest orphaned block to rewind
+   */
   async rewind_db(
-    startHeight: number,
-    endHeight: number
+    endHeight: number,
+    startHeight: number
   ) {
-    for (let i = startHeight; i <= endHeight; i++) {
+    // rewind from endHeight up to and including startHeight
+    for (let i = endHeight; i < startHeight; i--) {
       console.log(`${i}: rewinding index state`);
       try {
         // get db txes at block height
@@ -974,10 +981,10 @@ export class Database {
           await rewind_save_tx(tx, i);
         }
         // delete saved block from db
-          console.log(`${i}: rewind block`);
+        console.log(`${i}: rewind block`);
         await Block.Model.findOneAndDelete({ height: i });
       } catch (e: any) {
-
+        throw new Error(`Database.rewind_db(${startHeight}, ${endHeight}): ${e.message}`);
       }
     }
   };

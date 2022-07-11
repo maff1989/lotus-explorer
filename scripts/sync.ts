@@ -98,11 +98,11 @@ const main = async () => {
       case 'index':
         const blockcount = await lib.get_blockcount();
         const blockLastGood = await lib.is_block_orphaned(stats.last);
-        // rewind if last good block comes before last saved block
+        // rewind index state if last good block comes before last saved block
         if (blockLastGood < stats.last) {
           const blockhash = await lib.get_blockhash(stats.last);
-          console.log(`ORPHAN FOUND: height: %s, hash: %s`, blockLastGood, blockhash);
-          await db.rewind_db(blockLastGood, stats.last);
+          console.log(`ORPHAN FOUND: height: %s, hash: %s`, blockLastGood + 1, blockhash);
+          await db.rewind_db(stats.last, blockLastGood + 1);
           // update indexes from the last good block height
           stats.last = blockLastGood;
         }
