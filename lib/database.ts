@@ -141,18 +141,14 @@ const save_block = async (
   return;
 };
 const update_address = async (
-  hash: string,
+  address: string,
   amount: number,
   blockheight: number,
   txid: string,
   type: string
 ): Promise<void> => {
-  const addr_inc: {
-    sent: number,
-    balance: number,
-    received: number
-  } = { sent: 0, balance: 0, received: 0 };
-  if (hash == 'coinbase') {
+  const addr_inc = { sent: 0, balance: 0, received: 0 };
+  if (address == 'coinbase') {
     addr_inc.sent = amount;
   } else {
     switch (type) {
@@ -173,21 +169,21 @@ const update_address = async (
   }
   try {
     await Address.Model.findOneAndUpdate(
-      { a_id: hash },
+      { a_id: address },
       { $inc: addr_inc },
       { new: true, upsert: true },
     );
   } catch (e: any) {
-    throw new Error(`update_address: ${hash}: ${e.message}`);
+    throw new Error(`update_address: ${address}: ${e.message}`);
   }
-  if (hash != 'coinbase') {
+  if (address != 'coinbase') {
     try {
       await AddressTx.Model.findOneAndUpdate(
-        { a_id: hash, txid: txid },
+        { a_id: address, txid: txid },
         { $inc: {
           amount: addr_inc.balance
         }, $set: {
-          a_id: hash,
+          a_id: address,
           blockindex: blockheight,
           txid: txid
         }},
