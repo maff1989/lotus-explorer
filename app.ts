@@ -62,13 +62,13 @@ app.use('/ext/getaddress/:address', async (req, res) => {
   try {
     const { sent, received, balance } = await db.get_address(address);
     const { txs } = await db.get_address_txs_ajax(address, 0, settings.txcount);
-    for (const tx of txs) {
+    txs.forEach(tx => {
       const value = { vin: 0, vout: 0 };
       value.vin += tx.vin?.find(vin => vin.addresses == address)?.amount ?? 0;
       value.vout += tx.vout?.find(vout => vout.addresses == address)?.amount ?? 0;
       const type = value.vin > value.vout ? 'vin': 'vout';
       dataTableRows.push({ txid: tx.txid, type });
-    }
+    });
     return res.send({
       address,
       sent: lib.convert_to_xpi(sent),
