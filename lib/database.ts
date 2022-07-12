@@ -265,7 +265,7 @@ const rewind_save_tx = async (
   // Delete Tx and AddressTx entry for txid after rewinding all address updates
   try {
     await Tx.Model.deleteOne({ txid: txid });
-    await AddressTx.Model.deleteOne({ txid: txid });
+    await AddressTx.Model.deleteMany({ txid: txid });
   } catch (e: any) {
     throw new Error(`rewind_save_tx:: Tx/AddressTx.Model.deleteOne(${txid}): ${e.message}`);
   }
@@ -987,7 +987,7 @@ export class Database {
     endHeight: number,
     startHeight: number
   ) {
-    // rewind from endHeight up to and including startHeight
+    // rewind from endHeight down to and including startHeight
     for (let i = endHeight; i >= startHeight; i--) {
       try {
         // get db txes at block height
@@ -1000,7 +1000,7 @@ export class Database {
         console.log(`REWIND: ${i}: delete block`);
         await Block.Model.findOneAndDelete({ height: i });
       } catch (e: any) {
-        throw new Error(`Database.rewind_db(${startHeight}, ${endHeight}): ${e.message}`);
+        throw new Error(`Database.rewind_db(${endHeight}, ${startHeight}): ${e.message}`);
       }
     }
   };
