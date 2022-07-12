@@ -226,9 +226,13 @@ const rewind_save_tx = async (
   height: number
 ) => {
   const { txid, vin, vout, } = tx;
-  // rewind vins, minus coinbase input
-  for (const input of vin.slice(1)) {
+  // rewind vins
+  for (const input of vin) {
     const { addresses, amount } = input;
+    // skip coinbase input
+    if (addresses == 'coinbase') {
+      continue;
+    }
     try {
       await rewind_update_address(addresses, amount, 'rewind-vin');
     } catch (e: any) {
