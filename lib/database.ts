@@ -646,25 +646,18 @@ export class Database {
       count: number
     } = { txs: [], count: 0 };
     try {
+      const { balance } = await Address.Model.findOne({ a_id: address });
+      data.count= await AddressTx.Model.find({ a_id: address }).count();
+      // return default data if no db entries for address
+      if (data.count < 1) {
+        return data;
+      }
       const addressTxs: AddressTx.Document[] = await AddressTx.Model
         .find({ a_id: address })
         .sort({ blockindex: -1 })
         .sort({ amount: 1 })
         .skip(start)
         .limit(length);
-      const [{ balance, count }] = await AddressTx.Model.aggregate([
-        { $match: { a_id: address }},
-        { $sort: { blockindex: -1 }},
-        { $skip: start },
-        {
-          $group: {
-            _id: '',
-            balance: { $sum: '$amount' },
-            count: { $sum: 1 }
-          }
-        }
-      ]);
-      data.count = count;
       let runningBalance = balance ?? 0;
       for (const addressTx of addressTxs) {
         const tx = await this.get_tx(addressTx.txid);
