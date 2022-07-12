@@ -218,10 +218,19 @@ const rewind_update_address = async (
       break;
   }
   try {
-    await Address.Model.findOneAndUpdate(
+    const newAddress = await Address.Model.findOneAndUpdate(
       { a_id: address },
-      { $inc: addr_inc }
+      { $inc: addr_inc },
+      { new: true }
     );
+    // delete address if sent, received, and balance are all 0
+    if (
+      newAddress.sent == 0
+      && newAddress.received == 0
+      && newAddress.balance == 0
+    ) {
+      await Address.Model.deleteOne({ a_id: address });
+    }
   } catch (e: any) {
     throw new Error(`rewind_update_address(${address}, ${amount}, ${type}): ${e.message}`);
   }
