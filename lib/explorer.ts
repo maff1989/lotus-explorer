@@ -86,10 +86,7 @@ export class Explorer {
    * @returns {number} Satoshi units
    */
   convert_to_satoshi(amount: number): number {
-    // Lotus has only 6 decimal places
-    const fixed = amount.toFixed(6).toString();
-    // remove decimal (.) and return integer
-    return parseInt(fixed.replace('.', ''));
+    return amount * XPI_DIVISOR;
   };
   /**
    * Converts satoshi units into XPI units
@@ -255,7 +252,7 @@ export class Explorer {
   async is_block_orphaned(height: number): Promise<number> {
     const blockhash = await this.get_blockhash(height);
     const block = await this.get_block(blockhash);
-    if (block?.confirmations) {
+    if (block?.confirmations && block.confirmations > 0) {
       return height;
     }
     return await this.is_block_orphaned(height - 1);
