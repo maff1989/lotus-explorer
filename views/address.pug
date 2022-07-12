@@ -24,13 +24,6 @@ block content
                 if settings.labels[address.a_id].url
                   a(href=settings.labels[address.a_id].url, target='_blank')
                     span.fa.fa-question-circle(style='margin-left:5px;')
-          else
-            if address.name !== "" && typeof address.name !== "undefined"
-              label.badge.badge-pill.pull-right.d-none.d-sm-block(style='margin-left:15px;')
-                =address.name
-            else
-              a.badge.badge-pill.pull-right.d-none.d-sm-block(href="/address/"+ address.a_id +"/claim" style="font-size: smaller;")
-                =" Is this your address? Claim it now!"
       table.table.table-bordered.table-striped.summary-table
         thead
           tr.d-none.d-md-table-row
