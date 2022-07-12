@@ -148,8 +148,7 @@ const main = async () => {
             }
             // exit if already up-to-date and not rewinding
             else if (stats.last == blockcount) {
-              console.log('Database is already up-to-date (block: %s)', blockcount);
-              process.exit(0);
+              throw new Error(`Database is already up-to-date (block: ${blockcount})`);
             }
             console.log(`Last good height: ${stats.last})`)
             await db.update_tx_db(settings.coin, stats.last + 1, blockcount);
@@ -173,6 +172,7 @@ const main = async () => {
     await remove_lock(DATABASE)
   } catch (e: any) {
     await db.disconnect();
+    await remove_lock(DATABASE)
     console.log(e.message);
     process.exit(1);
   }
