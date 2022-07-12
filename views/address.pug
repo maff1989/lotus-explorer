@@ -11,18 +11,26 @@ block content
     .card.card-default.card-address-summary
       .card-header(style='position:relative;')
         strong #{address.a_id} &nbsp; 
-          if settings.labels[address.a_id].type
-            label(class='label label-'+settings.labels[address.a_id].type+' pull-right hidden-xs', style='margin-left:15px;')
-              =settings.labels[address.a_id].label
-              if settings.labels[address.a_id].url
-                a(href=settings.labels[address.a_id].url, target='_blank')
-                  span.fa.fa-question-circle(style='margin-left:5px;')
+          if settings.labels[address.a_id]
+            if settings.labels[address.a_id].type
+              label(class='label label-'+settings.labels[address.a_id].type+' pull-right hidden-xs', style='margin-left:15px;')
+                =settings.labels[address.a_id].label
+                if settings.labels[address.a_id].url
+                  a(href=settings.labels[address.a_id].url, target='_blank')
+                    span.fa.fa-question-circle(style='margin-left:5px;')
+            else
+              label.label.label-default.pull-right.hidden-xs(style='margin-left:15px;')
+                =settings.labels[address.a_id].label
+                if settings.labels[address.a_id].url
+                  a(href=settings.labels[address.a_id].url, target='_blank')
+                    span.fa.fa-question-circle(style='margin-left:5px;')
           else
-            label.label.label-default.pull-right.hidden-xs(style='margin-left:15px;')
-              =settings.labels[address.a_id].label
-              if settings.labels[address.a_id].url
-                a(href=settings.labels[address.a_id].url, target='_blank')
-                  span.fa.fa-question-circle(style='margin-left:5px;')
+            if address.name !== "" && typeof address.name !== "undefined"
+              label.badge.badge-pill.pull-right.d-none.d-sm-block(style='margin-left:15px;')
+                =address.name
+            else
+              a.badge.badge-pill.pull-right.d-none.d-sm-block(href="/address/"+ address.a_id +"/claim" style="font-size: smaller;")
+                =" Is this your address? Claim it now!"
       table.table.table-bordered.table-striped.summary-table
         thead
           tr.d-none.d-md-table-row
