@@ -255,13 +255,13 @@ export class Explorer {
   async is_block_orphaned(height: number): Promise<number> {
     const blockhash = await this.get_blockhash(height);
     const block = await this.get_block(blockhash);
-    // if confirmations is -1, then this block is orphaned!
-    return block.confirmations === -1
-      // check previous block height too to make sure no orphan
-      ? await this.is_block_orphaned(height--)
+    // assume orphaned/lost if get_block returns nothing
+    return block?.confirmations
       // block at this height is not orphaned; return this good height
-      // calling will determine if processing for orphaned blocks is required
-      : height;
+      // calling method will determine if processing for orphaned blocks is required
+      ? height
+      // check previous block height too to make sure no orphan
+      : await this.is_block_orphaned(height--);
   };
   /**
    * Calculate total input/output value
