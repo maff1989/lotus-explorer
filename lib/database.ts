@@ -655,7 +655,7 @@ export class Database {
       count: number
     } = { txs: [], count: 0 };
     try {
-      const { balance } = await Address.Model.findOne({ a_id: address });
+      const { balance } = await Address.Model.findOne({ a_id: address }) || { balance: 0 };
       data.count= await AddressTx.Model.find({ a_id: address }).count();
       // return default data if no db entries for address
       if (data.count < 1) {
