@@ -181,7 +181,7 @@ const save_block = async (
     });
     await newBlock.save();
   } catch (e: any) {
-    throw new Error(`save_block: failed to save new block to db: ${e.message}`);
+    throw new Error(`save_block: ${e.message}`);
   }
   return;
 };
@@ -197,7 +197,7 @@ const save_block = async (
 const update_address = async (
   address: string,
   amount: number,
-  blockheight: number,
+  height: number,
   txid: string,
   type: string
 ): Promise<void> => {
@@ -277,6 +277,7 @@ const rewind_update_address = async (
       { new: true }
     );
     // delete address if sent, received, and balance are all 0
+    // i.e. assume no transactions exist for address
     if (
       newAddress.sent == 0
       && newAddress.received == 0
@@ -294,8 +295,7 @@ const rewind_update_address = async (
  * @param height - Block height that includes this `txid`
  */
 const rewind_save_tx = async (
-  tx: Tx.Document,
-  height: number
+  tx: Tx.Document
 ) => {
   const { txid, vin, vout, } = tx;
   // rewind vins
@@ -715,15 +715,14 @@ export class Database {
     } = { blocks: [], count: 0 };
     try {
       const stats = await Stats.Model.findOne();
-      data.blocks = await Block.Model.aggregate([
-        { $sort: { height: -1 }},
-        { $skip: start },
-        { $limit: length }
-      ]);
+      data.blocks = await Block.Model.find()
+        .sort({ height: -1 })
+        .skip(start)
+        .limit(length);
       data.count = stats.last;
       return data;
     } catch (e: any) {
-      throw new Error(`get_last_blocks_ajax: failed to poll blocks collection: ${e.message}`);
+      throw new Error(`get_last_blocks_ajax: ${e.message}`);
     }
   };
 
@@ -763,7 +762,7 @@ export class Database {
       }
       return data;
     } catch (e: any) {
-      throw new Error(`get_address_txs_ajax: failed to poll addresstxs collection: ${e.message}`);
+      throw new Error(`get_address_txs_ajax: ${e.message}`);
     }
   };
 
@@ -1015,9 +1014,6 @@ export class Database {
           burned,
           connections
         }
-      }, {
-        // return new, updated document
-        new: true
       });
     } catch (e: any) {
       throw new Error(`Database.update_stats: ${e.message}`);
@@ -1074,7 +1070,7 @@ export class Database {
         const txs: Tx.Document[] = await Tx.Model.find({ blockindex: i });
         for (const tx of txs) {
           console.log(`REWIND: ${i}: ${tx.txid}`);
-          await rewind_save_tx(tx, i);
+          await rewind_save_tx(tx);
         }
         // delete saved block from db
         console.log(`REWIND: ${i}: delete block`);
