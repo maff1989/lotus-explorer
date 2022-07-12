@@ -59,7 +59,17 @@ const BLOCKSPANS: {
   quarter: 65700,
   year: 262800
 };
-const save_tx = async (txid: string, height: number) => {
+/**
+ * Save raw transaction info as `Tx.Model`
+ * @param txid Transaction ID
+ * @param height Block height that includes this `txid`
+ * @returns Object containing amount burned by tx, in satoshis
+ */
+const save_tx = async (
+  txid: string, height: number
+): Promise<{
+  burned: number
+}> => {
   const tx = await lib.get_rawtransaction(txid);
   const { vin } = await lib.prepare_vin(tx);
   const { vout, burned } = await lib.prepare_vout(tx.vout);
@@ -141,6 +151,15 @@ const save_block = async (
   }
   return;
 };
+/**
+ * Update `Address.Model` state for `address` with prepared `vin`/`vout` data
+ * @param address - Lotus address
+ * @param amount - Amount to incremenet/decrement, in satoshis
+ * @param height - Block height that includes this `txid`
+ * @param txid - Transaction ID
+ * @param type - How to calculate `$inc` for address update
+ * @returns 
+ */
 const update_address = async (
   address: string,
   amount: number,
@@ -196,7 +215,12 @@ const update_address = async (
   }
   return;
 };
-
+/**
+ * Rewind state changes for `address` with prepared `vin`/`vout` data
+ * @param address - Lotus address
+ * @param amount - Amount to increment/decrement, in satoshis
+ * @param type - How to calculate `$inc` for address rewind
+ */
 const rewind_update_address = async (
   address: string,
   amount: number,
@@ -235,7 +259,11 @@ const rewind_update_address = async (
     throw new Error(`rewind_update_address(${address}, ${amount}, ${type}): ${e.message}`);
   }
 };
-
+/**
+ * Rewind state changes caused by `tx`
+ * @param tx - Transaction document (`Tx.Document`)
+ * @param height - Block height that includes this `txid`
+ */
 const rewind_save_tx = async (
   tx: Tx.Document,
   height: number
@@ -327,6 +355,9 @@ export const is_locked = async (lockfile: string): Promise<boolean> => {
  * 
  */
 export class Database {
+  /**
+   * Connection string for MongoDB using data from `settings.json`
+   */
   private dbString = 'mongodb://' + settings.dbsettings.user
   + ':' + settings.dbsettings.password
   + '@' + settings.dbsettings.address
@@ -404,7 +435,9 @@ export class Database {
     }
   };
 
-  async create_txs(block: BlockInfo): Promise<{
+  async create_txs(
+    block: BlockInfo
+  ): Promise<{
     txburned: number
   }> {
     const { height, tx } = block;
@@ -426,7 +459,9 @@ export class Database {
    *    Check Database Entries
    *
    */
-  async check_market(market: string): Promise<Markets.Document> {
+  async check_market(
+    market: string
+  ): Promise<Markets.Document> {
     try {
       // returns either full document or null
       return await Markets.Model.findOne({ market: market }).lean();
@@ -435,7 +470,9 @@ export class Database {
     }
   };
 
-  async check_richlist(coin: string): Promise<Richlist.Document> {
+  async check_richlist(
+    coin: string
+  ): Promise<Richlist.Document> {
     try {
       // returns either full document or null
       return await Richlist.Model.findOne({ coin: coin }).lean();
@@ -444,7 +481,9 @@ export class Database {
     }
   };
 
-  async check_stats(coin: string): Promise<Stats.Document> {
+  async check_stats(
+    coin: string
+  ): Promise<Stats.Document> {
     try {
       // returns either full document or null
       return await Stats.Model.findOne({ coin: coin }).lean();
@@ -458,7 +497,9 @@ export class Database {
    *    Get Database Entries
    * 
    */
-  async get_address(hash: string): Promise<Address.Document> {
+  async get_address(
+    hash: string
+  ): Promise<Address.Document> {
     try {
       return await Address.Model.findOne({ a_id: hash }).lean();
     } catch (e: any) {
@@ -466,7 +507,9 @@ export class Database {
     }
   };
 
-  async get_block(height: number): Promise<Block.Document> {
+  async get_block(
+    height: number
+  ): Promise<Block.Document> {
     try {
       return await Block.Model.findOne({ height: height }).lean();
     } catch (e: any) {
@@ -561,7 +604,9 @@ export class Database {
     }
   };
 
-  async get_peer(address: string): Promise<Peers.Document> {
+  async get_peer(
+    address: string
+  ): Promise<Peers.Document> {
     try {
       return await Peers.Model.findOne({ address: address }).lean();
     } catch (e: any) {
@@ -577,7 +622,9 @@ export class Database {
     }
   }
   
-  async get_richlist(coin: string): Promise<Richlist.Document> {
+  async get_richlist(
+    coin: string
+  ): Promise<Richlist.Document> {
     try {
       return await Richlist.Model.findOne({ coin: coin }).lean();
     } catch (e: any) {
@@ -585,7 +632,9 @@ export class Database {
     }    
   };
   
-  async get_stats(coin: string): Promise<Stats.Document> {
+  async get_stats(
+    coin: string
+  ): Promise<Stats.Document> {
     try {
       return await Stats.Model.findOne({ coin: coin }).lean();
     } catch (e: any) {
@@ -593,7 +642,9 @@ export class Database {
     }
   };
   
-  async get_tx(txid: string): Promise<Tx.Document> {
+  async get_tx(
+    txid: string
+  ): Promise<Tx.Document> {
     try {
       return await Tx.Model.findOne({ txid: txid }).lean();
     } catch (e: any) {
@@ -601,7 +652,9 @@ export class Database {
     }
   };
 
-  async get_txs(txids: string[]) {
+  async get_txs(
+    txids: string[]
+  ): Promise<Tx.Document[]> {
     const txs: Tx.Document[] = [];
     for (const txid of txids) {
       try {
@@ -887,7 +940,9 @@ export class Database {
   };
 
   //property: 'received' or 'balance'
-  async update_richlist(list: string): Promise<void> {
+  async update_richlist(
+    list: string
+  ): Promise<void> {
     try {
       const addresses = list == 'received'
         ? await Address.Model.find({}, 'a_id balance received name')
@@ -925,7 +980,10 @@ export class Database {
     }
   };
 
-  async update_stats(coin: string, blockcount: number): Promise<void> {
+  async update_stats(
+    coin: string,
+    blockcount: number
+  ): Promise<void> {
     try {
       const supply = await lib.get_supply();
       const burned = await lib.get_burned_supply();
@@ -953,7 +1011,9 @@ export class Database {
    *    Delete/Rewind Database Entries
    * 
    */
-  async drop_peer(address: string): Promise<void> {
+  async drop_peer(
+    address: string
+  ): Promise<void> {
     try {
       await Peers.Model.deleteOne({ address: address });
     } catch (e: any) {
@@ -969,7 +1029,9 @@ export class Database {
     }
   };
 
-  async delete_richlist(coin: string): Promise<void> {
+  async delete_richlist(
+    coin: string
+  ): Promise<void> {
     try {
       await Richlist.Model.findOneAndRemove({ coin: coin });
     } catch (e: any) {
@@ -986,7 +1048,7 @@ export class Database {
   async rewind_db(
     endHeight: number,
     startHeight: number
-  ) {
+  ): Promise<void> {
     // rewind from endHeight down to and including startHeight
     for (let i = endHeight; i >= startHeight; i--) {
       try {
