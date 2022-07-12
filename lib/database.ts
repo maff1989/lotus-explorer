@@ -905,13 +905,11 @@ export class Database {
   };
 
   async update_tx_db(
-    coin: string,
     startBlockHeight: number,
     endBlockHeight: number
   ): Promise<void> {
     const counter = { currentBlockHeight: startBlockHeight };
     while (counter.currentBlockHeight <= endBlockHeight) {
-      let blockBurned = 0;
       try {
         const blockhash = await lib.get_blockhash(counter.currentBlockHeight);
         const block = await lib.get_block(blockhash);

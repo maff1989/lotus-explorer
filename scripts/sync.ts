@@ -121,7 +121,7 @@ const main = async () => {
             });
             console.log('Stats reset.');
             // Resync
-            await db.update_tx_db(settings.coin, 1, blockcount);
+            await db.update_tx_db(1, blockcount);
             console.log("update_tx_db complete");
             await db.update_charts_db();
             console.log("update_charts_db complete");
@@ -151,7 +151,7 @@ const main = async () => {
               throw new Error(`Database is already up-to-date (block: ${blockcount})`);
             }
             console.log(`Last good height: ${stats.last})`)
-            await db.update_tx_db(settings.coin, stats.last + 1, blockcount);
+            await db.update_tx_db(stats.last + 1, blockcount);
             console.log("update_tx_db complete");
             await db.update_charts_db();
             console.log("update_charts_db complete");
