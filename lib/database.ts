@@ -247,13 +247,17 @@ const rewind_save_tx = async (
   }
   // rewind vouts
   for (const output of vout) {
+    const type = { output: 'rewind-vout' };
     const { addresses, amount } = output;
     // skip all OP_RETURN outputs
     if (addresses.includes("OP_RETURN")) {
       continue;
     }
+    if (vin.find(input => input.addresses == addresses)) {
+      type.output = 'rewind-toSelf';
+    }
     try {
-      await rewind_update_address(addresses, amount, 'rewind-vout');
+      await rewind_update_address(addresses, amount, type.output);
     } catch (e: any) {
       throw new Error(`rewind_save_tx: rewind_update_address: vout ${addresses}: ${e.message}`);
     }
