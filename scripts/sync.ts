@@ -148,9 +148,9 @@ const main = async () => {
             }
             // exit if already up-to-date and not rewinding
             else if (stats.last == blockcount) {
-              throw new Error(`Database is already up-to-date (block: ${blockcount})`);
+              console.log(`Block database is already up-to-date (block: ${blockcount})`);
             }
-            console.log(`Last good height: ${stats.last})`)
+            console.log(`Last good height: ${stats.last}`)
             await db.update_tx_db(stats.last + 1, blockcount);
             console.log("update_tx_db complete");
             await db.update_charts_db();
