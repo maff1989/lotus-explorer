@@ -975,7 +975,6 @@ export class Database {
   ) {
     // rewind from endHeight up to and including startHeight
     for (let i = endHeight; i >= startHeight; i--) {
-      console.log(`${i}: rewinding index state`);
       try {
         // get db txes at block height
         const txs: Tx.Document[] = await Tx.Model.find({ blockindex: i });

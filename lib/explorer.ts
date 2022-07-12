@@ -75,7 +75,7 @@ const rpcCommand = async (
   try {
     return await rpc.call(command, ...params);
   } catch (e: any) {
-    throw new Error(`RPC error: ${e.message}`);
+    return new Error(`RPC error: ${e.message}`);
   }
 };
 
@@ -253,14 +253,12 @@ export class Explorer {
    * @returns {Promise<number>} Block height of non-orphaned block
    */
   async is_block_orphaned(height: number): Promise<number> {
-    try {
-      const blockhash = await this.get_blockhash(height);
-      await this.get_block(blockhash);
-      // assume valid if get_block doesn't throw Error
+    const blockhash = await this.get_blockhash(height);
+    const block = await this.get_block(blockhash);
+    if (block?.confirmations) {
       return height;
-    } catch (e: any) {
-      return await this.is_block_orphaned(height - 1);
     }
+    return await this.is_block_orphaned(height - 1);
   };
   /**
    * Calculate total input/output value

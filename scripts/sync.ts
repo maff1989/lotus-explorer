@@ -97,7 +97,6 @@ const main = async () => {
         break;
       case 'index':
         const blockcount = await lib.get_blockcount();
-        console.log('blockcount', blockcount);
         // rewind index state if last good block comes before last saved block
         const blockLastGood = await lib.is_block_orphaned(stats.last);
         if (blockLastGood < stats.last) {
