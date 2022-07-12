@@ -122,6 +122,40 @@ const save_tx = async (
   }
   return { burned };
 };
+/**
+ * Save info for `txid` and `address` to `AddressTx.Model`
+ * @param address - Lotus address
+ * @param balance - Overall balance of `address` in tx, in satoshis
+ * @param height - Block height that includes this `txid`
+ * @param txid - Transaction ID
+ */
+const save_addresstx = async (
+  address: string,
+  balance: number,
+  height: number,
+  txid: string
+): Promise<void> => {
+  try {
+    await AddressTx.Model.findOneAndUpdate(
+      { a_id: address, txid: txid },
+      { $inc: {
+        amount: balance
+      }, $set: {
+        a_id: address,
+        blockindex: height,
+        txid: txid
+      }},
+      { upsert: true }
+    );
+  } catch (e: any) {
+    throw new Error(`save_addresstx: ${e.message}`);
+  }
+};
+/**
+ * Save raw block data as `Block.Model`
+ * @param block - Raw block info
+ * @param txburned - Amount burned by txs, in satoshis
+ */
 const save_block = async (
   block: BlockInfo,
   txburned: number
@@ -189,16 +223,11 @@ const update_address = async (
         break;
     }
     try {
-      await AddressTx.Model.findOneAndUpdate(
-        { a_id: address, txid: txid },
-        { $inc: {
-          amount: addr_inc.balance
-        }, $set: {
-          a_id: address,
-          blockindex: blockheight,
-          txid: txid
-        }},
-        { new: true, upsert: true }
+      await save_addresstx(
+        address,
+        addr_inc.balance,
+        height,
+        txid
       );
     } catch (e: any) {
       throw new Error(`update_address: ${address}: ${txid}: ${e.message}`);
