@@ -226,7 +226,6 @@ const rewind_save_tx = async (
   height: number
 ) => {
   const { txid, vin, vout, } = tx;
-  console.log(`rewind: ${height}: ${txid}`);
   // rewind vins, minus coinbase input
   for (const input of vin.slice(1)) {
     const { addresses, amount } = input;
@@ -971,13 +970,13 @@ export class Database {
     startHeight: number
   ) {
     // rewind from endHeight up to and including startHeight
-    for (let i = endHeight; i < startHeight; i--) {
+    for (let i = endHeight; i >= startHeight; i--) {
       console.log(`${i}: rewinding index state`);
       try {
         // get db txes at block height
         const txs: Tx.Document[] = await Tx.Model.find({ blockindex: i });
         for (const tx of txs) {
-          console.log(`${i}: rewind ${tx.txid}`);
+          console.log(`${i}: ${tx.txid}`);
           await rewind_save_tx(tx, i);
         }
         // delete saved block from db
