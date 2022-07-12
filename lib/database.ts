@@ -976,11 +976,11 @@ export class Database {
         // get db txes at block height
         const txs: Tx.Document[] = await Tx.Model.find({ blockindex: i });
         for (const tx of txs) {
-          console.log(`${i}: ${tx.txid}`);
+          console.log(`REWIND: ${i}: ${tx.txid}`);
           await rewind_save_tx(tx, i);
         }
         // delete saved block from db
-        console.log(`${i}: rewind block`);
+        console.log(`REWIND: ${i}: delete block`);
         await Block.Model.findOneAndDelete({ height: i });
       } catch (e: any) {
         throw new Error(`Database.rewind_db(${startHeight}, ${endHeight}): ${e.message}`);

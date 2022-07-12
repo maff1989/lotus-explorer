@@ -103,8 +103,8 @@ const main = async () => {
         if (blockLastGood < stats.last) {
           console.log(`ORPHAN FOUND: height: %s`, blockLastGood + 1);
           await db.rewind_db(stats.last, blockLastGood + 1);
-          // update indexes from the last good block height
           stats.last = blockLastGood;
+          console.log(`REWIND: completed (chain height: ${stats.last})`);
         }
         // exit if already up-to-date and not rewinding
         else if (stats.last == blockcount) {
@@ -137,6 +137,8 @@ const main = async () => {
             // Resync
             await db.update_tx_db(settings.coin, 1, blockcount);
             console.log("update_tx_db complete");
+            await db.update_charts_db();
+            console.log("update_charts_db complete");
             await db.update_richlist('received');
             console.log("update_richlist (received) complete");
             await db.update_richlist('balance');
