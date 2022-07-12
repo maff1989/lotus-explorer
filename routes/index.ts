@@ -232,6 +232,10 @@ router.get('/block/:blockhash', async (req, res) => {
 });
 router.get('/address/:address', async (req, res) => {
   const { address } = req.params;
+  const { isvalid } = await lib.validate_address(address);
+  if (!isvalid) {
+    return route_get_index(res, `Address is invalid: ${address}`);
+  }
   const renderData = {
     active: 'address',
     address: {

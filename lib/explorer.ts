@@ -7,6 +7,12 @@ import BitcoinRpc from 'bitcoin-rpc-promise';
 
 type PreparedTransactionInputs = Tx.Document['vin'];
 type PreparedTransactionOutputs = Tx.Document['vout'];
+export type AddressInfo = {
+  isvalid: boolean,
+  address?: string,
+  scriptPubKey?: string,
+  isscript?: boolean
+};
 export type BlockInfo = {
   hash: string,
   confirmations: number,
@@ -191,6 +197,13 @@ export class Explorer {
   };
   async get_peerinfo(): Promise<PeerInfo[]> {
     return await rpcCommand('getpeerinfo');
+  };
+  /**
+   * Checks if provided address is a valid Lotus address
+   * @param address String to validate
+   */
+  async validate_address(address: string): Promise<AddressInfo> {
+    return await rpcCommand('validateaddress', address);
   };
   /**
    * Fetch all address balances from database and calculate available supply
