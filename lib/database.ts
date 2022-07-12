@@ -823,22 +823,11 @@ export class Database {
     } = { plot: [], minerTotal: 0 };
     try {
       const dbBlock = await this.get_latest_block();
-      const result: Array<{
-        _id: null,
-        blocks: Array<{ minedby: string }>
-      }> = await Block.Model.aggregate([
-        { '$match': {
-          'timestamp': { '$gte': (dbBlock.timestamp - seconds) }
-        }},
-        //{ "$sort": {"timestamp": 1} },
-        //{ "$limit": blockspan },
-        { "$group": {
-          _id: null,
-          "blocks": { $push: { minedby: "$minedby" } }
-        }},
-      ]);
+      const blocks: Block.Document[] = await Block.Model.find(
+        { timestamp: { $gte: (dbBlock.timestamp - seconds)}}
+      );
       const minerBlockCounts: { [minedby: string]: number } = {};
-      result[0].blocks.forEach((block) => {
+      blocks.forEach((block) => {
         minerBlockCounts[block.minedby] !== undefined
           ? minerBlockCounts[block.minedby]++
           : minerBlockCounts[block.minedby] = 1
@@ -852,7 +841,7 @@ export class Database {
           : minerMiscBlocks += blockCount;
       }
   
-      const plot = Object.entries(minerFiltered).sort((a, b) => b[1] - a[1]);
+      data.plot = Object.entries(minerFiltered).sort((a, b) => b[1] - a[1]);
       data.plot.push(["Miscellaneous Miners (<= 3% hashrate each)", minerMiscBlocks]);
       data.minerTotal = Object.keys(minerBlockCounts).length;
       return data;
