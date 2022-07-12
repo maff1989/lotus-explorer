@@ -97,19 +97,6 @@ const main = async () => {
         break;
       case 'index':
         const blockcount = await lib.get_blockcount();
-        // rewind index state if last good block comes before last saved block
-        const blockLastGood = await lib.is_block_orphaned(stats.last);
-        if (blockLastGood < stats.last) {
-          console.log(`ORPHAN FOUND: height: %s`, blockLastGood + 1);
-          await db.rewind_db(stats.last, blockLastGood + 1);
-          stats.last = blockLastGood;
-          console.log(`REWIND: completed (chain height: ${stats.last})`);
-        }
-        // exit if already up-to-date and not rewinding
-        else if (stats.last == blockcount) {
-          console.log('Database is already up-to-date (block: %s)', blockcount);
-          process.exit(0);
-        }
         switch (MODE) {
           case 'reindex':
             // Delete/reset
@@ -150,6 +137,21 @@ const main = async () => {
             // not implemented in the Database class code
             break;
           case 'update':
+            // rewind index state if last good block comes before last saved block
+            console.log('Checking for orphaned blocks...');
+            const blockLastGood = await lib.is_block_orphaned(stats.last);
+            if (blockLastGood < stats.last) {
+              console.log(`ORPHAN FOUND: height: %s`, blockLastGood + 1);
+              await db.rewind_db(stats.last, blockLastGood + 1);
+              stats.last = blockLastGood;
+              console.log(`REWIND: complete`);
+            }
+            // exit if already up-to-date and not rewinding
+            else if (stats.last == blockcount) {
+              console.log('Database is already up-to-date (block: %s)', blockcount);
+              process.exit(0);
+            }
+            console.log(`Last good height: ${stats.last})`)
             await db.update_tx_db(settings.coin, stats.last + 1, blockcount);
             console.log("update_tx_db complete");
             await db.update_charts_db();

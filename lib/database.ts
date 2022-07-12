@@ -153,15 +153,17 @@ const update_address = async (
     addr_inc.sent = amount;
   } else {
     switch (type) {
+      // used during vout processing to undo below vin case
       case 'toSelf':
         addr_inc.sent = -amount;
         addr_inc.balance = amount;
         break;
+      // increment sent and deduct from balance
       case 'vin':
         addr_inc.sent = amount;
         addr_inc.balance = -amount;
         break;
-      // only increment received if address spent to itself
+      // increment received/balance
       default:
         addr_inc.received = amount;
         addr_inc.balance = amount;
@@ -210,6 +212,10 @@ const rewind_update_address = async (
       addr_inc.received = -amount;
       addr_inc.balance = -amount;
       break;
+    case 'rewind-toSelf':
+      addr_inc.sent = amount;
+      addr_inc.balance = -amount;
+      break;
   }
   try {
     await Address.Model.findOneAndUpdate(
@@ -242,6 +248,10 @@ const rewind_save_tx = async (
   // rewind vouts
   for (const output of vout) {
     const { addresses, amount } = output;
+    // skip all OP_RETURN outputs
+    if (addresses.includes("OP_RETURN")) {
+      continue;
+    }
     try {
       await rewind_update_address(addresses, amount, 'rewind-vout');
     } catch (e: any) {
