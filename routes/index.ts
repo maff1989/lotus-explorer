@@ -232,12 +232,24 @@ router.get('/block/:blockhash', async (req, res) => {
 });
 router.get('/address/:address', async (req, res) => {
   const { address } = req.params;
+  const renderData = {
+    active: 'address',
+    address: {
+      a_id: address,
+      balance: 0,
+      received: 0,
+      sent: 0
+    },
+    txs: []
+  }
   try {
     const dbAddress = await db.get_address(address);
+    if (!dbAddress) {
+      return res.render('address', renderData);
+    }
     return res.render('address', {
-      active: 'address',
+      ...renderData,
       address: dbAddress,
-      txs: []
     });
   } catch (e: any) {
     console.log(`route_get_address: ${address}: ${e.message}`);
