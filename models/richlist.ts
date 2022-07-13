@@ -1,5 +1,8 @@
 import { Schema, model } from 'mongoose';
 import * as Address from './address';
+/**
+ * Richlist tracks the top Lotus addresses with the most Lotus balance
+ */
 export type Document = {
   coin: string,
   received: Address.Document[],

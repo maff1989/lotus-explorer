@@ -1,4 +1,7 @@
 import { Schema, model } from 'mongoose';
+/**
+ * Stats tracks various sync state values, such as supply
+ */
 export type Document = {
   coin: string,
   count: number,

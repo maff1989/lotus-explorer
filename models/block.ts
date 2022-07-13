@@ -1,4 +1,7 @@
 import { Schema, model } from 'mongoose';
+/**
+ * Block tracks necessary blockchain metrics, such as difficulty and burned Lotus
+ */
 export type Document = {
   height: number,
   minedby: string,

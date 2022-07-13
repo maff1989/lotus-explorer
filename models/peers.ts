@@ -1,4 +1,9 @@
 import { Schema, model } from 'mongoose';
+/**
+ * Peers stores the IP address, geo IP, and other network peer data
+ * 
+ * This is used to render the `/network` page content
+ */
 export type Document = {
   createdAt?: Date,
   address: string,

@@ -1,4 +1,7 @@
 import { Schema, model } from 'mongoose';
+/**
+ * Address tracks overall `sent`, `received`, and `balance` for `a_id`
+ */
 export type Document = {
   a_id: string,
   balance: number,

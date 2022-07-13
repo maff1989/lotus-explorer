@@ -1,4 +1,10 @@
 import { Schema, model } from 'mongoose';
+/**
+ * Tx stores transaction information used to derive:
+ * - address indexes
+ * - burned supply
+ * - etc.
+ */
 export type Document = {
   txid: string,
   size: number,

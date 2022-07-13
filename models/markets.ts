@@ -1,4 +1,9 @@
 import { Schema, model } from 'mongoose';
+/**
+ * Markets stores data retrieved from various market APIs
+ * 
+ * This is used to render the `/markets/:market` page content
+ */
 export type Document = {
   market: string,
   summary: object,

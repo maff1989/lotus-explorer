@@ -1,5 +1,10 @@
 import { Schema, model } from 'mongoose';
 export type PlotData = Array<(string | number)[]>;
+/**
+ * Charts stores calculated plot data for various metrics
+ * 
+ * This is used to render the graphs on the `/charts` page
+ */
 export type Document = {
   txsDay: PlotData,
   txsWeek: PlotData,
