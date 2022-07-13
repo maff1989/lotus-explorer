@@ -34,7 +34,6 @@ export type PeerInfo = {
   addr: string,
   version: number,
   subver: string,
-
 };
 export type TransactionInput = {
   txid: string,
@@ -68,8 +67,8 @@ const XPI_DIVISOR = 1000000
   + `${settings.wallet.port}`);
 /**
  * Run command with params against Lotus RPC daemon
- * @param command - RPC command
- * @param params  - RPC command parameters
+ * @param command RPC command
+ * @param params  RPC command parameters
  * @returns {Promise<any>} Command result
  */
 const rpcCommand = async (
@@ -86,7 +85,7 @@ const rpcCommand = async (
 export class Explorer {
   /**
    * Converts XPI units into satoshi units
-   * @param amount - Amount of XPI
+   * @param amount Amount of XPI
    * @returns {number} Satoshi units
    */
   convert_to_satoshi(amount: number): number {
@@ -94,7 +93,7 @@ export class Explorer {
   };
   /**
    * Converts satoshi units into XPI units
-   * @param sats - Amount of satoshis
+   * @param sats Amount of satoshis
    * @returns {number} XPI units
    */
   convert_to_xpi(sats: number): number {
@@ -142,7 +141,7 @@ export class Explorer {
   };
   /**
    * RPC command - `getblockhash`
-   * @param height - Block height
+   * @param height Block height
    * @returns {Promise<string>} Raw block hash
    */
   async get_blockhash(height: number): Promise<string> {
@@ -150,7 +149,7 @@ export class Explorer {
   };
   /**
    * RPC command - `getblock`
-   * @param hash - Raw block hash
+   * @param hash Raw block hash
    * @returns {Promise<BlockInfo>} Raw block info
    */
   async get_block(hash: string): Promise<BlockInfo> {
@@ -158,7 +157,7 @@ export class Explorer {
   };
   /**
    * RPC command - `getrawtransaction`
-   * @param txid - Raw transaction ID
+   * @param txid Raw transaction ID
    * @returns {Promise<RawTransaction} Raw transaction info
    */
   async get_rawtransaction(txid: string): Promise<RawTransaction> {
@@ -217,7 +216,7 @@ export class Explorer {
   };
   /**
    * Fetch all transactions from specified block from database and calculate fees paid/burned
-   * @param height - Block height
+   * @param height Block height
    * @returns Object containing blockFees and blockFeesBurned in satoshis
    */
   async get_block_fees(height: number): Promise<{
@@ -257,7 +256,7 @@ export class Explorer {
    * Check if block at specified height has been orphaned by the network
    * 
    * If block orphaned, check previous blocks to find most recent, non-orphaned block
-   * @param height - Block height
+   * @param height Block height
    * @returns {Promise<number>} Block height of non-orphaned block
    */
   async is_block_orphaned(
@@ -285,8 +284,8 @@ export class Explorer {
 
   /**
    * Calculate transaction fee
-   * @param vout - Prepared outputs
-   * @param vin - Prepared inputs
+   * @param vout Prepared outputs
+   * @param vin Prepared inputs
    * @returns {Promise<number>} Total transaction fee in satoshis
    */
   async calculate_fee(
@@ -299,7 +298,7 @@ export class Explorer {
   };
   /**
    * Prepare raw vout for database storage
-   * @param vout - Raw transaction `vout` array
+   * @param vout Raw transaction `vout` array
    * @returns Prepared outputs
    */
   async prepare_vout(
@@ -339,7 +338,7 @@ export class Explorer {
   };
   /**
    * Prepare raw vin for database storage
-   * @param tx - Raw transaction info
+   * @param tx Raw transaction info
    * @returns Prepared inputs
    */
   async prepare_vin(
@@ -364,8 +363,8 @@ export class Explorer {
   };
   /**
    * Gather the address/amount used by vin
-   * @param vin - Raw vin
-   * @param vouts - Raw vout
+   * @param vin Raw vin
+   * @param vouts Raw vout
    * @returns Object containing input address and amount
    */
   private async get_input_address(
