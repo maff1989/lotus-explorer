@@ -5,8 +5,6 @@ import * as Tx from '../models/tx';
 import BitcoinRpc from 'bitcoin-rpc-promise';
 // import { Tx } from 'chronik-client';
 
-type PreparedTransactionInputs = Tx.Document['vin'];
-type PreparedTransactionOutputs = Tx.Document['vout'];
 export type AddressInfo = {
   isvalid: boolean,
   address?: string,
@@ -240,9 +238,9 @@ export class Explorer {
    */
   async get_burned_supply(): Promise<number> {
     const data = { totalBurned: 0 };
-    const docs: Block.Document[] = await Block.Model.aggregate([
-      { $match: { burned: { $gt: 0 }}}
-    ]);
+    const docs: Block.Document[] = await Block.Model
+      .find({ burned: { $gt: 0 }})
+      .lean();
     docs.forEach(doc => data.totalBurned += doc.burned);
     return data.totalBurned;
   };
@@ -262,7 +260,9 @@ export class Explorer {
    * @param height - Block height
    * @returns {Promise<number>} Block height of non-orphaned block
    */
-  async is_block_orphaned(height: number): Promise<number> {
+  async is_block_orphaned(
+    height: number
+  ): Promise<number> {
     const blockhash = await this.get_blockhash(height);
     const block = await this.get_block(blockhash);
     if (block?.confirmations > 0) {
@@ -272,11 +272,11 @@ export class Explorer {
   };
   /**
    * Calculate total input/output value
-   * @param array - Prepared inputs or outputs
+   * @param array Prepared inputs or outputs
    * @returns {Promise<number>} Total amount in satoshis
    */
   async calculate_total(
-    array: PreparedTransactionInputs | PreparedTransactionOutputs
+    array: Tx.Document['vin'] | Tx.Document['vout']
   ): Promise<number> {
     const data = { total: 0 };
     array.forEach((entry: any) => data.total += entry.amount)
@@ -290,8 +290,8 @@ export class Explorer {
    * @returns {Promise<number>} Total transaction fee in satoshis
    */
   async calculate_fee(
-    vout: PreparedTransactionOutputs,
-    vin: PreparedTransactionInputs
+    vout: Tx.Document['vout'],
+    vin: Tx.Document['vin']
   ): Promise<number> {
     const totalVin = await this.calculate_total(vin);
     const totalVout = await this.calculate_total(vout);
@@ -302,12 +302,13 @@ export class Explorer {
    * @param vout - Raw transaction `vout` array
    * @returns Prepared outputs
    */
-  async prepare_vout(vout: TransactionOutput[]) {
+  async prepare_vout(
+    vout: TransactionOutput[]
+  ) {
     const data: {
-      vout: PreparedTransactionOutputs,
+      vout: Tx.Document['vout'],
       burned: number
     } = { vout: [], burned: 0 };
-
     for (const output of vout) {
       const amount = this.convert_to_satoshi(output.value);
       const { addresses, type, asm } = output.scriptPubKey;
@@ -334,7 +335,6 @@ export class Explorer {
           })
         : data.vout[index].amount += amount;
     }
-
     return data;
   };
   /**
@@ -342,15 +342,16 @@ export class Explorer {
    * @param tx - Raw transaction info
    * @returns Prepared inputs
    */
-  async prepare_vin(tx: RawTransaction) {
-    const { vin, vout } = tx;
+  async prepare_vin(
+    tx: RawTransaction
+  ) {
     const data: {
-      vin: PreparedTransactionInputs,
+      vin: Tx.Document['vin'],
     } = { vin: [] };
-
+    const { vin, vout } = tx;
     for (const input of vin) {
-      const inputAddresses = await this.get_input_addresses(input, vout);
-      const [ { hash, amount } ] = inputAddresses;
+      const inputAddress = await this.get_input_address(input, vout);
+      const { hash, amount } = inputAddress;
       const index = data.vin.findIndex(vin => vin.addresses == hash)
       if (index < 0) {
         data.vin.push({ addresses: hash, amount: amount, num_inputs: 1 });
@@ -359,37 +360,29 @@ export class Explorer {
         data.vin[index].num_inputs += 1;
       }
     }
-
     return data;
   };
   /**
    * Gather the address/amount used by vin
    * @param vin - Raw vin
    * @param vouts - Raw vout
-   * @returns Array of input addresses
+   * @returns Object containing input address and amount
    */
-  private async get_input_addresses(
+  private async get_input_address(
     vin: TransactionInput,
     vouts: TransactionOutput[]
   ) {
-    const data: {
-      addresses: Array<{
-        hash: string,
-        amount: number
-      }>
-    } = { addresses: [] };
-
+    const data = { address: { hash: '', amount: 0 }};
     if (vin.coinbase) {
       const amount = vouts.reduce((a, b) => a + b.value, vouts[0].value);
       const sats = this.convert_to_satoshi(amount);
-      data.addresses.push({ hash: 'coinbase', amount: sats });
+      data.address = { hash: 'coinbase', amount: sats };
     } else {
       const tx = await this.get_rawtransaction(vin.txid);
       const vout = tx.vout[vin.vout];
       const sats = this.convert_to_satoshi(vout.value);
-      data.addresses.push({ hash: vout.scriptPubKey.addresses[0], amount: sats });
+      data.address = { hash: vout.scriptPubKey.addresses[0], amount: sats };
     }
-
-    return data.addresses;
+    return data.address;
   };
 };
