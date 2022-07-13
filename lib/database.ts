@@ -4,7 +4,10 @@ import {
   PipelineStage,
 } from 'mongoose';
 import * as fs from 'fs/promises';
-import { BlockInfo, Explorer } from './explorer';
+import {
+  BlockInfo,
+  Explorer
+} from './explorer';
 import settings from './settings';
 import {
   getChartsDifficultyAggregation,
@@ -61,7 +64,7 @@ const BLOCKSPANS: {
   year: 262800
 };
 /**
- * Save raw transaction info as `Tx.Model`
+ * Save transaction info after converting to `Tx.Model`
  * @param txid Transaction ID
  * @param height Block height that includes this `txid`
  * @returns Object containing amount burned by tx, in satoshis
@@ -125,10 +128,10 @@ const save_tx = async (
 };
 /**
  * Save info for `txid` and `address` to `AddressTx.Model`
- * @param address - Lotus address
- * @param balance - Overall balance of `address` in tx, in satoshis
- * @param height - Block height that includes this `txid`
- * @param txid - Transaction ID
+ * @param address Lotus address
+ * @param balance Overall balance of `address` in tx, in satoshis
+ * @param height Block height that includes this `txid`
+ * @param txid Transaction ID
  */
 const save_addresstx = async (
   address: string,
@@ -154,8 +157,8 @@ const save_addresstx = async (
 };
 /**
  * Save raw block data as `Block.Model`
- * @param block - Raw block info
- * @param txburned - Amount burned by txs, in satoshis
+ * @param block Raw block info
+ * @param txburned Amount burned by txs, in satoshis
  */
 const save_block = async (
   block: BlockInfo,
@@ -188,11 +191,11 @@ const save_block = async (
 };
 /**
  * Update `Address.Model` state for `address` with prepared `vin`/`vout` data
- * @param address - Lotus address
- * @param amount - Amount to incremenet/decrement, in satoshis
- * @param height - Block height that includes this `txid`
- * @param txid - Transaction ID
- * @param type - How to calculate `$inc` for address update
+ * @param address Lotus address
+ * @param amount Amount to incremenet/decrement, in satoshis
+ * @param height Block height that includes this `txid`
+ * @param txid Transaction ID
+ * @param type How to calculate `$inc` for address update
  * @returns 
  */
 const update_address = async (
@@ -247,9 +250,9 @@ const update_address = async (
 };
 /**
  * Rewind state changes for `address` with prepared `vin`/`vout` data
- * @param address - Lotus address
- * @param amount - Amount to increment/decrement, in satoshis
- * @param type - How to calculate `$inc` for address rewind
+ * @param address Lotus address
+ * @param amount Amount to increment/decrement, in satoshis
+ * @param type How to calculate `$inc` for address rewind
  */
 const rewind_update_address = async (
   address: string,
@@ -292,8 +295,7 @@ const rewind_update_address = async (
 };
 /**
  * Rewind state changes caused by `tx`
- * @param tx - Transaction document (`Tx.Document`)
- * @param height - Block height that includes this `txid`
+ * @param tx Transaction document (`Tx.Document`)
  */
 const rewind_save_tx = async (
   tx: Tx.Document
@@ -309,7 +311,7 @@ const rewind_save_tx = async (
     try {
       await rewind_update_address(addresses, amount, 'rewind-vin');
     } catch (e: any) {
-      throw new Error(`rewind_save_tx: rewind_update_address: vin ${addresses}: ${e.message}`);
+      throw new Error(`rewind_save_tx: vin: ${e.message}`);
     }
   }
   // rewind vouts
@@ -326,7 +328,7 @@ const rewind_save_tx = async (
     try {
       await rewind_update_address(addresses, amount, type.output);
     } catch (e: any) {
-      throw new Error(`rewind_save_tx: rewind_update_address: vout ${addresses}: ${e.message}`);
+      throw new Error(`rewind_save_tx: vout: ${e.message}`);
     }
   }
   // Delete Tx and AddressTx entry for txid after rewinding all address updates
@@ -334,7 +336,7 @@ const rewind_save_tx = async (
     await Tx.Model.deleteOne({ txid: txid });
     await AddressTx.Model.deleteMany({ txid: txid });
   } catch (e: any) {
-    throw new Error(`rewind_save_tx:: Tx/AddressTx.Model.deleteOne(${txid}): ${e.message}`);
+    throw new Error(`rewind_save_tx: ${txid}: ${e.message}`);
   }
 };
 const get_market_data = async (market: string) => {
@@ -431,7 +433,9 @@ export class Database {
     }
   };
   
-  async create_peer(params: Peers.Document): Promise<Peers.Document> {
+  async create_peer(
+    params: Peers.Document
+  ): Promise<Peers.Document> {
     try {
       const peer = new Peers.Model(params);
       return await peer.save();
@@ -440,7 +444,9 @@ export class Database {
     }
   };
 
-  async create_richlist(coin: string): Promise<Richlist.Document> {
+  async create_richlist(
+    coin: string
+  ): Promise<Richlist.Document> {
     try {
       const richlist = new Richlist.Model({ coin: coin, received: [], balance: [] });
       return await richlist.save();
@@ -449,7 +455,9 @@ export class Database {
     }
   };
 
-  async create_stats(coin: string): Promise<Stats.Document> {
+  async create_stats(
+    coin: string
+  ): Promise<Stats.Document> {
     try {
       const create = new Stats.Model({
         coin: coin,
@@ -473,7 +481,6 @@ export class Database {
     const { height, tx } = block;
     const burned = { total: 0 };
     for (const txid of tx) {
-      console.log('%s: %s', height, txid);
       try {
         const { burned: txBurned } = await save_tx(txid, height);
         burned.total += txBurned;
@@ -984,13 +991,19 @@ export class Database {
     const counter = { currentBlockHeight: startBlockHeight };
     while (counter.currentBlockHeight <= endBlockHeight) {
       try {
+        const timeStart = Date.now();
         const blockhash = await lib.get_blockhash(counter.currentBlockHeight);
         const block = await lib.get_block(blockhash);
         // save all txs in block
         const { txburned } = await this.create_txs(block);
         // save block
         await save_block(block, txburned);
-        console.log('%s: block saved', block.height);
+        const timeEnd = Date.now();
+        console.log('SAVE: block %s (%s txs) complete (%sms)',
+          block.height,
+          block.nTx,
+          timeEnd - timeStart
+        );
       } catch (e: any) {
         throw new Error(`Database.update_tx_db: ${e.message}`);
       }
@@ -1068,16 +1081,21 @@ export class Database {
     for (let i = endHeight; i >= startHeight; i--) {
       try {
         // get db txes at block height
+        const timeStart = Date.now();
         const txs: Tx.Document[] = await Tx.Model.find({ blockindex: i });
         for (const tx of txs) {
-          console.log(`REWIND: ${i}: ${tx.txid}`);
           await rewind_save_tx(tx);
         }
         // delete saved block from db
-        console.log(`REWIND: ${i}: delete block`);
         await Block.Model.findOneAndDelete({ height: i });
+        const timeEnd = Date.now();
+        console.log(`REWIND: block %s (%s txs) complete (%sms)`,
+          i,
+          txs.length,
+          timeEnd - timeStart
+        );
       } catch (e: any) {
-        throw new Error(`Database.rewind_db(${endHeight}, ${startHeight}): ${e.message}`);
+        throw new Error(`Database.rewind_db(${endHeight}, ${startHeight}): ${i}: ${e.message}`);
       }
     }
   };
