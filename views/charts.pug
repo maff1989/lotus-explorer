@@ -10,6 +10,7 @@ block content
       DifficultyWeek: !{JSON.stringify(difficultyWeek)},
       DifficultyMonth: !{JSON.stringify(difficultyMonth)},
       DifficultyQuarter: !{JSON.stringify(difficultyQuarter)},
+      DifficultyYear: !{JSON.stringify(difficultyYear)},
       MiningDistDay: !{JSON.stringify(miningDistDay)},
       MiningDistWeek: !{JSON.stringify(miningDistWeek)}
     }
@@ -26,6 +27,7 @@ block content
       plotChartDifficultyWeek: null,
       plotChartDifficultyMonth: null,
       plotChartDifficultyQuarter: null,
+      plotChartDifficultyYear: null,
       plotChartMiningDistDay: null,
       plotChartMiningDistWeek: null
     }
@@ -202,6 +204,32 @@ block content
           showMarker: false,
         }]  
       },
+      DifficultyYear: {
+        title: "!{parseFloat(((difficultyYear[difficultyYear.length - 1][1] - difficultyYear[0][1]) / difficultyYear[0][1]) * 100).toLocaleString('en')}% Change",
+        highlighter:{
+          show: true
+        },
+        axes:{
+          xaxis:{
+            show: true,
+            renderer:$.jqplot.DateAxisRenderer,
+            tickOptions:{
+              formatString:'%m/%d'
+            },
+            tickInterval:'1 month',
+          },
+          yaxis:{
+            show: true,
+          }
+        },
+        series:[{
+          rendererOptions:{
+            //smooth: true,
+          },
+          lineWidth: 1.5,
+          showMarker: false,
+        }]  
+      },
       MiningDistDay: {
         title: "!{totalMinersDay} Miners Total",
         series: [{
@@ -359,6 +387,8 @@ block content
               a.nav-link(href='#tabDifficultyMonth', aria-controls='tabDifficultyMonth', role='tab', data-toggle='tab') Month
             li.nav-item(role='presentation')
               a.nav-link(href='#tabDifficultyQuarter', aria-controls='tabDifficultyQuarter', role='tab', data-toggle='tab') Quarter
+            li.nav-item(role='presentation')
+              a.nav-link(href='#tabDifficultyYear', aria-controls='tabDifficultyYear', role='tab', data-toggle='tab') Year
         .tab-content
           #tabDifficultyWeek.tab-pane.active
             div#chartDifficultyWeek
@@ -366,6 +396,8 @@ block content
             div#chartDifficultyMonth
           #tabDifficultyQuarter.tab-pane
             div#chartDifficultyQuarter
+          #tabDifficultyYear.tab-pane
+            div#chartDifficultyYear
         hr
   
   .col-md-12
