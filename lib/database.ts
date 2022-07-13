@@ -49,6 +49,7 @@ const TIMESPANS: {
   week: 604800,
   month: 2592000,
   quarter: 7776000,
+  year: 31536000
 };
 const BLOCKSPANS: {
   [blockspan: string]: number
@@ -921,7 +922,7 @@ export class Database {
       const { plot: difficultyWeek } = await this.get_charts_difficulty('week');
       const { plot: difficultyMonth } = await this.get_charts_difficulty('month');
       const { plot: difficultyQuarter } = await this.get_charts_difficulty('quarter');
-      //const { plot: difficultyYear } = await this.get_charts_difficulty('year');
+      const { plot: difficultyYear } = await this.get_charts_difficulty('year');
       await Charts.Model.findOneAndUpdate({}, {
         // txs
         txsDay, txsDay_count,
@@ -934,7 +935,7 @@ export class Database {
         difficultyWeek,
         difficultyMonth,
         difficultyQuarter,
-        //difficultyYear
+        difficultyYear
       }, { upsert: true });
     } catch (e: any) {
       throw new Error(`Database.update_charts_db: ${e.message}`);

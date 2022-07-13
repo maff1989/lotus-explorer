@@ -80,19 +80,11 @@ export const getChartsDifficultyAggregation: {
           'input': '$blocks',
           'as': 'block',
           'cond': {
-            // get difficulty from 11 blocks per month
+            // get difficulty from 3 days per month
             '$and': [
               { '$or': [
                 { '$eq': [{ '$dayOfMonth': {'$dateFromString': {'dateString': "$$block.t"}}}, 1]},
-                { '$eq': [{ '$dayOfMonth': {'$dateFromString': {'dateString': "$$block.t"}}}, 4]},
-                { '$eq': [{ '$dayOfMonth': {'$dateFromString': {'dateString': "$$block.t"}}}, 7]},
-                { '$eq': [{ '$dayOfMonth': {'$dateFromString': {'dateString': "$$block.t"}}}, 10]},
-                { '$eq': [{ '$dayOfMonth': {'$dateFromString': {'dateString': "$$block.t"}}}, 13]},
-                { '$eq': [{ '$dayOfMonth': {'$dateFromString': {'dateString': "$$block.t"}}}, 16]},
-                { '$eq': [{ '$dayOfMonth': {'$dateFromString': {'dateString': "$$block.t"}}}, 19]},
-                { '$eq': [{ '$dayOfMonth': {'$dateFromString': {'dateString': "$$block.t"}}}, 22]},
-                { '$eq': [{ '$dayOfMonth': {'$dateFromString': {'dateString': "$$block.t"}}}, 25]},
-                { '$eq': [{ '$dayOfMonth': {'$dateFromString': {'dateString': "$$block.t"}}}, 28]},
+                { '$eq': [{ '$dayOfMonth': {'$dateFromString': {'dateString': "$$block.t"}}}, 15]},
                 { '$eq': [{ '$dayOfMonth': {'$dateFromString': {'dateString': "$$block.t"}}}, 31]},
               ]},
               { '$eq': [{ '$minute': {'$dateFromString': {'dateString': "$$block.t"}}}, 0]},
