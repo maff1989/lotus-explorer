@@ -295,7 +295,7 @@ export class Explorer {
   ): Promise<number> {
     const totalVin = await this.calculate_total(vin);
     const totalVout = await this.calculate_total(vout);
-    return (totalVin - totalVout);
+    return Math.round(totalVin - totalVout);
   };
   /**
    * Prepare raw vout for database storage
