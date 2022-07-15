@@ -51,13 +51,14 @@ router.get('/info', async (req, res) => {
 });
 router.get('/markets/:market', async (req, res) => {
   const { market } = req.params;
-  // render market if it is enabled
-  if (!settings.markets.enabled.includes(market)) {
-    console.log(`/markets/${market}: Market ${market} not enabled`);
-    return route_get_index(res, `Market not found: ${market}`);
-  }
   try {
+    if (!settings.markets.enabled.includes(market)) {
+      throw new Error(`Market "${market}" not enabled in settings.json`);
+    }
     const dbMarket = await db.get_market(market);
+    if (!dbMarket) {
+      throw new Error(`no database entry for "${market}"`);
+    }
     return res.render(`./markets/${market}`, {
       active: 'markets',
       marketdata: {
