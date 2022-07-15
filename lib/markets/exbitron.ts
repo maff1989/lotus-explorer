@@ -2,6 +2,8 @@ import request from 'request-promise';
 import settings from '../settings';
 import * as API from './exbitron-api';
 
+const DECIMALS = { USDT: 8, XPI: 6 };
+
 type Summary = {
   low: number,
   high: number,
@@ -14,9 +16,9 @@ type Summary = {
 };
 
 type ParsedOrder = {
-  amount: number,
-  price: number,
-  total: number
+  amount: string,
+  price: string,
+  total: string
 };
 
 export type ParsedData = {
@@ -24,7 +26,6 @@ export type ParsedData = {
   trades: API.Trade[],
   buys: ParsedOrder[],
   sells: ParsedOrder[]
-  chartdata?,
 };
 
 export default class {
@@ -34,12 +35,13 @@ export default class {
   private URI =
     `${API.BASE_URL}/${API.MARKETS_URL}`
     + `/${this.TRADEPAIR}`;
+  private EXCHANGE_PRECISION = DECIMALS[settings.markets.exchange];
+  private COIN_PRECISION = DECIMALS[settings.markets.coin];
   
   async get_data(): Promise<ParsedData> {
     const { buys, sells } = await this.get_orders();
     return {
       buys, sells,
-      chartdata: [],
       trades: await this.get_trades(),
       stats: await this.get_summary(),
     }
@@ -74,9 +76,13 @@ export default class {
   }> {
     const processor = (order: API.Order) => {
       return {
-        amount: Number(order.remaining_volume),
-        price: Number(order.price),
-        total: Number(order.price) * Number(order.remaining_volume)
+        amount: order.remaining_volume,
+        price: Number(order.price)
+          .toFixed(this.EXCHANGE_PRECISION),
+        total: (
+            Number(order.price)
+            * Number(order.remaining_volume)
+          ).toFixed(this.EXCHANGE_PRECISION)
       };
     };
     try {
