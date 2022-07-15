@@ -300,8 +300,11 @@ const rewind_save_tx = async (
   // rewind vins
   for (const input of vin) {
     const { addresses, amount } = input;
-    // skip coinbase input
+    // Rewind sent amount from coinbase entry
     if (addresses == 'coinbase') {
+      await MongoDB.Address.Model.findOneAndUpdate(
+        { a_id: 'coinbase' },
+        { $inc: { sent: -amount }});
       continue;
     }
     try {
