@@ -1,8 +1,6 @@
-import settings from './settings';
-import * as Address from '../models/address';
-import * as Block from '../models/block';
-import * as Tx from '../models/tx';
 import BitcoinRpc from 'bitcoin-rpc-promise';
+import settings from './settings';
+import * as MongoDB from '../models';
 // import { Tx } from 'chronik-client';
 
 export type AddressInfo = {
@@ -208,7 +206,7 @@ export class Explorer {
    */
   async balance_supply(): Promise<number> {
     const data = { totalBalance: 0 };
-    const docs: Address.Document[] = await Address.Model
+    const docs: MongoDB.Address.Document[] = await MongoDB.Address.Model
       .find({ balance: { $gt: 0 }})
       .lean();
     docs.forEach(doc => data.totalBalance += doc.balance);
@@ -224,7 +222,7 @@ export class Explorer {
     blockFeesBurned: number,
   }> {
     const data = { blockFees: 0, blockFeesBurned: 0 };
-    const docs: Tx.Document[] = await Tx.Model
+    const docs: MongoDB.Tx.Document[] = await MongoDB.Tx.Model
       .find({ blockindex: height }, 'fee')
       .lean();
     docs.forEach(doc => data.blockFees += doc.fee);
@@ -237,7 +235,7 @@ export class Explorer {
    */
   async get_burned_supply(): Promise<number> {
     const data = { totalBurned: 0 };
-    const docs: Block.Document[] = await Block.Model
+    const docs: MongoDB.Block.Document[] = await MongoDB.Block.Model
       .find({ burned: { $gt: 0 }})
       .lean();
     docs.forEach(doc => data.totalBurned += doc.burned);
@@ -275,7 +273,7 @@ export class Explorer {
    * @returns {Promise<number>} Total amount in satoshis
    */
   async calculate_total(
-    array: Tx.Document['vin'] | Tx.Document['vout']
+    array: MongoDB.Tx.Document['vin'] | MongoDB.Tx.Document['vout']
   ): Promise<number> {
     const data = { total: 0 };
     array.forEach((entry: any) => data.total += entry.amount)
@@ -289,8 +287,8 @@ export class Explorer {
    * @returns {Promise<number>} Total transaction fee in satoshis
    */
   async calculate_fee(
-    vout: Tx.Document['vout'],
-    vin: Tx.Document['vin']
+    vout: MongoDB.Tx.Document['vout'],
+    vin: MongoDB.Tx.Document['vin']
   ): Promise<number> {
     const totalVin = await this.calculate_total(vin);
     const totalVout = await this.calculate_total(vout);
@@ -305,7 +303,7 @@ export class Explorer {
     vout: TransactionOutput[]
   ) {
     const data: {
-      vout: Tx.Document['vout'],
+      vout: MongoDB.Tx.Document['vout'],
       burned: number
     } = { vout: [], burned: 0 };
     for (const output of vout) {
@@ -345,7 +343,7 @@ export class Explorer {
     tx: RawTransaction
   ) {
     const data: {
-      vin: Tx.Document['vin'],
+      vin: MongoDB.Tx.Document['vin'],
     } = { vin: [] };
     const { vin, vout } = tx;
     for (const input of vin) {
