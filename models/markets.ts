@@ -9,14 +9,14 @@ export type Document = {
   summary: object,
   // chartData?,
   buys: Array<{
-    amount: number,
-    price: number,
-    total: number
+    amount: string,
+    price: string,
+    total: string
   }>,
   sells: Array<{
-    amount: number,
-    price: number,
-    total: number
+    amount: string,
+    price: string,
+    total: string
   }>,
   history: Array<{
     id: number,
