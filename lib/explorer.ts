@@ -349,7 +349,7 @@ export class Explorer {
     for (const input of vin) {
       const inputAddress = await this.get_input_address(input, vout);
       const { hash, amount } = inputAddress;
-      const index = data.vin.findIndex(vin => vin.addresses == hash)
+      const index = data.vin.findIndex(vin => vin.addresses == hash);
       if (index < 0) {
         data.vin.push({ addresses: hash, amount: amount, num_inputs: 1 });
       } else {
@@ -363,13 +363,14 @@ export class Explorer {
    * Gather the address/amount used by vin
    * @param vin Raw vin
    * @param vouts Raw vout
-   * @returns Object containing input address and amount
+   * @returns Object containing input address and amount, in satoshis
    */
   private async get_input_address(
     vin: TransactionInput,
     vouts: TransactionOutput[]
   ) {
     const data = { address: { hash: '', amount: 0 }};
+    // Parse vouts to gather coinbase value
     if (vin.coinbase) {
       const amount = vouts.reduce((a, b) => a + b.value, vouts[0].value);
       const sats = this.convert_to_satoshi(amount);

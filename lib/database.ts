@@ -269,11 +269,13 @@ const rewind_update_address = async (
       break;
   }
   try {
-    const newAddress = await MongoDB.Address.Model.findOneAndUpdate(
-      { a_id: address },
-      { $inc: addr_inc },
-      { new: true }
-    );
+    // capture updated document
+    const newAddress = await MongoDB.Address.Model
+      .findOneAndUpdate(
+        { a_id: address },
+        { $inc: addr_inc },
+        { new: true }
+      );
     // delete address if sent, received, and balance are all 0
     // i.e. assume no transactions exist for address
     if (
@@ -454,7 +456,11 @@ export class Database {
     coin: string
   ): Promise<MongoDB.Richlist.Document> {
     try {
-      const richlist = new MongoDB.Richlist.Model({ coin: coin, received: [], balance: [] });
+      const richlist = new MongoDB.Richlist.Model({
+        coin: coin,
+        received: [],
+        balance: []
+      });
       return await richlist.save();
     } catch (e: any) {
       throw new Error(`Database.create_richlist: ${e.message}`);
@@ -507,7 +513,9 @@ export class Database {
   ): Promise<MongoDB.Markets.Document> {
     try {
       // returns either full document or null
-      return await MongoDB.Markets.Model.findOne({ market: market }).lean();
+      return await MongoDB.Markets.Model
+        .findOne({ market: market })
+        .lean();
     } catch (e: any) {
       return null;
     }
@@ -518,7 +526,9 @@ export class Database {
   ): Promise<MongoDB.Richlist.Document> {
     try {
       // returns either full document or null
-      return await MongoDB.Richlist.Model.findOne({ coin: coin }).lean();
+      return await MongoDB.Richlist.Model
+        .findOne({ coin: coin })
+        .lean();
     } catch (e: any) {
       return null;
     }
@@ -529,7 +539,9 @@ export class Database {
   ): Promise<MongoDB.Stats.Document> {
     try {
       // returns either full document or null
-      return await MongoDB.Stats.Model.findOne({ coin: coin }).lean();
+      return await MongoDB.Stats.Model
+        .findOne({ coin: coin })
+        .lean();
     } catch (e: any) {
       return null;
     }
@@ -544,7 +556,9 @@ export class Database {
     hash: string
   ): Promise<MongoDB.Address.Document> {
     try {
-      return await MongoDB.Address.Model.findOne({ a_id: hash }).lean();
+      return await MongoDB.Address.Model
+        .findOne({ a_id: hash })
+        .lean();
     } catch (e: any) {
       throw new Error(`Database.get_address: ${e.message}`);
     }
@@ -554,7 +568,9 @@ export class Database {
     height: number
   ): Promise<MongoDB.Block.Document> {
     try {
-      return await MongoDB.Block.Model.findOne({ height: height }).lean();
+      return await MongoDB.Block.Model
+        .findOne({ height: height })
+        .lean();
     } catch (e: any) {
       throw new Error(`Database.get_block: ${e.message}`);
     }
@@ -575,7 +591,9 @@ export class Database {
   // Polls the Charts db for latest aggregate data
   async get_charts(): Promise<MongoDB.Charts.Document> {
     try {
-      return await MongoDB.Charts.Model.findOne().lean();
+      return await MongoDB.Charts.Model
+        .findOne()
+        .lean();
     } catch (e: any) {
       return null;
     }
@@ -1131,8 +1149,7 @@ export class Database {
       try {
         // get db txes at block height
         const timeStart = Date.now();
-        const txs: MongoDB.Tx.Document[] = await MongoDB.Tx.Model
-          .find({ blockindex: i });
+        const txs = await MongoDB.Tx.Model.find({ blockindex: i });
         for (const tx of txs) {
           await rewind_save_tx(tx);
         }
