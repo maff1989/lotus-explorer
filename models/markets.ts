@@ -7,18 +7,34 @@ import { Schema, model } from 'mongoose';
 export type Document = {
   market: string,
   summary: object,
-  //chartData: Array,
-  //buys: Array,
-  //sells: Array,
-  //history: Array
+  // chartData?,
+  buys: Array<{
+    amount: number,
+    price: number,
+    total: number
+  }>,
+  sells: Array<{
+    amount: number,
+    price: number,
+    total: number
+  }>,
+  history: Array<{
+    id: number,
+    price: number,
+    amount: number,
+    total: number,
+    market: string,
+    created_at: number,
+    taker_type: 'buy' | 'sell'
+  }>
 };
 export const Model = model('Markets',
   new Schema<Document>({
     market: { type: String, index: true },
     summary: { type: Object, default: {} },
-    //chartdata: { type: Array, default: [] },
-    //buys: { type: Array, default: [] },
-    //sells: { type: Array, default: [] },
-    //history: { type: Array, default: [] },
+    // chartdata: { type: Array, default: [] },
+    buys: { type: <Document['buys']>[], default: [] },
+    sells: { type: <Document['sells']>[], default: [] },
+    history: { type: <Document['history']>[], default: [] },
   })
 );
