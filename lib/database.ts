@@ -12,15 +12,8 @@ import settings from './settings';
 import {
   getChartsDifficultyAggregation,
 } from './util';
-import * as Address from '../models/address';
-import * as AddressTx from '../models/addresstx';
-import * as Block from '../models/block';
-import * as Charts from '../models/charts';
-import * as Markets from '../models/markets';
-import * as Peers from '../models/peers';
-import * as Richlist from '../models/richlist';
-import * as Stats from '../models/stats';
-import * as Tx from '../models/tx';
+import * as Markets from './markets';
+import * as MongoDB from '../models';
 
 const lib = new Explorer();
 /*
@@ -107,7 +100,7 @@ const save_tx = async (
     }
   }
   // save Tx
-  const newTx = new Tx.Model({
+  const newTx = new MongoDB.Tx.Model({
     txid: tx.txid,
     vin,
     vout,
@@ -115,7 +108,8 @@ const save_tx = async (
     size: tx.size,
     total: total.toFixed(6),
     timestamp: tx.time,
-    localeTimestamp: new Date(tx.time * 1000).toLocaleString('en-us', { timeZone:"UTC" }),
+    localeTimestamp: new Date(tx.time * 1000)
+      .toLocaleString('en-us', { timeZone:"UTC" }),
     blockhash: tx.blockhash,
     blockindex: height,
   });
@@ -140,7 +134,7 @@ const save_addresstx = async (
   txid: string
 ): Promise<void> => {
   try {
-    await AddressTx.Model.findOneAndUpdate(
+    await MongoDB.AddressTx.Model.findOneAndUpdate(
       { a_id: address, txid: txid },
       { $inc: {
         amount: balance
@@ -171,7 +165,7 @@ const save_block = async (
     const coinbaseTx = await lib.get_rawtransaction(block.tx[0]);
     const miner = coinbaseTx.vout[1].scriptPubKey.addresses[0];
     // save block
-    const newBlock = new Block.Model({
+    const newBlock = new MongoDB.Block.Model({
       height: block.height,
       minedby: miner,
       //hash: block.hash,
@@ -238,7 +232,7 @@ const update_address = async (
     };
   }
   try {
-    await Address.Model.findOneAndUpdate(
+    await MongoDB.Address.Model.findOneAndUpdate(
       { a_id: address },
       { $inc: addr_inc },
       { new: true, upsert: true },
@@ -275,7 +269,7 @@ const rewind_update_address = async (
       break;
   }
   try {
-    const newAddress = await Address.Model.findOneAndUpdate(
+    const newAddress = await MongoDB.Address.Model.findOneAndUpdate(
       { a_id: address },
       { $inc: addr_inc },
       { new: true }
@@ -287,7 +281,7 @@ const rewind_update_address = async (
       && newAddress.received == 0
       && newAddress.balance == 0
     ) {
-      await Address.Model.deleteOne({ a_id: address });
+      await MongoDB.Address.Model.deleteOne({ a_id: address });
     }
   } catch (e: any) {
     throw new Error(`rewind_update_address(${address}, ${amount}, ${type}): ${e.message}`);
@@ -298,7 +292,7 @@ const rewind_update_address = async (
  * @param tx Transaction document (`Tx.Document`)
  */
 const rewind_save_tx = async (
-  tx: Tx.Document
+  tx: MongoDB.Tx.Document
 ) => {
   const { txid, vin, vout, } = tx;
   // rewind vins
@@ -333,17 +327,25 @@ const rewind_save_tx = async (
   }
   // Delete Tx and AddressTx entry for txid after rewinding all address updates
   try {
-    await Tx.Model.deleteOne({ txid: txid });
-    await AddressTx.Model.deleteMany({ txid: txid });
+    await MongoDB.Tx.Model.deleteOne({ txid: txid });
+    await MongoDB.AddressTx.Model.deleteMany({ txid: txid });
   } catch (e: any) {
     throw new Error(`rewind_save_tx: ${txid}: ${e.message}`);
   }
 };
-const get_market_data = async (market: string) => {
-  const exMarket = await import('./lib/markets/' + market + '.ts');
-  exMarket.get_data();
+const get_market_data = async (
+  market: string
+) => {
+  try {
+    const marketlib = new Markets[market].default();
+    return await marketlib.get_data();
+  } catch (e: any) {
+    throw new Error(`get_market_data. ${e.message}`);
+  }  
 };
-export const create_lock = async (lockfile: string): Promise<boolean> => {
+export const create_lock = async (
+  lockfile: string
+): Promise<boolean> => {
   if (settings.lock_during_index == true) {
     const fileName = './tmp/' + lockfile + '.pid';
     try {
@@ -356,7 +358,9 @@ export const create_lock = async (lockfile: string): Promise<boolean> => {
   }
   return false;
 };
-export const remove_lock = async (lockfile: string): Promise<boolean> => {
+export const remove_lock = async (
+  lockfile: string
+): Promise<boolean> => {
   if (settings.lock_during_index == true) {
     const fileName = './tmp/' + lockfile + '.pid';
     try {
@@ -369,7 +373,9 @@ export const remove_lock = async (lockfile: string): Promise<boolean> => {
   }
   return false;
 };
-export const is_locked = async (lockfile: string): Promise<boolean> => {
+export const is_locked = async (
+  lockfile: string
+): Promise<boolean> => {
   if (settings.lock_during_index == true) {
     const fileName = './tmp/' + lockfile + '.pid';
     try {
@@ -421,9 +427,9 @@ export class Database {
   async create_market(
     coin: string,
     market: string
-  ): Promise<Markets.Document> {
+  ): Promise<MongoDB.Markets.Document> {
     try {
-      const create = new Markets.Model({
+      const create = new MongoDB.Markets.Model({
         coin,
         market
       });
@@ -434,10 +440,10 @@ export class Database {
   };
   
   async create_peer(
-    params: Peers.Document
-  ): Promise<Peers.Document> {
+    params: MongoDB.Peers.Document
+  ): Promise<MongoDB.Peers.Document> {
     try {
-      const peer = new Peers.Model(params);
+      const peer = new MongoDB.Peers.Model(params);
       return await peer.save();
     } catch (e: any) {
       throw new Error(`Database.create_peer: ${e.message}`);
@@ -446,9 +452,9 @@ export class Database {
 
   async create_richlist(
     coin: string
-  ): Promise<Richlist.Document> {
+  ): Promise<MongoDB.Richlist.Document> {
     try {
-      const richlist = new Richlist.Model({ coin: coin, received: [], balance: [] });
+      const richlist = new MongoDB.Richlist.Model({ coin: coin, received: [], balance: [] });
       return await richlist.save();
     } catch (e: any) {
       throw new Error(`Database.create_richlist: ${e.message}`);
@@ -457,9 +463,9 @@ export class Database {
 
   async create_stats(
     coin: string
-  ): Promise<Stats.Document> {
+  ): Promise<MongoDB.Stats.Document> {
     try {
-      const create = new Stats.Model({
+      const create = new MongoDB.Stats.Model({
         coin: coin,
         count: 0,
         last: 0,
@@ -498,10 +504,10 @@ export class Database {
    */
   async check_market(
     market: string
-  ): Promise<Markets.Document> {
+  ): Promise<MongoDB.Markets.Document> {
     try {
       // returns either full document or null
-      return await Markets.Model.findOne({ market: market }).lean();
+      return await MongoDB.Markets.Model.findOne({ market: market }).lean();
     } catch (e: any) {
       return null;
     }
@@ -509,10 +515,10 @@ export class Database {
 
   async check_richlist(
     coin: string
-  ): Promise<Richlist.Document> {
+  ): Promise<MongoDB.Richlist.Document> {
     try {
       // returns either full document or null
-      return await Richlist.Model.findOne({ coin: coin }).lean();
+      return await MongoDB.Richlist.Model.findOne({ coin: coin }).lean();
     } catch (e: any) {
       return null;
     }
@@ -520,10 +526,10 @@ export class Database {
 
   async check_stats(
     coin: string
-  ): Promise<Stats.Document> {
+  ): Promise<MongoDB.Stats.Document> {
     try {
       // returns either full document or null
-      return await Stats.Model.findOne({ coin: coin }).lean();
+      return await MongoDB.Stats.Model.findOne({ coin: coin }).lean();
     } catch (e: any) {
       return null;
     }
@@ -536,9 +542,9 @@ export class Database {
    */
   async get_address(
     hash: string
-  ): Promise<Address.Document> {
+  ): Promise<MongoDB.Address.Document> {
     try {
-      return await Address.Model.findOne({ a_id: hash }).lean();
+      return await MongoDB.Address.Model.findOne({ a_id: hash }).lean();
     } catch (e: any) {
       throw new Error(`Database.get_address: ${e.message}`);
     }
@@ -546,37 +552,38 @@ export class Database {
 
   async get_block(
     height: number
-  ): Promise<Block.Document> {
+  ): Promise<MongoDB.Block.Document> {
     try {
-      return await Block.Model.findOne({ height: height }).lean();
+      return await MongoDB.Block.Model.findOne({ height: height }).lean();
     } catch (e: any) {
       throw new Error(`Database.get_block: ${e.message}`);
     }
   };
 
-  async get_latest_block(): Promise<Block.Document> {
+  async get_latest_block(): Promise<MongoDB.Block.Document> {
     try {
-      const result = await Block.Model.find()
+      const result = await MongoDB.Block.Model
+        .find()
         .sort({ timestamp: -1 })
         .limit(1);
-      return <Block.Document>result.pop();
+      return <MongoDB.Block.Document>result.pop();
     } catch (e: any) {
       throw new Error(`Database.get_latest_block: ${e.message}`);
     }
   };
 
   // Polls the Charts db for latest aggregate data
-  async get_charts(): Promise<Charts.Document> {
+  async get_charts(): Promise<MongoDB.Charts.Document> {
     try {
-      return await Charts.Model.findOne().lean();
+      return await MongoDB.Charts.Model.findOne().lean();
     } catch (e: any) {
       return null;
     }
   };
 
   async get_distribution(
-    richlist: Richlist.Document,
-    stats: Stats.Document
+    richlist: MongoDB.Richlist.Document,
+    stats: MongoDB.Stats.Document
   ): Promise<SupplyDistribution> {
     const distribution = {
       t_1_25: { percent: 0, total: 0 },
@@ -635,7 +642,9 @@ export class Database {
 
   async get_market(market: string) {
     try {
-      return await Markets.Model.findOne({ market: market }).lean();
+      return await MongoDB.Markets.Model
+        .findOne({ market: market })
+        .lean();
     } catch (e: any) {
       throw new Error(`Database.get_market: ${e.message}`);
     }
@@ -643,17 +652,19 @@ export class Database {
 
   async get_peer(
     address: string
-  ): Promise<Peers.Document> {
+  ): Promise<MongoDB.Peers.Document> {
     try {
-      return await Peers.Model.findOne({ address: address }).lean();
+      return await MongoDB.Peers.Model
+        .findOne({ address: address })
+        .lean();
     } catch (e: any) {
       throw new Error(`Database.get_peer: ${e.message}`);
     }
   };
 
-  async get_peers(): Promise<Peers.Document[]> {
+  async get_peers(): Promise<MongoDB.Peers.Document[]> {
     try {
-      return await Peers.Model.find({}).lean();
+      return await MongoDB.Peers.Model.find().lean();
     } catch (e: any) {
       throw new Error(`Database.get_peers: ${e.message}`);
     }
@@ -661,9 +672,11 @@ export class Database {
   
   async get_richlist(
     coin: string
-  ): Promise<Richlist.Document> {
+  ): Promise<MongoDB.Richlist.Document> {
     try {
-      return await Richlist.Model.findOne({ coin: coin }).lean();
+      return await MongoDB.Richlist.Model
+        .findOne({ coin: coin })
+        .lean();
     } catch (e: any) {
       throw new Error(`Database.get_richlist: ${e.message}`);
     }    
@@ -671,9 +684,11 @@ export class Database {
   
   async get_stats(
     coin: string
-  ): Promise<Stats.Document> {
+  ): Promise<MongoDB.Stats.Document> {
     try {
-      return await Stats.Model.findOne({ coin: coin }).lean();
+      return await MongoDB.Stats.Model
+        .findOne({ coin: coin })
+        .lean();
     } catch (e: any) {
       throw new Error(`Database.get_stats: ${e.message}`);
     }
@@ -681,9 +696,11 @@ export class Database {
   
   async get_tx(
     txid: string
-  ): Promise<Tx.Document> {
+  ): Promise<MongoDB.Tx.Document> {
     try {
-      return await Tx.Model.findOne({ txid: txid }).lean();
+      return await MongoDB.Tx.Model
+        .findOne({ txid: txid })
+        .lean();
     } catch (e: any) {
       throw new Error(`Database.get_tx: ${e.message}`);
     }
@@ -691,8 +708,8 @@ export class Database {
 
   async get_txs(
     txids: string[]
-  ): Promise<Tx.Document[]> {
-    const txs: Tx.Document[] = [];
+  ): Promise<MongoDB.Tx.Document[]> {
+    const txs: MongoDB.Tx.Document[] = [];
     for (const txid of txids) {
       try {
         const tx = await this.get_tx(txid);
@@ -700,8 +717,8 @@ export class Database {
       } catch (e: any) {
         // couldn't find txid in db
         throw new Error(
-          e.message
-          + ` -- data for txid ${txid} didn't save to db?`
+          e.message +
+          ` -- data for txid ${txid} didn't save to db?`
         );
       }
     }
@@ -718,12 +735,14 @@ export class Database {
     length: number
   ) {
     const data: {
-      blocks: Block.Document[],
+      blocks: MongoDB.Block.Document[],
       count: number
     } = { blocks: [], count: 0 };
     try {
-      const stats = await Stats.Model.findOne();
-      data.blocks = await Block.Model.find()
+      const stats = await MongoDB.Stats.Model
+        .findOne();
+      data.blocks = await MongoDB.Block.Model
+        .find()
         .sort({ height: -1 })
         .skip(start)
         .limit(length);
@@ -740,22 +759,27 @@ export class Database {
     length: number
   ) {
     const data: {
-      txs: Tx.Document[],
+      txs: MongoDB.Tx.Document[],
       count: number
     } = { txs: [], count: 0 };
     try {
-      const { balance } = await Address.Model.findOne({ a_id: address }) || { balance: 0 };
-      data.count= await AddressTx.Model.find({ a_id: address }).count();
+      const { balance } = await MongoDB.Address.Model
+        .findOne({ a_id: address })
+        .lean() || { balance: 0 };
+      data.count= await MongoDB.AddressTx.Model
+        .find({ a_id: address })
+        .count();
       // return default data if no db entries for address
       if (data.count < 1) {
         return data;
       }
-      const addressTxs: AddressTx.Document[] = await AddressTx.Model
-        .find({ a_id: address })
-        .sort({ blockindex: -1 })
-        .sort({ amount: 1 })
-        .skip(start)
-        .limit(length);
+      const addressTxs: MongoDB.AddressTx.Document[] =
+        await MongoDB.AddressTx.Model
+          .find({ a_id: address })
+          .sort({ blockindex: -1 })
+          .sort({ amount: 1 })
+          .skip(start)
+          .limit(length);
       let runningBalance = balance ?? 0;
       for (const addressTx of addressTxs) {
         const tx = await this.get_tx(addressTx.txid);
@@ -765,7 +789,7 @@ export class Database {
           vin: tx.vin,
           vout: tx.vout,
           balance: runningBalance
-        } as Tx.Document);
+        } as MongoDB.Tx.Document);
         runningBalance -= addressTx.amount;
       }
       return data;
@@ -782,11 +806,11 @@ export class Database {
   async get_charts_difficulty(
     timespan: ChartDifficultyTimespan
   ): Promise<{
-    plot: Charts.PlotData
+    plot: MongoDB.Charts.PlotData
   }> {
     const seconds = TIMESPANS[timespan];
     const data: {
-      plot: Charts.PlotData
+      plot: MongoDB.Charts.PlotData
     } = { plot: [] };
     try {
       const dbBlock = await this.get_latest_block();
@@ -808,7 +832,7 @@ export class Database {
           localeTimestamp: string,
           difficulty: number
         }>
-      }> = await Block.Model.aggregate(agg);
+      }> = await MongoDB.Block.Model.aggregate(agg);
       data.plot = result[0].blocks.map((block) => Object.values(block));
       return data;
     } catch (e: any) {
@@ -819,20 +843,20 @@ export class Database {
   async get_charts_reward_distribution(
     timespan: ChartDistributionTimespan
   ): Promise<{
-    plot: Charts.PlotData,
+    plot: MongoDB.Charts.PlotData,
     minerTotal: number
   }> {
     const seconds = TIMESPANS[timespan];
     const blockspan = BLOCKSPANS[timespan];
     const data: {
-      plot: Charts.PlotData,
+      plot: MongoDB.Charts.PlotData,
       minerTotal: number
     } = { plot: [], minerTotal: 0 };
     try {
       const dbBlock = await this.get_latest_block();
-      const blocks: Block.Document[] = await Block.Model.find(
-        { timestamp: { $gte: (dbBlock.timestamp - seconds)}}
-      );
+      const blocks: MongoDB.Block.Document[] =
+        await MongoDB.Block.Model
+          .find({ timestamp: { $gte: (dbBlock.timestamp - seconds)}});
       const minerBlockCounts: { [minedby: string]: number } = {};
       blocks.forEach((block) => {
         minerBlockCounts[block.minedby] !== undefined
@@ -848,8 +872,12 @@ export class Database {
           : minerMiscBlocks += blockCount;
       }
   
-      data.plot = Object.entries(minerFiltered).sort((a, b) => b[1] - a[1]);
-      data.plot.push(["Miscellaneous Miners (<= 3% hashrate each)", minerMiscBlocks]);
+      data.plot = Object.entries(minerFiltered)
+        .sort((a, b) => b[1] - a[1]);
+      data.plot.push([
+        "Miscellaneous Miners (<= 3% hashrate each)",
+        minerMiscBlocks
+      ]);
       data.minerTotal = Object.keys(minerBlockCounts).length;
       return data;
     } catch (e: any) {
@@ -861,45 +889,46 @@ export class Database {
   async get_charts_txs(
     timespan: ChartTransactionTimespan
   ): Promise<{
-    plot: Charts.PlotData,
+    plot: MongoDB.Charts.PlotData,
     txTotal: number
   }> {
     const seconds = TIMESPANS[timespan];
     const data: {
-      plot: Charts.PlotData,
+      plot: MongoDB.Charts.PlotData,
       txTotal: number
     } = { plot: [], txTotal: 0 };
     try {
       const dbBlock = await this.get_latest_block();
-      const [{ blocks, txtotal }] = await Block.Model.aggregate([
-        { '$match': {
-          'timestamp': { '$gte': (dbBlock.timestamp - seconds) },
-          'txcount': { $gt: 1 } 
-        }},
-        { "$sort": { "timestamp": 1 } },
-        //{ "$limit": blockspan },
-        { "$group":
-          {
-            _id: null,
-            "blocks": {
-              $push: {
-                localeTimestamp: "$localeTimestamp",
-                txcount: {
+      const [{ blocks, txtotal }] = await MongoDB.Block.Model
+        .aggregate([
+          { '$match': {
+            'timestamp': { '$gte': (dbBlock.timestamp - seconds) },
+            'txcount': { $gt: 1 } 
+          }},
+          { "$sort": { "timestamp": 1 } },
+          //{ "$limit": blockspan },
+          { "$group":
+            {
+              _id: null,
+              "blocks": {
+                $push: {
+                  localeTimestamp: "$localeTimestamp",
+                  txcount: {
+                    $subtract: ["$txcount", 1] 
+                  }
+                }
+              },
+              // add together all txcount minus 1; we don't include coinbase tx in count
+              'txtotal': {
+                $sum: {
                   $subtract: ["$txcount", 1] 
                 }
               }
-            },
-            // add together all txcount minus 1; we don't include coinbase tx in count
-            'txtotal': {
-              $sum: {
-                $subtract: ["$txcount", 1] 
-              }
             }
-          }
-        },
-      ]);
+          },
+        ]);
       const arranged_data: { [x: string]: number } = {};
-      blocks.forEach((block: Block.Document) => {
+      blocks.forEach((block: MongoDB.Block.Document) => {
         arranged_data[block.localeTimestamp] = block.txcount;
       });
       data.plot = Object.entries(arranged_data);
@@ -930,7 +959,7 @@ export class Database {
       const { plot: difficultyMonth } = await this.get_charts_difficulty('month');
       const { plot: difficultyQuarter } = await this.get_charts_difficulty('quarter');
       const { plot: difficultyYear } = await this.get_charts_difficulty('year');
-      await Charts.Model.findOneAndUpdate({}, {
+      await MongoDB.Charts.Model.findOneAndUpdate({}, {
         // txs
         txsDay, txsDay_count,
         txsWeek, txsWeek_count,
@@ -949,19 +978,35 @@ export class Database {
     }
   };
   
-  async update_label(hash: string, message: string): Promise<void> {
+  async update_label(
+    hash: string,
+    message: string
+  ): Promise<void> {
     const address = await this.get_address(hash);
     if (address?.a_id) {
       try {
-        await Address.Model.updateOne({ a_id: hash }, { name: message });
+        await MongoDB.Address.Model
+          .updateOne({ a_id: hash }, { name: message });
       } catch (e: any) {
         throw new Error(`Database.update_label: ${e.message}`)
       }
     }
   };
 
-  async update_markets_db(market: string) {
-    
+  async update_markets_db(
+    market: string
+  ): Promise<void> {
+    try {
+      const data = await get_market_data(market);
+      await MongoDB.Markets.Model.updateOne({ market: market }, {
+        chartdata: JSON.stringify(data.chartdata),
+        buys: data.buys,
+        sells: data.sells,
+        history: data.trades
+      });
+    } catch (e: any) {
+      throw new Error(`Database.update_markets_db: ${e.message}`);
+    }
   };
 
   //property: 'received' or 'balance'
@@ -970,17 +1015,44 @@ export class Database {
   ): Promise<void> {
     try {
       const addresses = list == 'received'
-        ? await Address.Model.find({}, 'a_id balance received name')
+        ? await MongoDB.Address.Model
+          .find({}, 'a_id balance received name')
           .sort({ received: 'desc' })
           .limit(100)
-        : await Address.Model.find({}, 'a_id balance received name')
+        : await MongoDB.Address.Model
+          .find({}, 'a_id balance received name')
           .sort({ balance: 'desc' })
           .limit(100);
       list == 'received'
-        ? await Richlist.Model.updateOne({ coin: settings.coin }, { received: addresses })
-        : await Richlist.Model.updateOne({ coin: settings.coin }, { balance: addresses });
+        ? await MongoDB.Richlist.Model
+          .updateOne({ coin: settings.coin }, { received: addresses })
+        : await MongoDB.Richlist.Model
+          .updateOne({ coin: settings.coin }, { balance: addresses });
     } catch (e: any) {
       throw new Error(`Database.update_richlist: ${e.message}`);
+    }
+  };
+
+  async update_stats(
+    coin: string,
+    blockcount: number
+  ): Promise<void> {
+    try {
+      const supply = await lib.get_supply();
+      const burned = await lib.get_burned_supply();
+      const connections = await lib.get_connectioncount();
+      await MongoDB.Stats.Model.findOneAndUpdate({ coin: coin }, {
+        $set: {
+          last: blockcount,
+          count: blockcount,
+          coin,
+          supply,
+          burned,
+          connections
+        }
+      });
+    } catch (e: any) {
+      throw new Error(`Database.update_stats: ${e.message}`);
     }
   };
 
@@ -1011,29 +1083,6 @@ export class Database {
     }
   };
 
-  async update_stats(
-    coin: string,
-    blockcount: number
-  ): Promise<void> {
-    try {
-      const supply = await lib.get_supply();
-      const burned = await lib.get_burned_supply();
-      const connections = await lib.get_connectioncount();
-      await Stats.Model.findOneAndUpdate({ coin: coin }, {
-        $set: {
-          last: blockcount,
-          count: blockcount,
-          coin,
-          supply,
-          burned,
-          connections
-        }
-      });
-    } catch (e: any) {
-      throw new Error(`Database.update_stats: ${e.message}`);
-    }
-  };
-
   /*
    *
    *    Delete/Rewind Database Entries
@@ -1043,7 +1092,7 @@ export class Database {
     address: string
   ): Promise<void> {
     try {
-      await Peers.Model.deleteOne({ address: address });
+      await MongoDB.Peers.Model.deleteOne({ address: address });
     } catch (e: any) {
       throw new Error(`drop_peer: ${e.message}`);
     }
@@ -1051,7 +1100,7 @@ export class Database {
 
   async drop_peers(): Promise<void> {
     try {
-      await Peers.Model.deleteMany({});
+      await MongoDB.Peers.Model.deleteMany({});
     } catch (e: any) {
       throw new Error(`drop_peers: ${e.message}`);
     }
@@ -1061,7 +1110,7 @@ export class Database {
     coin: string
   ): Promise<void> {
     try {
-      await Richlist.Model.findOneAndRemove({ coin: coin });
+      await MongoDB.Richlist.Model.findOneAndRemove({ coin: coin });
     } catch (e: any) {
       throw new Error(`delete_richlist: ${e.message}`);
     }
@@ -1082,12 +1131,13 @@ export class Database {
       try {
         // get db txes at block height
         const timeStart = Date.now();
-        const txs: Tx.Document[] = await Tx.Model.find({ blockindex: i });
+        const txs: MongoDB.Tx.Document[] = await MongoDB.Tx.Model
+          .find({ blockindex: i });
         for (const tx of txs) {
           await rewind_save_tx(tx);
         }
         // delete saved block from db
-        await Block.Model.findOneAndDelete({ height: i });
+        await MongoDB.Block.Model.findOneAndDelete({ height: i });
         const timeEnd = Date.now();
         console.log(`REWIND: block %s (%s txs) complete (%sms)`,
           i,
