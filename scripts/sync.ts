@@ -89,9 +89,13 @@ const main = async () => {
       case 'market':
         const markets = settings.markets.enabled;
         for (const market of markets) {
-          if (await db.check_market(market)) {
-            await db.update_markets_db(market);
-            console.log('%s market data updated successfully.', market);
+          try {
+            if (await db.check_market(market)) {
+              await db.update_markets_db(market);
+              console.log('%s market data updated successfully.', market);
+            }
+          } catch (e: any) {
+            throw new Error(`updating ${market} data failed: ${e.message}`);
           }
         }
         break;
