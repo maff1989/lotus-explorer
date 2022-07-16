@@ -80,8 +80,8 @@ export default class {
         price: Number(order.price)
           .toFixed(this.EXCHANGE_PRECISION),
         total: (
-            Number(order.price)
-            * Number(order.remaining_volume)
+            Number(order.price) *
+            Number(order.remaining_volume)
           ).toFixed(this.EXCHANGE_PRECISION)
       };
     };
