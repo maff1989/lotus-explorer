@@ -124,18 +124,6 @@ const main = async () => {
               burned: 0,
             });
             console.log('Stats reset.');
-            // Resync
-            await db.update_tx_db(1, blockcount);
-            console.log("update_tx_db complete");
-            await db.update_charts_db();
-            console.log("update_charts_db complete");
-            await db.update_richlist('received');
-            console.log("update_richlist (received) complete");
-            await db.update_richlist('balance');
-            console.log("update_richlist (balance) complete");
-            await db.update_stats(settings.coin, blockcount);
-            console.log("update_stats complete");
-            console.log('reindex complete (block: %s)', blockcount);
             break;
           case 'check':
             // not implemented in the Database class code
@@ -154,22 +142,22 @@ const main = async () => {
             else if (stats.last == blockcount) {
               console.log(`Block database is already up-to-date (block: ${blockcount})`);
             }
-            console.log(`Last good height: ${stats.last}`)
-            await db.update_tx_db(stats.last + 1, blockcount);
-            console.log("update_tx_db complete");
-            await db.update_charts_db();
-            console.log("update_charts_db complete");
-            await db.update_richlist('received');
-            console.log("update_richlist (received) complete");
-            await db.update_richlist('balance');
-            console.log("update_richlist (balance) complete");
-            await db.update_stats(settings.coin, blockcount);
-            console.log("update_stats complete");
-            console.log('update complete (block: %s)', blockcount);
             break;
           case 'reindex-rich':
             break;
         }
+        console.log(`Last good height: ${stats.last}`)
+        await db.update_tx_db(stats.last + 1, blockcount);
+        console.log("update_tx_db complete");
+        await db.update_charts_db();
+        console.log("update_charts_db complete");
+        await db.update_richlist('received');
+        console.log("update_richlist (received) complete");
+        await db.update_richlist('balance');
+        console.log("update_richlist (balance) complete");
+        await db.update_stats(settings.coin, blockcount);
+        console.log("update_stats complete");
+        console.log('update complete (block: %s)', blockcount);
         break;
     }
     await db.disconnect();

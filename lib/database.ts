@@ -839,22 +839,19 @@ export class Database {
         { '$match': {
           'timestamp': { '$gte': (dbBlock.timestamp - seconds) }
         }},
-        { "$sort": {"timestamp": 1} },
-        //{ "$limit": blockspan },
-        { "$group": {
-          _id: null,
-          "blocks": { $push: { t: "$localeTimestamp", d: "$difficulty" } }
-        }},
       ];
       // filter agg results depending on blockspan to reduce data load
       agg.push(getChartsDifficultyAggregation[timespan]);
       const result: Array<{
-        blocks: Array<{
-          localeTimestamp: string,
-          difficulty: number
-        }>
+        _id: string | null,
+        difficulty: number
       }> = await MongoDB.Block.Model.aggregate(agg);
-      data.plot = result[0].blocks.map((block) => Object.values(block));
+      data.plot = result.map(entry => Object.values(entry));
+      data.plot.sort((a, b) => {
+        const t1 = String(a[0]);
+        const t2 = String(b[0]);
+        return Date.parse(t1) - Date.parse(t2);
+      });
       return data;
     } catch (e: any) {
       throw new Error(`Database.get_charts_difficulty(${timespan}): ${e.message}`);
@@ -863,10 +860,7 @@ export class Database {
   
   async get_charts_reward_distribution(
     timespan: ChartDistributionTimespan
-  ): Promise<{
-    plot: MongoDB.Charts.PlotData,
-    minerTotal: number
-  }> {
+  ) {
     const seconds = TIMESPANS[timespan];
     const blockspan = BLOCKSPANS[timespan];
     const data: {
@@ -887,7 +881,9 @@ export class Database {
   
       let minerMiscBlocks = 0;
       const minerFiltered: { [minedby: string]: number } = {};
-      for (const [minedby, blockCount] of Object.entries(minerBlockCounts)) {
+      for (const [minedby, blockCount]
+        of Object.entries(minerBlockCounts)
+      ) {
         blockCount > Math.floor(0.03 * blockspan)
           ? minerFiltered[minedby] = blockCount
           : minerMiscBlocks += blockCount;
@@ -909,10 +905,7 @@ export class Database {
   // gather and prepare chart data for transaction count based on timespan
   async get_charts_txs(
     timespan: ChartTransactionTimespan
-  ): Promise<{
-    plot: MongoDB.Charts.PlotData,
-    txTotal: number
-  }> {
+  ) {
     const seconds = TIMESPANS[timespan];
     const data: {
       plot: MongoDB.Charts.PlotData,
@@ -920,7 +913,7 @@ export class Database {
     } = { plot: [], txTotal: 0 };
     try {
       const dbBlock = await this.get_latest_block();
-      const [{ blocks, txtotal }] = await MongoDB.Block.Model
+      const [{ _id }] = await MongoDB.Block.Model
         .aggregate([
           { '$match': {
             'timestamp': { '$gte': (dbBlock.timestamp - seconds) },
@@ -930,30 +923,23 @@ export class Database {
           //{ "$limit": blockspan },
           { "$group":
             {
-              _id: null,
-              "blocks": {
+              _id: {
                 $push: {
                   localeTimestamp: "$localeTimestamp",
                   txcount: {
                     $subtract: ["$txcount", 1] 
                   }
                 }
-              },
-              // add together all txcount minus 1; we don't include coinbase tx in count
-              'txtotal': {
-                $sum: {
-                  $subtract: ["$txcount", 1] 
-                }
               }
             }
           },
         ]);
       const arranged_data: { [x: string]: number } = {};
-      blocks.forEach((block: MongoDB.Block.Document) => {
+      _id.forEach((block: MongoDB.Block.Document) => {
         arranged_data[block.localeTimestamp] = block.txcount;
+        data.txTotal += block.txcount;
       });
       data.plot = Object.entries(arranged_data);
-      data.txTotal = txtotal;
       return data;
     } catch (e: any) {
       throw new Error(`Database.get_charts_txs(${timespan}): ${e.message}`);
