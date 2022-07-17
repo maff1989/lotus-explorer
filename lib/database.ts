@@ -923,11 +923,11 @@ export class Database {
           //{ "$limit": blockspan },
           { "$group":
             {
-              _id: {
-                $push: {
-                  localeTimestamp: "$localeTimestamp",
-                  txcount: {
-                    $subtract: ["$txcount", 1] 
+              '_id': {
+                '$push': {
+                  'localeTimestamp': "$localeTimestamp",
+                  'txcount': {
+                    '$subtract': ["$txcount", 1] 
                   }
                 }
               }
