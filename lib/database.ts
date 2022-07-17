@@ -913,7 +913,7 @@ export class Database {
     } = { plot: [], txTotal: 0 };
     try {
       const dbBlock = await this.get_latest_block();
-      const [{ _id }] = await MongoDB.Block.Model
+      const [{ blocks }] = await MongoDB.Block.Model
         .aggregate([
           { '$match': {
             'timestamp': { '$gte': (dbBlock.timestamp - seconds) },
@@ -923,11 +923,12 @@ export class Database {
           //{ "$limit": blockspan },
           { "$group":
             {
-              '_id': {
-                '$push': {
-                  'localeTimestamp': "$localeTimestamp",
-                  'txcount': {
-                    '$subtract': ["$txcount", 1] 
+              _id: null,
+              "blocks": {
+                $push: {
+                  localeTimestamp: "$localeTimestamp",
+                  txcount: {
+                    $subtract: ["$txcount", 1] 
                   }
                 }
               }
@@ -935,7 +936,7 @@ export class Database {
           },
         ]);
       const arranged_data: { [x: string]: number } = {};
-      _id.forEach((block: MongoDB.Block.Document) => {
+      blocks.forEach((block: MongoDB.Block.Document) => {
         arranged_data[block.localeTimestamp] = block.txcount;
         data.txTotal += block.txcount;
       });
