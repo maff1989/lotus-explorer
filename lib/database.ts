@@ -785,9 +785,16 @@ export class Database {
       count: number
     } = { txs: [], count: 0 };
     try {
-      const { balance } = await MongoDB.Address.Model
-        .findOne({ a_id: address })
-        .lean() || { balance: 0 };
+      const [{ balance }] = await MongoDB.AddressTx.Model
+        .aggregate([
+          { '$match': { a_id: address }},
+          { '$sort': { 'blockindex': -1 }},
+          { '$skip': Number(start) },
+          { '$group': {
+            _id: null,
+            balance: { '$sum': '$amount' }
+          }}
+        ]) || [{ balance: 0 }];
       data.count= await MongoDB.AddressTx.Model
         .find({ a_id: address })
         .count();
@@ -801,7 +808,8 @@ export class Database {
           .sort({ blockindex: -1 })
           .sort({ amount: 1 })
           .skip(start)
-          .limit(length);
+          .limit(length)
+          .lean();
       let runningBalance = balance ?? 0;
       for (const addressTx of addressTxs) {
         const tx = await this.get_tx(addressTx.txid);
