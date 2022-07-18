@@ -300,15 +300,16 @@ const rewind_save_tx = async (
   // rewind vins
   for (const input of vin) {
     const { addresses, amount } = input;
-    // Rewind sent amount from coinbase entry
-    if (addresses == 'coinbase') {
-      await MongoDB.Address.Model.findOneAndUpdate(
-        { a_id: 'coinbase' },
-        { $inc: { sent: -amount }});
-      continue;
-    }
     try {
-      await rewind_update_address(addresses, amount, 'rewind-vin');
+      // Rewind sent amount from coinbase entry
+      if (addresses == 'coinbase') {
+        await MongoDB.Address.Model.findOneAndUpdate(
+          { a_id: 'coinbase' },
+          { $inc: { sent: -amount }});
+        continue;
+      } else {
+        await rewind_update_address(addresses, amount, 'rewind-vin');
+      }
     } catch (e: any) {
       throw new Error(`rewind_save_tx: vin: ${e.message}`);
     }
