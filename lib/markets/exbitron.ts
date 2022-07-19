@@ -18,10 +18,11 @@ type Summary = {
 type ParsedOrder = {
   amount: string,
   price: string,
-  total: string
+  total: string,
+  created_at: string,
 };
 
-export type ParsedData = {
+type ParsedData = {
   stats: Summary,
   trades: API.Trade[],
   buys: ParsedOrder[],
@@ -82,7 +83,8 @@ export default class {
         total: (
             Number(order.price) *
             Number(order.remaining_volume)
-          ).toFixed(this.EXCHANGE_PRECISION)
+          ).toFixed(this.EXCHANGE_PRECISION),
+        created_at: order.created_at
       };
     };
     try {
