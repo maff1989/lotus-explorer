@@ -148,16 +148,11 @@ const main = async () => {
         }
         console.log(`Last good height: ${stats.last}`)
         await db.update_tx_db(stats.last + 1, blockcount);
-        console.log("update_tx_db complete");
         await db.update_charts_db();
-        console.log("update_charts_db complete");
         await db.update_richlist('received');
-        console.log("update_richlist (received) complete");
         await db.update_richlist('balance');
-        console.log("update_richlist (balance) complete");
         await db.update_stats(settings.coin, blockcount);
-        console.log("update_stats complete");
-        console.log('update complete (block: %s)', blockcount);
+        console.log('LOG: update complete (blockcount: %s)', blockcount);
         break;
     }
     await db.disconnect();

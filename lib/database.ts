@@ -963,6 +963,7 @@ export class Database {
    */
 
   async update_charts_db(): Promise<void> {
+    const start = Date.now();
     try {
       // Transaction Charts
       const { plot: txsDay, txTotal: txsDay_count } = await this.get_charts_txs('day');
@@ -993,6 +994,8 @@ export class Database {
     } catch (e: any) {
       throw new Error(`Database.update_charts_db: ${e.message}`);
     }
+    const end = Date.now();
+    console.log('LOG: update_charts_db complete (%sms)', end - start)
   };
   
   async update_label(
@@ -1030,6 +1033,7 @@ export class Database {
   async update_richlist(
     list: string
   ): Promise<void> {
+    const start = Date.now();
     try {
       const addresses = list == 'received'
         ? await MongoDB.Address.Model
@@ -1048,12 +1052,18 @@ export class Database {
     } catch (e: any) {
       throw new Error(`Database.update_richlist: ${e.message}`);
     }
+    const end = Date.now();
+    console.log('LOG: update_richlist (%s) complete (%sms)',
+      list,
+      end - start
+    );
   };
 
   async update_stats(
     coin: string,
     blockcount: number
   ): Promise<void> {
+    const start = Date.now();
     try {
       const supply = await lib.get_supply();
       const burned = await lib.get_burned_supply();
@@ -1071,12 +1081,15 @@ export class Database {
     } catch (e: any) {
       throw new Error(`Database.update_stats: ${e.message}`);
     }
+    const end = Date.now();
+    console.log('LOG: update_stats complete (%sms)', end - start);
   };
 
   async update_tx_db(
     startBlockHeight: number,
     endBlockHeight: number
   ): Promise<void> {
+    const start = Date.now();
     const counter = { currentBlockHeight: startBlockHeight };
     while (counter.currentBlockHeight <= endBlockHeight) {
       try {
@@ -1098,6 +1111,8 @@ export class Database {
       }
       counter.currentBlockHeight++;
     }
+    const end = Date.now();
+    console.log('LOG: update_tx_db complete (%sms)', end - start);
   };
 
   /*
