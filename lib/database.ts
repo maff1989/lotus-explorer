@@ -63,8 +63,10 @@ const BLOCKSPANS: {
  * @returns Object containing amount burned by tx, in satoshis
  */
 const save_tx = async (
-  txid: string, height: number
+  txid: string,
+  height: number
 ): Promise<{
+  fee: number,
   burned: number
 }> => {
   const tx = await lib.get_rawtransaction(txid);
@@ -99,26 +101,26 @@ const save_tx = async (
       throw new Error(`save_tx: update_address: vout ${addresses}: ${e.message}`);
     }
   }
-  // save Tx
-  const newTx = new MongoDB.Tx.Model({
-    txid: tx.txid,
-    vin,
-    vout,
-    fee,
-    size: tx.size,
-    total: total.toFixed(6),
-    timestamp: tx.time,
-    localeTimestamp: new Date(tx.time * 1000)
-      .toLocaleString('en-us', { timeZone:"UTC" }),
-    blockhash: tx.blockhash,
-    blockindex: height,
-  });
   try {
+    // save Tx
+    const newTx = new MongoDB.Tx.Model({
+      txid: tx.txid,
+      vin,
+      vout,
+      fee,
+      size: tx.size,
+      total: total.toFixed(6),
+      timestamp: tx.time,
+      localeTimestamp: new Date(tx.time * 1000)
+        .toLocaleString('en-us', { timeZone:"UTC" }),
+      blockhash: tx.blockhash,
+      blockindex: height,
+    });
     await newTx.save();
   } catch (e: any) {
     throw new Error(`save_tx: newTx.save: ${e.message}`);
   }
-  return { burned };
+  return { fee, burned };
 };
 /**
  * Save info for `txid` and `address` to `AddressTx.Model`
@@ -156,11 +158,10 @@ const save_addresstx = async (
  */
 const save_block = async (
   block: BlockInfo,
-  txburned: number
+  fees: number,
+  burned: number,
 ): Promise<void> => {
   try {
-    const { blockFees, blockFeesBurned } = await lib.get_block_fees(block.height);
-    const totalFeesBurned = blockFeesBurned + txburned;
     // gather minedby address
     const coinbaseTx = await lib.get_rawtransaction(block.tx[0]);
     const miner = coinbaseTx.vout[1].scriptPubKey.addresses[0];
@@ -173,8 +174,8 @@ const save_block = async (
       timestamp: block.time,
       localeTimestamp: new Date(block.time * 1000).toLocaleString('en-us', { timeZone:"UTC" }),
       size: block.size,
-      fees: blockFees,
-      burned: totalFeesBurned,
+      fees,
+      burned,
       txcount: block.nTx
     });
     await newBlock.save();
@@ -492,19 +493,21 @@ export class Database {
   async create_txs(
     block: BlockInfo
   ): Promise<{
-    txburned: number
+    fees: number,
+    burned: number
   }> {
     const { height, tx } = block;
-    const burned = { total: 0 };
+    const counters = { fees: 0, burned: 0 };
     for (const txid of tx) {
       try {
-        const { burned: txBurned } = await save_tx(txid, height);
-        burned.total += txBurned;
+        const { fee, burned } = await save_tx(txid, height);
+        counters.fees += fee;
+        counters.burned += burned;
       } catch (e: any) {
         throw new Error(`Database.create_txs: ${height}: ${txid}: ${e.message}`);
       }
     }
-    return { txburned: burned.total };
+    return { ...counters };
   };
 
   /*
@@ -1097,9 +1100,15 @@ export class Database {
         const blockhash = await lib.get_blockhash(counter.currentBlockHeight);
         const block = await lib.get_block(blockhash);
         // save all txs in block
-        const { txburned } = await this.create_txs(block);
+        const { fees, burned } = await this.create_txs(block);
+        // calculate burned fees from total tx fees
+        const burnedFees = Math.round(fees / 2);
         // save block
-        await save_block(block, txburned);
+        await save_block(
+          block,
+          fees,
+          burnedFees + burned
+        );
         const timeEnd = Date.now();
         console.log('SAVE: block %s (%s txs) complete (%sms)',
           block.height,
