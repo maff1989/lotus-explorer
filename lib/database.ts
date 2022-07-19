@@ -319,10 +319,6 @@ const rewind_save_tx = async (
   for (const output of vout) {
     const type = { output: 'rewind-vout' };
     const { addresses, amount } = output;
-    // skip all OP_RETURN outputs
-    if (addresses.includes("OP_RETURN")) {
-      continue;
-    }
     if (vin.find(input => input.addresses == addresses)) {
       type.output = 'rewind-toSelf';
     }
@@ -1121,7 +1117,11 @@ export class Database {
       counter.currentBlockHeight++;
     }
     const end = Date.now();
-    console.log('LOG: update_tx_db complete (%sms)', end - start);
+    console.log('SAVE: block %s->%s complete (%sms)',
+      startBlockHeight,
+      endBlockHeight,
+      end - start
+    );
   };
 
   /*
