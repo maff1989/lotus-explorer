@@ -372,7 +372,7 @@ export class Explorer {
     const data = { address: { hash: '', amount: 0 }};
     // Parse vouts to gather coinbase value
     if (vin.coinbase) {
-      const amount = vouts.reduce((a, b) => a + b.value, vouts[0].value);
+      const amount = vouts.reduce((a, b) => a + b.value, 0);
       const sats = this.convert_to_satoshi(amount);
       data.address = { hash: 'coinbase', amount: sats };
     } else {
