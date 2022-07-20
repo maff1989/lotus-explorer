@@ -123,6 +123,7 @@ const main = async () => {
               supply: 0,
               burned: 0,
             });
+            stats.last = 0;
             console.log('Stats reset.');
             break;
           case 'check':
