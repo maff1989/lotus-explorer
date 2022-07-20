@@ -19,7 +19,6 @@ export type Document = {
     amount: number,
     asm?: string,
   }>,
-  total?: number,
   timestamp: number,
   localeTimestamp?: string,
   blockhash: string,
@@ -32,7 +31,6 @@ const TxSchema = new Schema<Document>({
   fee: { type: Number, default: 0 },
   vin: { type: <Document['vin']>[], default: [] },
   vout: { type: <Document['vout']>[], default: [] },
-  total: { type: Number, default: 0, index: true },
   timestamp: { type: Number, default: 0, index: true },
   localeTimestamp: { type: String }, // for jqPlot charts
   blockhash: { type: String, index: true },

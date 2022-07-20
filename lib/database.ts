@@ -72,7 +72,6 @@ const save_tx = async (
   const tx = await lib.get_rawtransaction(txid);
   const { vin } = await lib.prepare_vin(tx);
   const { vout, burned } = await lib.prepare_vout(tx.vout);
-  const total = await lib.calculate_total(vout);
   const fee = await lib.calculate_fee(vout, vin);
   // update vins
   for (const input of vin) {
@@ -109,7 +108,6 @@ const save_tx = async (
       vout,
       fee,
       size: tx.size,
-      total: total.toFixed(6),
       timestamp: tx.time,
       localeTimestamp: new Date(tx.time * 1000)
         .toLocaleString('en-us', { timeZone:"UTC" }),
