@@ -290,9 +290,10 @@ export class Explorer {
     vout: MongoDB.Tx.Document['vout'],
     vin: MongoDB.Tx.Document['vin']
   ): Promise<number> {
-    const totalVin = await this.calculate_total(vin);
-    const totalVout = await this.calculate_total(vout);
-    return Math.round(totalVin - totalVout);
+    const total = { vin: 0, vout: 0 };
+    vin.forEach(vin => total.vin += vin.amount);
+    vout.forEach(vout => total.vout += vout.amount);
+    return Math.round(total.vin - total.vout);
   };
   /**
    * Prepare raw vout for database storage
