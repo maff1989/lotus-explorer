@@ -105,18 +105,18 @@ const main = async () => {
           case 'reindex':
             // Delete/reset
             await Tx.Model.deleteMany({});
-            console.log('TXs cleared.');
+            console.log('LOG: Tx collection cleared.');
             await Address.Model.deleteMany({});
-            console.log('Addresses cleared.');
+            console.log('LOG: Address collection cleared.');
             await AddressTx.Model.deleteMany({});
-            console.log('Address TXs cleared.');
+            console.log('LOG: AddressTx collection cleared.');
             await Block.Model.deleteMany({});
-            console.log('Blocks cleared');
+            console.log('LOG: Block collection cleared');
             await Richlist.Model.updateOne({ coin: settings.coin }, {
               received: [],
               balance: [],
             });
-            console.log('Richlist reset.');
+            console.log('LOG: Richlist collection reset');
             await Stats.Model.updateOne({ coin: settings.coin }, {
               last: 0,
               count: 0,
@@ -124,7 +124,7 @@ const main = async () => {
               burned: 0,
             });
             stats.last = 0;
-            console.log('Stats reset.');
+            console.log('LOG: Stats collection reset');
             break;
           case 'check':
             // not implemented in the Database class code
@@ -143,11 +143,11 @@ const main = async () => {
             else if (stats.last == blockcount) {
               console.log(`Block database is already up-to-date (block: ${blockcount})`);
             }
+            console.log(`LOG: Last good height: ${stats.last}`);
             break;
           case 'reindex-rich':
             break;
         }
-        console.log(`Last good height: ${stats.last}`)
         await db.update_tx_db(stats.last + 1, blockcount);
         await db.update_charts_db();
         await db.update_richlist('received');
