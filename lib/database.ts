@@ -152,7 +152,8 @@ const save_addresstx = async (
 /**
  * Save raw block data as `Block.Model`
  * @param block Raw block info
- * @param txburned Amount burned by txs, in satoshis
+ * @param fees Fees paid by txs, in satoshis
+ * @param burned OP_RETURN and fees burned, in satoshis
  */
 const save_block = async (
   block: BlockInfo,
@@ -170,7 +171,8 @@ const save_block = async (
       //hash: block.hash,
       difficulty: block.difficulty,
       timestamp: block.time,
-      localeTimestamp: new Date(block.time * 1000).toLocaleString('en-us', { timeZone:"UTC" }),
+      localeTimestamp: new Date(block.time * 1000)
+        .toLocaleString('en-us', { timeZone:"UTC" }),
       size: block.size,
       fees,
       burned,

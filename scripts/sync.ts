@@ -39,7 +39,7 @@ const printUsageAndExit = () => {
 
 // check options
 if (process.argv[2] == 'index') {
-  if (process.argv.length <3) {
+  if (process.argv.length < 3) {
     printUsageAndExit();
   } else {
     switch(process.argv[3])
@@ -60,7 +60,7 @@ if (process.argv[2] == 'index') {
         printUsageAndExit();
     }
   }
-} else if (process.argv[2] == 'market'){
+} else if (process.argv[2] == 'market') {
   DATABASE = 'market';
 } else {
   printUsageAndExit();
