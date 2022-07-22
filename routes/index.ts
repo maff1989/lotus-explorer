@@ -173,7 +173,7 @@ router.get('/tx/:txid', async (req, res) => {
       fee: fee,
       vin: vin,
       vout: vout,
-      blockindex: null
+      blockindex: 0
     };
     renderData.blockcount = -1;
     return res.render('tx', renderData);
