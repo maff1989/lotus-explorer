@@ -505,7 +505,7 @@ export class Database {
         throw new Error(`Database.create_txs: ${height}: ${txid}: ${e.message}`);
       }
     }
-    return { ...counters };
+    return counters;
   };
 
   /*
