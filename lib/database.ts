@@ -72,7 +72,7 @@ const save_tx = async (
   const tx = await lib.get_rawtransaction(txid);
   const { vin } = await lib.prepare_vin(tx);
   const { vout, burned } = await lib.prepare_vout(tx.vout);
-  const total = await lib.calculate_total(vout);
+  const total = vout.reduce((a, b) => a + b.amount, 0);
   const fee = await lib.calculate_fee(vout, vin);
   // update vins
   for (const input of vin) {
