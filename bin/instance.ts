@@ -5,8 +5,7 @@ import { Database } from '../lib/database';
 import settings from '../lib/settings';
 const db = new Database();
 
-
-const main = async () => {
+export const main = async () => {
   // Initialize instance
   app.set('port', process.env.PORT || settings.port);
   try {
@@ -39,4 +38,3 @@ const main = async () => {
     debug('Express server listening on port ' + server.address());
   });
 };
-main();

@@ -1,6 +1,7 @@
 import cluster from 'cluster';
 import * as os from 'os';
 import * as fs from 'fs/promises';
+import * as instance from './instance';
 
 const main = async () => {
   if (cluster.isMaster) {
@@ -15,7 +16,7 @@ const main = async () => {
             cluster.workers[id].kill();
           }
           // exit the master process
-          setTimeout(() => process.exit(0), 3000);
+          process.exit(0);
         }, 1000);
       });
       // set up workers
@@ -41,7 +42,7 @@ const main = async () => {
       process.exit(1);
     }
   } else {
-    require('./instance.ts')
+    await instance.main();
   }
 };
 main();
