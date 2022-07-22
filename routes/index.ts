@@ -215,6 +215,18 @@ router.get('/block/:blockhash', async (req, res) => {
       // genesis block handler
       case blockhash === settings.genesis_block:
         renderData.txs = 'GENESIS';
+        renderData.blockDocument = {
+          height: block.height,
+          minedby: '-',
+          timestamp: block.time,
+          localeTimestamp: new Date(block.time * 1000)
+            .toLocaleString('en-us', { timeZone:"UTC" }),
+          difficulty: block.difficulty,
+          size: block.size,
+          fees: 0,
+          burned: 0,
+          txcount: block.nTx
+        };
         return res.render('block', renderData);
       // default block render
       default:
@@ -222,7 +234,6 @@ router.get('/block/:blockhash', async (req, res) => {
         const stats = await db.get_stats(settings.coin);
         renderData.txs = await db.get_txs(block.tx);
         renderData.blockcount = stats.last;
-        renderData.blockInfo = block;
         renderData.blockDocument = {
           ...dbBlock,
           burned: lib.convert_to_xpi(dbBlock.burned)
