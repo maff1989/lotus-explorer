@@ -49,12 +49,12 @@ export type TransactionOutput = {
 export type RawTransaction = {
   txid: string,
   size: number,
-  confirmations: number,
   vin: TransactionInput[],
   vout: TransactionOutput[],
-  time: number,
-  blocktime: number,
-  blockhash: string,
+  time?: number,
+  blocktime?: number,
+  blockhash?: string,
+  confirmations?: number,
 };
 
 const XPI_DIVISOR = 1000000
