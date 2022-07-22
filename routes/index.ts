@@ -190,31 +190,34 @@ router.get('/block/:blockhash', async (req, res) => {
     const hash = await lib.get_blockhash(height);
     return res.redirect(`/block/${hash}`);
   }
-  const renderData: {
-    active: string,
-    confirmations: number,
-    blockcount: number,
-    blockDocument: Block.Document,
-    blockInfo: BlockInfo,
-    txs: Tx.Document[] | string
-  } = {
-    active: 'block',
-    confirmations: settings.confirmations,
-    blockcount: null,
-    blockDocument: null,
-    blockInfo: null,
-    txs: null
-  };
-  // process block
-  switch (true) {
-    // genesis block handler
-    case blockhash === settings.genesis_block:
-      renderData.txs = 'GENESIS';
-      return res.render('block', renderData);
-    // default block render
-    default:
-      try {
-        const block = await lib.get_block(blockhash);
+  try {
+    const block = await lib.get_block(blockhash);
+    const renderData: {
+      active: string,
+      confirmations: number,
+      blockInfo: BlockInfo,
+      blockDocument: Block.Document,
+      blockcount: number,
+      txs: Tx.Document[] | string
+    } = {
+      active: 'block',
+      confirmations: settings.confirmations,
+      blockInfo: block,
+      blockDocument: null,
+      blockcount: null,
+      txs: null
+    };
+    // process block
+    switch (true) {
+      // something went wrong with RPC call
+      case block instanceof Error:
+        throw <any>block as Error;
+      // genesis block handler
+      case blockhash === settings.genesis_block:
+        renderData.txs = 'GENESIS';
+        return res.render('block', renderData);
+      // default block render
+      default:
         const dbBlock = await db.get_block(block.height);
         const stats = await db.get_stats(settings.coin);
         renderData.txs = await db.get_txs(block.tx);
@@ -225,10 +228,10 @@ router.get('/block/:blockhash', async (req, res) => {
           burned: lib.convert_to_xpi(dbBlock.burned)
         };
         return res.render('block', renderData);
-      } catch (e: any) {
-        console.log(`/block/${blockhash}: ${e.message}`);
-        return route_get_index(res, `Block not found: ${blockhash}`);
-      }
+    }
+  } catch (e: any) {
+    console.log(`/block/${blockhash}: ${e.message}`);
+    return route_get_index(res, `Block not found: ${blockhash}`);
   }
 });
 router.get('/address/:address', async (req, res) => {
