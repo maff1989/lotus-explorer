@@ -7,7 +7,7 @@ export const getChartsDifficultyAggregation: {
     '$group': {
       '_id': {
         "$dateToString": {
-          "format": "%Y-%m-%d %H",
+          "format": "%m-%d-%Y %H",
           "date": {
             '$dateFromString': { 'dateString': "$localeTimestamp" }
           }
@@ -22,7 +22,7 @@ export const getChartsDifficultyAggregation: {
     '$group': {
       '_id': {
         "$dateToString": {
-          "format": "%Y-%m-%d %H",
+          "format": "%m-%d-%Y %H",
           "date": {
             '$dateFromString': { 'dateString': "$localeTimestamp" }
           }
@@ -37,7 +37,7 @@ export const getChartsDifficultyAggregation: {
     '$group': {
       '_id': {
         "$dateToString": {
-          "format": "%Y-%m-%d %H",
+          "format": "%m-%d-%Y %H",
           "date": {
             '$dateFromString': { 'dateString': "$localeTimestamp" }
           }
@@ -52,7 +52,7 @@ export const getChartsDifficultyAggregation: {
     '$group': {
       '_id': {
         "$dateToString": {
-          "format": "%Y-%m-%d",
+          "format": "%m-%d-%Y",
           "date": {
             '$dateFromString': { 'dateString': "$localeTimestamp" }
           }

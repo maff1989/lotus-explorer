@@ -4,6 +4,7 @@ import {
   PipelineStage,
 } from 'mongoose';
 import * as fs from 'fs/promises';
+import moment from 'moment';
 import {
   BlockInfo,
   Explorer
@@ -856,10 +857,10 @@ export class Database {
         _id: string | null,
         difficulty: number
       }> = await MongoDB.Block.Model.aggregate(agg);
-      data.plot = result.map(entry => Object.values(entry));
-      data.plot.sort((a, b) => {
-        const t1 = String(a[0]);
-        const t2 = String(b[0]);
+      const plot = result.map(entry => Object.values(entry));
+      data.plot = plot.sort((a, b) => {
+        const t1 = moment(a[0], 'MM-DD-YYYY HH').toLocaleString();
+        const t2 = moment(b[0], 'MM-DD-YYYY HH').toLocaleString();
         return Date.parse(t1) - Date.parse(t2);
       });
       return data;
