@@ -1160,20 +1160,19 @@ export class Database {
     }
   };
   /**
-   * Rewind appropriate index states from `endHeight` to `startHeight`
+   * Rewind appropriate index states from `startHeight` to `endHeight`
    * 
-   * `startHeight` is the last good block, plus one (i.e. oldest bad block)
-   * @param endHeight Newest orphaned block height to rewind
-   * @param startHeight Oldest orphaned block to rewind
+   * `endHeight` is the last good block, plus one (i.e. oldest bad block)
+   * @param startHeight Newest orphaned block height to rewind
+   * @param endHeight Oldest orphaned block to rewind
    */
   async rewind_db(
-    endHeight: number,
-    startHeight: number
+    startHeight: number,
+    endHeight: number
   ): Promise<void> {
-    // rewind from endHeight down to and including startHeight
-    for (let i = endHeight; i >= startHeight; i--) {
+    for (let i = startHeight; i >= endHeight; i--) {
       try {
-        // get db txes at block height
+        // fetch and rewind db txes at blockindex
         const timeStart = Date.now();
         const txs = await MongoDB.Tx.Model.find({ blockindex: i });
         for (const tx of txs) {
@@ -1188,7 +1187,7 @@ export class Database {
           timeEnd - timeStart
         );
       } catch (e: any) {
-        throw new Error(`Database.rewind_db(${endHeight}, ${startHeight}): ${i}: ${e.message}`);
+        throw new Error(`rewind_db(${startHeight}, ${endHeight}): ${i}: ${e.message}`);
       }
     }
   };
