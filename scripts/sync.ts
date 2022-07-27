@@ -149,10 +149,10 @@ const main = async () => {
             break;
         }
         await db.update_tx_db(stats.last + 1, blockcount);
-        await db.update_charts_db();
+        await db.update_stats(settings.coin, blockcount);
         await db.update_richlist('received');
         await db.update_richlist('balance');
-        await db.update_stats(settings.coin, blockcount);
+        await db.update_charts_db();
         console.log('LOG: update complete (blockcount: %s)', blockcount);
         break;
     }
