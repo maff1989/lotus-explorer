@@ -852,7 +852,7 @@ export class Database {
         }},
       ];
       // filter agg results depending on blockspan to reduce data load
-      agg.push(getChartsDifficultyAggregation[timespan]);
+      agg.push(...getChartsDifficultyAggregation[timespan]);
       const result: Array<{
         _id: string | null,
         difficulty: number
