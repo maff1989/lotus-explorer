@@ -9,15 +9,14 @@ const main = async () => {
       await fs.appendFile('./tmp/cluster.pid', process.pid.toString());
       console.log('Starting cluster with pid: ' + process.pid);
       process.on('SIGINT', () => {
-        console.log('Cluster shutting down..');
-        setTimeout(() => {
-          for (const id in cluster.workers) {
-            console.log('Worker shutting down (' + id + ')');
-            cluster.workers[id].kill();
-          }
-          // exit the master process
-          process.exit(0);
-        }, 1000);
+        console.log('Cluster shutting down...');
+        for (const id in cluster.workers) {
+          const { pid } = cluster.workers[id].process;
+          console.log(`Stopping instance with PID ${pid}`);
+          cluster.workers[id].kill();
+        }
+        // exit the master process
+        process.exit(0);
       });
       // set up workers
       const cpuCount = os.cpus().length;
@@ -37,11 +36,12 @@ const main = async () => {
           cluster.fork();
         }
       });
-    } catch (e :any) {
+    } catch (e: any) {
       console.log('Error: unable to create cluster.pid');
       process.exit(1);
     }
   } else {
+    console.log(`Starting instance with PID ${process.pid}`);
     await instance.main();
   }
 };
