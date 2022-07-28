@@ -1069,13 +1069,14 @@ export class Database {
     try {
       const supply = await lib.get_supply();
       const burned = await lib.get_burned_supply();
+      const supplyAvailable = supply - burned;
       const connections = await lib.get_connectioncount();
       await MongoDB.Stats.Model.findOneAndUpdate({ coin: coin }, {
         $set: {
           last: blockcount,
           count: blockcount,
           coin,
-          supply,
+          supply: supplyAvailable,
           burned,
           connections
         }
