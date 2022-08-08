@@ -18,6 +18,6 @@ const AddressTXSchema = new Schema<Document>({
   txid: { type: String, lowercase: true, index: true},
   amount: { type: Number, default: 0, index: true}
 }, { id: false });
-AddressTXSchema.index({ a_id: 1, blockindex: -1 });
+AddressTXSchema.index({ a_id: 1, blockindex: -1, amount: 1 });
 
 export const Model = model('AddressTx', AddressTXSchema);
