@@ -119,7 +119,7 @@ const save_tx = async (
     });
     await newTx.save();
   } catch (e: any) {
-    throw new Error(`save_tx: newTx.save: ${e.message}`);
+    throw new Error(`save_tx: ${e.message}`);
   }
   return { fee, burned };
 };
@@ -415,7 +415,7 @@ export class Database {
     try {
       await connect(this.dbString);
     } catch (e: any) {
-      throw new Error(`Database.connect: ${this.dbString}: ${e.message}`);
+      throw new Error(`connect: ${this.dbString}: ${e.message}`);
     }
   };
 
@@ -423,7 +423,7 @@ export class Database {
     try {
       await disconnect();
     } catch (e: any) {
-      throw new Error(`Database.disconnect: ${this.dbString}: ${e.message}`);
+      throw new Error(`disconnect: ${this.dbString}: ${e.message}`);
     }
   };
 
@@ -441,7 +441,7 @@ export class Database {
       });
       return await create.save();
     } catch (e: any) {
-      throw new Error(`Database.create_market: ${e.message}`);
+      throw new Error(`create_market: ${e.message}`);
     }
   };
   
@@ -452,7 +452,7 @@ export class Database {
       const peer = new MongoDB.Peers.Model(params);
       return await peer.save();
     } catch (e: any) {
-      throw new Error(`Database.create_peer: ${e.message}`);
+      throw new Error(`create_peer: ${e.message}`);
     }
   };
 
@@ -467,7 +467,7 @@ export class Database {
       });
       return await richlist.save();
     } catch (e: any) {
-      throw new Error(`Database.create_richlist: ${e.message}`);
+      throw new Error(`create_richlist: ${e.message}`);
     }
   };
 
@@ -485,7 +485,7 @@ export class Database {
       });
       return await create.save();
     } catch (e: any) {
-      throw new Error(`Database.create_stats: ${e.message}`);
+      throw new Error(`create_stats: ${e.message}`);
     }
   };
 
@@ -503,7 +503,7 @@ export class Database {
         counters.fees += fee;
         counters.burned += burned;
       } catch (e: any) {
-        throw new Error(`Database.create_txs: ${height}: ${txid}: ${e.message}`);
+        throw new Error(`create_txs: ${height}: ${txid}: ${e.message}`);
       }
     }
     return counters;
@@ -566,7 +566,7 @@ export class Database {
         .findOne({ a_id: hash })
         .lean();
     } catch (e: any) {
-      throw new Error(`Database.get_address: ${e.message}`);
+      throw new Error(`get_address: ${e.message}`);
     }
   };
 
@@ -578,7 +578,7 @@ export class Database {
         .findOne({ height: height })
         .lean();
     } catch (e: any) {
-      throw new Error(`Database.get_block: ${e.message}`);
+      throw new Error(`get_block: ${e.message}`);
     }
   };
 
@@ -590,7 +590,7 @@ export class Database {
         .limit(1);
       return <MongoDB.Block.Document>result.pop();
     } catch (e: any) {
-      throw new Error(`Database.get_latest_block: ${e.message}`);
+      throw new Error(`get_latest_block: ${e.message}`);
     }
   };
 
@@ -670,7 +670,7 @@ export class Database {
         .findOne({ market: market })
         .lean();
     } catch (e: any) {
-      throw new Error(`Database.get_market: ${e.message}`);
+      throw new Error(`get_market: ${e.message}`);
     }
   };
 
@@ -682,7 +682,7 @@ export class Database {
         .findOne({ address: address })
         .lean();
     } catch (e: any) {
-      throw new Error(`Database.get_peer: ${e.message}`);
+      throw new Error(`get_peer: ${e.message}`);
     }
   };
 
@@ -690,7 +690,7 @@ export class Database {
     try {
       return await MongoDB.Peers.Model.find().lean();
     } catch (e: any) {
-      throw new Error(`Database.get_peers: ${e.message}`);
+      throw new Error(`get_peers: ${e.message}`);
     }
   }
   
@@ -702,7 +702,7 @@ export class Database {
         .findOne({ coin: coin })
         .lean();
     } catch (e: any) {
-      throw new Error(`Database.get_richlist: ${e.message}`);
+      throw new Error(`get_richlist: ${e.message}`);
     }    
   };
   
@@ -714,7 +714,7 @@ export class Database {
         .findOne({ coin: coin })
         .lean();
     } catch (e: any) {
-      throw new Error(`Database.get_stats: ${e.message}`);
+      throw new Error(`get_stats: ${e.message}`);
     }
   };
   
@@ -726,7 +726,7 @@ export class Database {
         .findOne({ txid: txid })
         .lean();
     } catch (e: any) {
-      throw new Error(`Database.get_tx: ${e.message}`);
+      throw new Error(`get_tx: ${e.message}`);
     }
   };
 
@@ -865,7 +865,7 @@ export class Database {
       });
       return data;
     } catch (e: any) {
-      throw new Error(`Database.get_charts_difficulty(${timespan}): ${e.message}`);
+      throw new Error(`get_charts_difficulty(${timespan}): ${e.message}`);
     }
   };
   
@@ -909,7 +909,7 @@ export class Database {
       data.minerTotal = Object.keys(minerBlockCounts).length;
       return data;
     } catch (e: any) {
-      throw new Error(`Database.get_charts_reward_distribution(${timespan}): ${e.message}`);
+      throw new Error(`get_charts_reward_distribution(${timespan}): ${e.message}`);
     }
   };
 
@@ -954,7 +954,7 @@ export class Database {
       data.plot = Object.entries(arranged_data);
       return data;
     } catch (e: any) {
-      throw new Error(`Database.get_charts_txs(${timespan}): ${e.message}`);
+      throw new Error(`get_charts_txs(${timespan}): ${e.message}`);
     }
   };
   
@@ -968,12 +968,27 @@ export class Database {
     const start = Date.now();
     try {
       // Transaction Charts
-      const { plot: txsDay, txTotal: txsDay_count } = await this.get_charts_txs('day');
-      const { plot: txsWeek, txTotal: txsWeek_count } = await this.get_charts_txs('week');
-      const { plot: txsMonth, txTotal: txsMonth_count } = await this.get_charts_txs('month');
+      const {
+        plot: txsDay,
+        txTotal: txsDay_count
+      } = await this.get_charts_txs('day');
+      const {
+        plot: txsWeek,
+        txTotal: txsWeek_count
+      } = await this.get_charts_txs('week');
+      const {
+        plot: txsMonth,
+        txTotal: txsMonth_count
+      } = await this.get_charts_txs('month');
       // Reward Distribution Charts
-      const { plot: miningDistDay, minerTotal: totalMinersDay } = await this.get_charts_reward_distribution('day');
-      const { plot: miningDistWeek, minerTotal: totalMinersWeek } = await this.get_charts_reward_distribution('week');
+      const {
+        plot: miningDistDay,
+        minerTotal: totalMinersDay
+      } = await this.get_charts_reward_distribution('day');
+      const {
+        plot: miningDistWeek,
+        minerTotal: totalMinersWeek
+      } = await this.get_charts_reward_distribution('week');
       // Difficulty Charts
       const { plot: difficultyWeek } = await this.get_charts_difficulty('week');
       const { plot: difficultyMonth } = await this.get_charts_difficulty('month');
@@ -994,7 +1009,7 @@ export class Database {
         difficultyYear
       }, { upsert: true });
     } catch (e: any) {
-      throw new Error(`Database.update_charts_db: ${e.message}`);
+      throw new Error(`update_charts_db: ${e.message}`);
     }
     const end = Date.now();
     console.log('LOG: update_charts_db complete (%sms)', end - start)
@@ -1010,7 +1025,7 @@ export class Database {
         await MongoDB.Address.Model
           .updateOne({ a_id: hash }, { name: message });
       } catch (e: any) {
-        throw new Error(`Database.update_label: ${e.message}`)
+        throw new Error(`update_label: ${e.message}`)
       }
     }
   };
@@ -1027,7 +1042,7 @@ export class Database {
         history: data.trades
       });
     } catch (e: any) {
-      throw new Error(`Database.update_markets_db: ${e.message}`);
+      throw new Error(`update_markets_db: ${e.message}`);
     }
   };
 
@@ -1052,7 +1067,7 @@ export class Database {
         : await MongoDB.Richlist.Model
           .updateOne({ coin: settings.coin }, { balance: addresses });
     } catch (e: any) {
-      throw new Error(`Database.update_richlist: ${e.message}`);
+      throw new Error(`update_richlist: ${e.message}`);
     }
     const end = Date.now();
     console.log('LOG: update_richlist (%s) complete (%sms)',
@@ -1082,7 +1097,7 @@ export class Database {
         }
       });
     } catch (e: any) {
-      throw new Error(`Database.update_stats: ${e.message}`);
+      throw new Error(`update_stats: ${e.message}`);
     }
     const end = Date.now();
     console.log('LOG: update_stats complete (%sms)', end - start);
@@ -1116,7 +1131,7 @@ export class Database {
           timeEnd - timeStart
         );
       } catch (e: any) {
-        throw new Error(`Database.update_tx_db: ${e.message}`);
+        throw new Error(`update_tx_db: ${e.message}`);
       }
       counter.currentBlockHeight++;
     }
