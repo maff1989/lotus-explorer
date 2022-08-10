@@ -787,6 +787,13 @@ export class Database {
       count: number
     } = { txs: [], count: 0 };
     try {
+      data.count = await MongoDB.AddressTx.Model
+        .find({ a_id: address })
+        .count();
+      // return default data if no db entries for address
+      if (data.count < 1) {
+        return data;
+      }
       const [{ balance }] = await MongoDB.AddressTx.Model
         .aggregate([
           { '$match': { a_id: address }},
@@ -797,13 +804,6 @@ export class Database {
             balance: { '$sum': '$amount' }
           }}
         ]) || [{ balance: 0 }];
-      data.count= await MongoDB.AddressTx.Model
-        .find({ a_id: address })
-        .count();
-      // return default data if no db entries for address
-      if (data.count < 1) {
-        return data;
-      }
       const addressTxs: MongoDB.AddressTx.Document[] =
         await MongoDB.AddressTx.Model
           .find({ a_id: address })
