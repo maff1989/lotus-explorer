@@ -11,7 +11,7 @@ import {
 } from './explorer';
 import settings from './settings';
 import {
-  getChartsDifficultyAggregation,
+  chartsDifficultyAggregation,
 } from './util';
 import * as Markets from './markets';
 import * as MongoDB from '../models';
@@ -852,7 +852,7 @@ export class Database {
         }},
       ];
       // filter agg results depending on blockspan to reduce data load
-      agg.push(...getChartsDifficultyAggregation[timespan]);
+      agg.push(...chartsDifficultyAggregation[timespan]);
       const result: Array<{
         _id: string | null,
         difficulty: number

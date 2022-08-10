@@ -1,6 +1,6 @@
 import { PipelineStage } from "mongoose";
 
-export const getChartsDifficultyAggregation: {
+export const chartsDifficultyAggregation: {
   [timespan: string]: PipelineStage[]
 } = {
   week: [
