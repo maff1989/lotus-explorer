@@ -8,6 +8,7 @@ import cookieParser from 'cookie-parser';
 import router from './routes';
 import { Explorer } from './lib/explorer';
 import { Database } from './lib/database';
+import { toXPI } from './lib/util';
 import * as Tx from './models/tx';
 import settings from './lib/settings';
 import locale from './lib/locale';
@@ -45,12 +46,12 @@ app.use('/api', bitcoinapi.app);
 app.use('/', router);
 app.use('/ext/getmoneysupply', async (req, res) => {
   const stats = await db.get_stats(settings.coin);
-  const supplyXPI = lib.convert_to_xpi(stats.supply)
+  const supplyXPI = toXPI(stats.supply)
   return res.send(` ${supplyXPI}`);
 });
 app.use('/ext/getburnedsupply', async (req, res) => {
   const stats = await db.get_stats(settings.coin);
-  const burnedXPI = lib.convert_to_xpi(stats.burned);
+  const burnedXPI = toXPI(stats.burned);
   return res.send(` ${burnedXPI}`);
 });
 app.use('/ext/getaddress/:address', async (req, res) => {
@@ -71,9 +72,9 @@ app.use('/ext/getaddress/:address', async (req, res) => {
     });
     return res.send({
       address,
-      sent: lib.convert_to_xpi(sent),
-      received: lib.convert_to_xpi(received),
-      balance: lib.convert_to_xpi(balance),
+      sent: toXPI(sent),
+      received: toXPI(received),
+      balance: toXPI(balance),
       last_txs: dataTableRows
     });
   } catch (e: any) {
@@ -136,7 +137,7 @@ app.use('/ext/getbalance/:address', async (req, res) => {
   const { address } = req.params;
   try {
     const dbAddress = await db.get_address(address);
-    return res.send(lib.convert_to_xpi(dbAddress.balance)
+    return res.send(toXPI(dbAddress.balance)
       .toString()
       .replace(/(^-+)/mg, ''));
   } catch (e: any) {
@@ -171,7 +172,7 @@ app.use('/ext/getlastblocksajax', async (req, res) => {
       block.minedby,
       block.size,
       block.txcount,
-      lib.convert_to_xpi(block.burned),
+      toXPI(block.burned),
       new Date((block.timestamp) * 1000).toUTCString()
     ]));
     return res.json({
