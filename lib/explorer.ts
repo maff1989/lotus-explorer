@@ -1,6 +1,9 @@
 import BitcoinRpc from 'bitcoin-rpc-promise';
 import settings from './settings';
 import * as MongoDB from '../models';
+import {
+  toSats
+} from './util';
 // import { Tx } from 'chronik-client';
 
 export type AddressInfo = {
@@ -57,8 +60,7 @@ export type RawTransaction = {
   confirmations?: number,
 };
 
-const XPI_DIVISOR = 1000000
-  , rpc = new BitcoinRpc('http://'
+const rpc = new BitcoinRpc('http://'
   + `${settings.wallet.username}:`
   + `${settings.wallet.password}@`
   + `${settings.wallet.host}:`
@@ -81,22 +83,6 @@ const rpcCommand = async (
 };
 
 export class Explorer {
-  /**
-   * Converts XPI units into satoshi units
-   * @param amount Amount of XPI
-   * @returns {number} Satoshi units
-   */
-  convert_to_satoshi(amount: number): number {
-    return amount * XPI_DIVISOR;
-  };
-  /**
-   * Converts satoshi units into XPI units
-   * @param sats Amount of satoshis
-   * @returns {number} XPI units
-   */
-  convert_to_xpi(sats: number): number {
-    return sats / XPI_DIVISOR;
-  }
   /*
   get_peerinfo: function(cb) {
     // RPC call goes here
@@ -308,7 +294,7 @@ export class Explorer {
       burned: number
     } = { vout: [], burned: 0 };
     for (const output of vout) {
-      const amount = this.convert_to_satoshi(output.value);
+      const amount = toSats(output.value);
       const { addresses, type, asm } = output.scriptPubKey;
       switch (type) {
         case 'nonstandard':
@@ -374,12 +360,12 @@ export class Explorer {
     // Parse vouts to gather coinbase value
     if (vin.coinbase) {
       const amount = vouts.reduce((a, b) => a + b.value, 0);
-      const sats = this.convert_to_satoshi(amount);
+      const sats = toSats(amount);
       data.address = { hash: 'coinbase', amount: sats };
     } else {
       const tx = await this.get_rawtransaction(vin.txid);
       const vout = tx.vout[vin.vout];
-      const sats = this.convert_to_satoshi(vout.value);
+      const sats = toSats(vout.value);
       data.address = { hash: vout.scriptPubKey.addresses[0], amount: sats };
     }
     return data.address;

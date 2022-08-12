@@ -11,6 +11,7 @@ import {
 } from './explorer';
 import settings from './settings';
 import {
+  toXPI,
   chartsDifficultyAggregation,
 } from './util';
 import * as Markets from './markets';
@@ -618,8 +619,8 @@ export class Database {
     };
     for (let i = 0; i < richlist.balance.length; i++) {
       const addressDoc = richlist.balance[i];
-      const addressBalanceXpi = lib.convert_to_xpi(addressDoc.balance);
-      const supplyXPI = lib.convert_to_xpi(stats.supply);
+      const addressBalanceXpi = toXPI(addressDoc.balance);
+      const supplyXPI = toXPI(stats.supply);
       const count = i + 1;
       const percent = (addressBalanceXpi / supplyXPI) * 100;
       switch (true) {

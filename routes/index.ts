@@ -8,6 +8,9 @@ import {
   Explorer,
   BlockInfo
 } from '../lib/explorer';
+import {
+  toXPI
+} from '../lib/util';
 import * as Block from '../models/block';
 import * as Tx from '../models/tx';
 import settings from '../lib/settings';
@@ -86,19 +89,19 @@ router.get('/richlist', async (req, res) => {
       balance: dbRichlist.balance.map(doc => {
         return {
           ...doc,
-          balance: lib.convert_to_xpi(doc.balance)
+          balance: toXPI(doc.balance)
         };
       }),
       received: dbRichlist.received.map(doc => {
         return {
           ...doc,
-          received: lib.convert_to_xpi(doc.received)
+          received: toXPI(doc.received)
         };
       }),
       stats: {
         ...dbStats,
-        supply: lib.convert_to_xpi(dbStats.supply),
-        burned: lib.convert_to_xpi(dbStats.burned)
+        supply: toXPI(dbStats.supply),
+        burned: toXPI(dbStats.burned)
       },
       dista: dbDistribution.t_1_25,
       distb: dbDistribution.t_26_50,
@@ -236,7 +239,7 @@ router.get('/block/:blockhash', async (req, res) => {
         renderData.blockcount = stats.last;
         renderData.blockDocument = {
           ...dbBlock,
-          burned: lib.convert_to_xpi(dbBlock.burned)
+          burned: toXPI(dbBlock.burned)
         };
         return res.render('block', renderData);
     }
@@ -298,8 +301,8 @@ router.get('/ext/summary', async (req, res) => {
     const dbStats = await db.get_stats(settings.coin);
     return res.send({ data: [{
       difficulty: difficulty,
-      supply: lib.convert_to_xpi(dbStats.supply),
-      burned: lib.convert_to_xpi(dbStats.burned),
+      supply: toXPI(dbStats.supply),
+      burned: toXPI(dbStats.burned),
       hashrate: hashrate,
       // lastPrice: dbStats.last_price,
       connections: connections,
