@@ -925,32 +925,18 @@ export class Database {
     } = { plot: [], txTotal: 0 };
     try {
       const dbBlock = await this.get_latest_block();
-      const [{ blocks }] = await MongoDB.Block.Model
-        .aggregate([
-          { '$match': {
-            'timestamp': { '$gte': (dbBlock.timestamp - seconds) },
-            'txcount': { $gt: 1 } 
-          }},
-          { "$sort": { "timestamp": 1 } },
-          //{ "$limit": blockspan },
-          { "$group":
-            {
-              _id: null,
-              "blocks": {
-                $push: {
-                  localeTimestamp: "$localeTimestamp",
-                  txcount: {
-                    $subtract: ["$txcount", 1] 
-                  }
-                }
-              }
-            }
-          },
-        ]);
+      const blocks = await MongoDB.Block.Model
+        .find({
+          timestamp: { $gte: (dbBlock.timestamp - seconds) },
+          txcount: { $gt: 1 } 
+        })
+        .select({ localeTimestamp: 1, txcount: 1 })
+        .lean();
       const arranged_data: { [x: string]: number } = {};
       blocks.forEach((block: MongoDB.Block.Document) => {
-        arranged_data[block.localeTimestamp] = block.txcount;
-        data.txTotal += block.txcount;
+        const txcount = block.txcount - 1;
+        arranged_data[block.localeTimestamp] = txcount;
+        data.txTotal += txcount;
       });
       data.plot = Object.entries(arranged_data);
       return data;
