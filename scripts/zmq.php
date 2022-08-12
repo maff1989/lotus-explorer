@@ -1,6 +1,5 @@
 <?php
 $lotus_zeromq = 'tcp://127.0.0.1:10632';
-//$on_message = '/root/iquidius-sync.sh';
 // 2 I/O threads, non-persistent
 $context = new ZMQContext(2, false);
 // New subscriber socket
@@ -20,7 +19,7 @@ do {
     $socket->recvMulti();
     //print(d()." Message: ".json_encode($msg)."\r\n");
     d("New block detected, syncing lotus-explorer db...");
-    exec("ts-node scripts/sync.ts index update", $output, $status);
+    exec("node scripts/sync.js index update", $output, $status);
     if($status !== 0) {
       d("Error: '{$on_message}' failed: {$output}");
     }
