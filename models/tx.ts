@@ -38,6 +38,7 @@ const TxSchema = new Schema<Document>({
   localeTimestamp: { type: String }, // for jqPlot charts
   blockhash: { type: String, index: true },
   blockindex: {type: Number, default: 0, index: true},
+  burned: { type: Number, default: 0 }
 }, {id: false});
 TxSchema.index({ total: 1, blockindex: 1 });
 export const Model = model('Tx', TxSchema);
