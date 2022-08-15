@@ -930,12 +930,10 @@ export class Database {
           timestamp: { $gte: (dbBlock.timestamp - TIMESPANS[timespan]) }
         })
         .select({ localeTimestamp: 1, burned: 1 });
-      const arranged: { [x: string]: number } = {};
       txs.forEach(tx => {
-        arranged[tx.localeTimestamp] = tx.burned;
+        data.plot.push([ tx.localeTimestamp, tx.burned ]);
         data.burnedTotal += tx.burned;
       });
-      data.plot = Object.entries(arranged);
       return data;
     } catch (e: any) {
       throw new Error(`gen_charts_burned(${timespan}): ${e.message}`);
