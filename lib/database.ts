@@ -37,6 +37,7 @@ type SupplyDistribution = {
     total: number
   }
 };
+type ChartBurnedTimestamp = 'day' | 'week' | 'month'
 type ChartTransactionTimespan = 'day' | 'week' | 'month';
 type ChartDifficultyTimespan = 'week' | 'month' | 'quarter' | 'year';
 type ChartDistributionTimespan = 'day' | 'week';
@@ -914,6 +915,34 @@ export class Database {
     }
   };
 
+  async gen_charts_burned(
+    timespan: ChartBurnedTimestamp
+  ) {
+    const data: {
+      plot: MongoDB.Charts.PlotData,
+      burnedTotal: number
+    } = { plot: [], burnedTotal: 0 };
+    try {
+      const dbBlock = await this.get_latest_block();
+      const blocks = await MongoDB.Block.Model
+        .find({
+          timestamp: { $gte: (dbBlock.timestamp - TIMESPANS[timespan]) }
+        })
+        .select({ localeTimestamp: 1, burned: 1 });
+      const arranged: { [x: string]: number } = {};
+      const burned = { sats: 0 };
+      blocks.forEach(block => {
+        arranged[block.localeTimestamp] = block.burned;
+        burned.sats += block.burned;
+      });
+      data.burnedTotal = burned.sats;
+      data.plot = Object.entries(arranged);
+      return data;
+    } catch (e: any) {
+      throw new Error(`gen_charts_burned(${timespan}): ${e.message}`);
+    }
+  };
+
   // gather and prepare chart data for transaction count based on timespan
   async get_charts_txs(
     timespan: ChartTransactionTimespan
@@ -954,6 +983,19 @@ export class Database {
   async update_charts_db(): Promise<void> {
     const start = Date.now();
     try {
+      // Burned XPI Charts
+      const {
+        plot: burnedDay,
+        burnedTotal: burnedDay_total
+      } = await this.gen_charts_burned('day');
+      const {
+        plot: burnedWeek,
+        burnedTotal: burnedWeek_total
+      } = await this.gen_charts_burned('week');
+      const {
+        plot: burnedMonth,
+        burnedTotal: burnedMonth_total
+      } = await this.gen_charts_burned('month');
       // Transaction Charts
       const {
         plot: txsDay,
@@ -982,6 +1024,10 @@ export class Database {
       const { plot: difficultyQuarter } = await this.get_charts_difficulty('quarter');
       const { plot: difficultyYear } = await this.get_charts_difficulty('year');
       await MongoDB.Charts.Model.findOneAndUpdate({}, {
+        // burned
+        burnedDay, burnedDay_total,
+        burnedWeek, burnedWeek_total,
+        burnedMonth, burnedMonth_total,
         // txs
         txsDay, txsDay_count,
         txsWeek, txsWeek_count,

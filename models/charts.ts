@@ -6,6 +6,12 @@ export type PlotData = Array<(string | number)[]>;
  * This is used to render the graphs on the `/charts` page
  */
 export type Document = {
+  burnedDay: PlotData,
+  burnedWeek: PlotData,
+  burnedMonth: PlotData,
+  burnedDay_total: number,
+  burnedWeek_total: number,
+  burnedMonth_total: number,
   txsDay: PlotData,
   txsWeek: PlotData,
   txsMonth: PlotData,
@@ -28,6 +34,13 @@ export type Document = {
 };
 export const Model = model('Charts',
   new Schema<Document>({
+    // Burned XPI (OP_RETURN)
+    burnedDay: { type: <PlotData>[], default: [] },
+    burnedWeek: { type: <PlotData>[], default: [] },
+    burnedMonth: { type: <PlotData>[], default: [] },
+    burnedDay_total: { type: Number, default: 0 },
+    burnedWeek_total: { type: Number, default: 0 },
+    burnedMonth_total: { type: Number, default: 0 },
     // Non-coinbase Transactions
     txsDay: { type: <PlotData>[], default: [] },
     txsWeek: { type: <PlotData>[], default: [] },

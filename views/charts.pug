@@ -4,6 +4,9 @@ block content
   script.
     // data from db queries
     var chartData = {
+      BurnedDay: !{JSON.stringify(burnedDay)},
+      BurnedWeek: !{JSON.stringify(burnedWeek)},
+      BurnedMonth: !{JSON.stringify(burnedMonth)},
       TxDay: !{JSON.stringify(txsDay)},
       TxWeek: !{JSON.stringify(txsWeek)},
       TxMonth: !{JSON.stringify(txsMonth)},
@@ -21,6 +24,9 @@ block content
     
     // plot objects
     var plots = {
+      plotChartBurnedDay: null,
+      plotChartBurnedWeek: null,
+      plotChartBurnedMonth: null,
       plotChartTxDay: null,
       plotChartTxWeek: null,
       plotChartTxMonth: null,
@@ -42,6 +48,87 @@ block content
     
     // plot config objects
     var plotConfigs = {
+      BurnedDay: {
+        title: "!{parseInt(burnedDay_total).toLocaleString('en')} XPI Total",
+        highlighter:{
+          show: true
+        },
+        axes:{
+          xaxis:{
+            show: true,
+            renderer:$.jqplot.DateAxisRenderer,
+            tickInterval:'6 hour',
+            tickOptions:{
+              formatString:'%a %#H:%M',
+            }
+          },
+          yaxis:{
+            show: true,
+            min: 0
+          }
+        },
+        series:[{
+          rendererOptions:{
+            //smooth: true,
+          },
+          lineWidth: 1.5,
+          showMarker: false,
+        }]
+      },
+      BurnedWeek: {
+        title: "!{parseInt(burnedWeek_total).toLocaleString('en')} XPI Total",
+        highlighter:{
+          show: true
+        },
+        axes:{
+          xaxis:{
+            show: true,
+            renderer:$.jqplot.DateAxisRenderer,
+            tickInterval:'6 hour',
+            tickOptions:{
+              formatString:'%a %#H:%M',
+            }
+          },
+          yaxis:{
+            show: true,
+            min: 0
+          }
+        },
+        series:[{
+          rendererOptions:{
+            //smooth: true,
+          },
+          lineWidth: 1.5,
+          showMarker: false,
+        }]
+      },
+      BurnedMonth: {
+        title: "!{parseInt(burnedMonth_total).toLocaleString('en')} XPI Total",
+        highlighter:{
+          show: true
+        },
+        axes:{
+          xaxis:{
+            show: true,
+            renderer:$.jqplot.DateAxisRenderer,
+            tickInterval:'6 hour',
+            tickOptions:{
+              formatString:'%a %#H:%M',
+            }
+          },
+          yaxis:{
+            show: true,
+            min: 0
+          }
+        },
+        series:[{
+          rendererOptions:{
+            //smooth: true,
+          },
+          lineWidth: 1.5,
+          showMarker: false,
+        }]
+      },
       TxDay: {
         title: "!{parseInt(txsDay_count).toLocaleString('en')} Total",
         highlighter:{
@@ -246,7 +333,7 @@ block content
           }
         }],
         legend:{
-          show: true,
+          show: false,
           placement: 'outside',
           location: pieLegendLocation,
           //renderer: $.jqplot.EnhancedPieLegendRenderer,
@@ -275,7 +362,7 @@ block content
           }
         }],
         legend:{
-          show: true,
+          show: false,
           placement: 'outside',
           location: pieLegendLocation,
           //renderer: $.jqplot.EnhancedPieLegendRenderer,
@@ -331,6 +418,11 @@ block content
       plots['plotChartMiningDistDay'] = $.jqplot('chartMiningDistDay', [chartData['MiningDistDay']], plotConfigs['MiningDistDay']);
       // plots['plotChartMiningDistWeek'] = $.jqplot('chartMiningDistWeek', [chartData['MiningDistWeek']], plotConfigs['MiningDistWeek'];
       
+      plots.plotChartBurnedDay = $.jqplot(
+        'chartBurnedDay',
+        [chartData.BurnedDay],
+        plotConfigs.BurnedDay
+      );
     });
     
     $(window).resize(function () {
@@ -378,6 +470,27 @@ block content
         hr
 
       .col-md-6
+        h4 Burned XPI (OP_RETURN)
+        .tabpanel
+          ul.nav.nav-tabs(role='tablist')
+            li.nav-item(role='presentation')
+              a.nav-link.active(href='#tabBurnedDay', aria-controls='tabBurnedDay', role='tab', data-toggle='tab') Day
+            li.nav-item(role='presentation')
+              a.nav-link(href='#tabBurnedWeek', aria-controls='tabBurnedWeek', role='tab', data-toggle='tab') Week
+            li.nav-item(role='presentation')
+              a.nav-link(href='#tabBurnedMonth', aria-controls='tabBurnedMonth', role='tab', data-toggle='tab') Month
+        .tab-content
+          #tabTxDay.tab-pane.active
+            div#chartBurnedDay
+          #tabTxWeek.tab-pane
+            div#chartBurnedWeek
+          #tabTxMonth.tab-pane
+            div#chartBurnedMonth
+
+ 
+  .col-md-12
+    .row
+      .col-md-6
         h4 Block Difficulty
         .tabpanel
           ul.nav.nav-tabs(role='tablist')
@@ -399,9 +512,7 @@ block content
           #tabDifficultyYear.tab-pane
             div#chartDifficultyYear
         hr
-  
-  .col-md-12
-    .row
+
       .col-md-6
         h4 Block Distribution
         .tabpanel

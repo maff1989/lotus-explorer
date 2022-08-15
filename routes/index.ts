@@ -125,7 +125,10 @@ router.get('/charts', async (req, res) => {
     const dbCharts = await db.get_charts();
     return res.render('charts', {
       active: 'charts',
-      ...dbCharts
+      ...dbCharts,
+      burnedDay_total: toXPI(dbCharts.burnedDay_total),
+      burnedWeek_total: toXPI(dbCharts.burnedWeek_total),
+      burnedMonth_total: toXPI(dbCharts.burnedMonth_total)
     });
   } catch (e: any) {
     console.log(`/charts: ${e.message}`);
