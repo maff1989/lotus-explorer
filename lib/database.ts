@@ -118,6 +118,7 @@ const save_tx = async (
         .toLocaleString('en-us', { timeZone:"UTC" }),
       blockhash: tx.blockhash,
       blockindex: height,
+      burned: burned
     });
     await newTx.save();
   } catch (e: any) {
@@ -924,18 +925,16 @@ export class Database {
     } = { plot: [], burnedTotal: 0 };
     try {
       const dbBlock = await this.get_latest_block();
-      const blocks = await MongoDB.Block.Model
+      const txs = await MongoDB.Tx.Model
         .find({
           timestamp: { $gte: (dbBlock.timestamp - TIMESPANS[timespan]) }
         })
         .select({ localeTimestamp: 1, burned: 1 });
       const arranged: { [x: string]: number } = {};
-      const burned = { sats: 0 };
-      blocks.forEach(block => {
-        arranged[block.localeTimestamp] = block.burned;
-        burned.sats += block.burned;
+      txs.forEach(tx => {
+        arranged[tx.localeTimestamp] = tx.burned;
+        data.burnedTotal += tx.burned;
       });
-      data.burnedTotal = burned.sats;
       data.plot = Object.entries(arranged);
       return data;
     } catch (e: any) {

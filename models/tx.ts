@@ -24,6 +24,7 @@ export type Document = {
   localeTimestamp?: string,
   blockhash: string,
   blockindex: number,
+  burned: number,
   balance?: number,
 };
 const TxSchema = new Schema<Document>({

@@ -169,7 +169,7 @@ router.get('/tx/:txid', async (req, res) => {
     // process mempool tx
     const tx = await lib.get_rawtransaction(txid);
     const { vin } = await lib.prepare_vin(tx);
-    const { vout } = await lib.prepare_vout(tx.vout);
+    const { vout, burned } = await lib.prepare_vout(tx.vout);
     const fee = await lib.calculate_fee(vout, vin);
     renderData.tx = {
       txid: tx.txid,
@@ -179,7 +179,8 @@ router.get('/tx/:txid', async (req, res) => {
       fee: fee,
       vin: vin,
       vout: vout,
-      blockindex: 0
+      blockindex: 0,
+      burned: burned
     };
     renderData.blockcount = -1;
     return res.render('tx', renderData);
