@@ -931,7 +931,7 @@ export class Database {
         })
         .select({ localeTimestamp: 1, burned: 1 });
       txs.forEach(tx => {
-        data.plot.push([ tx.localeTimestamp, tx.burned ]);
+        data.plot.push([ tx.localeTimestamp, toXPI(tx.burned) ]);
         data.burnedTotal += tx.burned;
       });
       return data;
