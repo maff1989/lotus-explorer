@@ -114,7 +114,7 @@ app.use('/ext/gettx/:txid', async (req, res) => {
     // process mempool tx
     const tx = await lib.get_rawtransaction(txid);
     const { vin } = await lib.prepare_vin(tx);
-    const { vout } = await lib.prepare_vout(tx.vout);
+    const { vout, burned } = await lib.prepare_vout(tx.vout);
     const fee = await lib.calculate_fee(vout, vin);
     renderData.blockcount = await lib.get_blockcount();
     renderData.tx = {
@@ -125,7 +125,8 @@ app.use('/ext/gettx/:txid', async (req, res) => {
       fee: fee,
       vin: vin,
       vout: vout,
-      blockindex: 0
+      blockindex: 0,
+      burned: burned
     };
     return res.send(renderData);
   } catch (e: any) {
