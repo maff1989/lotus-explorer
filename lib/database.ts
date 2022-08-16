@@ -928,7 +928,8 @@ export class Database {
       const dbBlock = await this.get_latest_block();
       const txs = await MongoDB.Tx.Model
         .find({
-          timestamp: { $gte: (dbBlock.timestamp - TIMESPANS[timespan]) }
+          timestamp: { $gte: (dbBlock.timestamp - TIMESPANS[timespan]) },
+          burned: { $gt: 0 }
         })
         .select({ localeTimestamp: 1, burned: 1 });
       const arranged: { [x: string]: number } = {};
