@@ -11,6 +11,7 @@ import {
 } from './explorer';
 import settings from './settings';
 import {
+  toSats,
   toXPI,
   chartsDifficultyAggregation,
 } from './util';
@@ -930,10 +931,15 @@ export class Database {
           timestamp: { $gte: (dbBlock.timestamp - TIMESPANS[timespan]) }
         })
         .select({ localeTimestamp: 1, burned: 1 });
+      const arranged: { [x: string]: number } = {};
       txs.forEach(tx => {
-        data.plot.push([ tx.localeTimestamp, toXPI(tx.burned) ]);
+        const timestampBurned = arranged[tx.localeTimestamp] || 0;
+        arranged[tx.localeTimestamp] = toXPI(timestampBurned > 0
+          ? toSats(timestampBurned) + tx.burned
+          : tx.burned);
         data.burnedTotal += tx.burned;
       });
+      data.plot = Object.entries(arranged);
       return data;
     } catch (e: any) {
       throw new Error(`gen_charts_burned(${timespan}): ${e.message}`);
