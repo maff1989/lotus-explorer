@@ -1,7 +1,9 @@
-Lotus Explorer - 2.0.0
+Lotus Explorer - 2.1.0
 ================
 
-An open source Lotus block explorer written in TypeScript for node.js
+Lotus block explorer written in TypeScript for node.js
+
+See it live: https://explorer.givelotus.org
 
 ### Requires
 
@@ -21,11 +23,9 @@ Create databse:
 
 Create user with read/write access:
 
-    > db.createUser( { user: "explorer", pwd: "3xp!0reR", roles: [ "readWrite" ] } )
+    > db.createUser( { user: "username", pwd: "password", roles: [ "readWrite" ] } )
 
-*Note: If you're using mongo shell 4.2.x, use the following to create your user:
-
-    > db.addUser( { user: "username", pwd: "password", roles: [ "readWrite"] })
+*Note: If you're using mongo shell 4.2.x, use `db.addUser` instead of `db.createUser`
 
 ### Get the source
 
@@ -41,17 +41,13 @@ Create user with read/write access:
 
 *Make required changes in settings.json*
 
-### Compile TypeScript to JavaScript
-
-    ./node_modules/typescript/bin/tsc
-
 ### Start Explorer
 
     npm start
 
-*Note: mongod must be running to start the explorer*
+**Note**: mongod must be running to start the explorer
 
-As of Iquidus version 1.4.0 the explorer defaults to cluster mode, forking an instance of its process to each cpu core. This results in increased performance and stability. Load balancing gets automatically taken care of and any instances that for some reason die, will be restarted automatically. For testing/development (or if you just wish to) a single instance can be launched with
+As of Iquidus version 1.4.0 the explorer defaults to cluster mode, forking an instance of its process to each cpu core. This results in increased performance and stability. Load balancing is handled automatically and any instances that die will be restarted. For testing/development (or if you just wish to) a single instance can be launched with
 
     node --stack-size=10000 bin/instance.js
 
@@ -76,19 +72,22 @@ sync.js (located in scripts/) is used for updating the local databases. This scr
     notes:
     * 'current block' is the latest created block when script is executed.
     * The market database only supports (& defaults to) reindex mode.
+
 **ZMQ**
 
-It is recommended to use the ZeroMQ on your lotusd in order to detect and process new blocks in the database. Be sure that your working directory is the explorer's root directory when you call `node scripts/sync.js`!
+It is recommended to use the ZeroMQ on your lotusd in order to detect and process new blocks. A PHP script for ZMQ is included in the repo. To launch the script, navigate to the Explorer's top-level directory and run:
 
+    php scripts/zmq.php
 
+**Note**: You must have the `php-zmq` module installed on your system in order for this to work. Refer to the PHP documentation for instructions on how to install on your system.
 
-### Wallet
+### Node
 
-Lotus Explorer is intended to be generic, so it can be used with any wallet following the usual standards. The wallet must be running with atleast the following flags
+Lotus Explorer is intended to be generic, so it can be used with any wallet following the usual standards. The node must be running with atleast the following flags
 
     -daemon -txindex
 
-It is also heavily advised against running lotusd with the wallet functionality enabled. In order to disable, simply add the following line to your `~/.lotus/lotus.conf` file:
+It is also heavily advised against running lotusd with the wallet functionality enabled. In order to disable, add the following line to your `~/.lotus/lotus.conf` file:
 
     disablewallet = 1
     
@@ -100,10 +99,9 @@ Ensure mongodb is not exposed to the outside world via your mongo config or a fi
 
 **script is already running.**
 
-If you receive this message when launching the sync script either a) a sync is currently in progress, or b) a previous sync was killed before it completed. If you are certian a sync is not in progress remove the index.pid and db_index.pid from the tmp folder in the explorer root directory.
+If you receive this message when launching the sync script either a) a sync is currently in progress, or b) a previous sync was killed before it completed. If you are certian a sync is not in progress remove the index.pid from the tmp folder in the explorer root directory.
 
     rm tmp/index.pid
-    rm tmp/db_index.pid
 
 **exceeding stack size**
 
