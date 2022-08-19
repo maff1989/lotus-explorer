@@ -1,4 +1,11 @@
 Note: All updates require the explorer to be restarted
+2.0.0 -> 2.1.0
+* Add Burned XPI chart to Charts page
+* Tons of small fixes and optimizations
+
+1.7.4 -> 2.0.0
+* Initial Lotus Explorer release
+
 1.7.3 -> 1.7.4
 * Ensure that you are not using theme "Paper" or "Readable" as these were not ported by Bootswatch
 * Add new settings to settings.json (see settings.json.template)
