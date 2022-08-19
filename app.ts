@@ -9,7 +9,6 @@ import router from './routes';
 import { Explorer } from './lib/explorer';
 import { Database } from './lib/database';
 import { toXPI } from './lib/util';
-import * as Tx from './models/tx';
 import settings from './lib/settings';
 import locale from './lib/locale';
 
@@ -84,26 +83,11 @@ app.use('/ext/getaddress/:address', async (req, res) => {
 });
 app.use('/ext/gettx/:txid', async (req, res) => {
   const { txid } = req.params;
-  const renderData: {
-    active: string,
-    tx: Tx.Document,
-    confirmations: number,
-    blockcount: number
-  } = {
-    active: 'tx',
-    tx: null,
-    confirmations: settings.confirmations,
-    blockcount: null
-  };
   try {
     // process db tx
     const dbTx = await db.get_tx(txid);
     if (dbTx) {
-      renderData.tx = dbTx;
-      // get last block height from Stats db
-      const stats = await db.get_stats(settings.coin);
-      renderData.blockcount = stats.last;
-      return res.send(renderData);
+      return res.send(dbTx);
     }
     // check mempool for tx
     // if tx isn't there either, assume invalid
@@ -116,19 +100,19 @@ app.use('/ext/gettx/:txid', async (req, res) => {
     const { vin } = await lib.prepare_vin(tx);
     const { vout, burned } = await lib.prepare_vout(tx.vout);
     const fee = await lib.calculate_fee(vout, vin);
-    renderData.blockcount = await lib.get_blockcount();
-    renderData.tx = {
-      txid: tx.txid,
-      size: tx.size,
-      timestamp: tx.time,
-      blockhash: tx.blockhash,
-      fee: fee,
-      vin: vin,
-      vout: vout,
+    const { time: timestamp, size, blockhash } = tx;
+    return res.send({
+      _id: null,
+      txid,
+      size,
+      timestamp,
+      blockhash,
+      fee,
+      vin,
+      vout,
       blockindex: 0,
-      burned: burned
-    };
-    return res.send(renderData);
+      burned
+    });
   } catch (e: any) {
     console.log(`/ext/gettx/${txid}: ${e.message}`);
     return res.send({ error: `tx not found`, txid });
