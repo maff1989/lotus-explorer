@@ -23,6 +23,13 @@ const db = new Database()
  *      Handler Functions
  * 
  */
+const ajaxParamTypeConverter = (params: any) => {
+  return {
+    start: Number(params.start),
+    length: Number(params.length),
+    draw: Number(params.draw),
+  };
+};
 /**
  * Render the main index page, optionally with a warning/error
  * @param res - Response instance from Express router
@@ -295,29 +302,6 @@ router.get('/qr/:string', async (req, res) => {
     return address.pipe(res);
   }
 });
-router.get('/ext/summary', async (req, res) => {
-  try {
-    const difficulty = await lib.get_difficulty();
-    const hashrate = await lib.get_hashrate();
-    const connections = await lib.get_connectioncount();
-    const blockcount = await lib.get_blockcount();
-    const mempool = await lib.get_mempoolinfo();
-    const dbStats = await db.get_stats(settings.coin);
-    return res.send({ data: [{
-      difficulty: difficulty,
-      supply: toXPI(dbStats.supply),
-      burned: toXPI(dbStats.burned),
-      hashrate: hashrate,
-      // lastPrice: dbStats.last_price,
-      connections: connections,
-      blockcount: blockcount,
-      mempoolinfo: mempool
-    }]});
-  } catch (e: any) {
-    console.log(`/ext/summary: ${e.message}`);
-    return res.send({ error: `failed to fetch summary data` });
-  }
-});
 router.post('/search', async (req, res) => {
   const search = String(req.body.search).trim();
   if (!search) {
@@ -348,6 +332,206 @@ router.post('/search', async (req, res) => {
     return res.redirect(`/address/${address.a_id}`);
   }
   return route_get_index(res, locale.ex_search_error + search);
+});
+/*
+ *
+ *      Extended API
+ * 
+ */
+router.get('/ext/summary', async (req, res) => {
+  try {
+    const difficulty = await lib.get_difficulty();
+    const hashrate = await lib.get_hashrate();
+    const connections = await lib.get_connectioncount();
+    const blockcount = await lib.get_blockcount();
+    const mempool = await lib.get_mempoolinfo();
+    const dbStats = await db.get_stats(settings.coin);
+    return res.send({ data: [{
+      difficulty: difficulty,
+      supply: toXPI(dbStats.supply),
+      burned: toXPI(dbStats.burned),
+      hashrate: hashrate,
+      // lastPrice: dbStats.last_price,
+      connections: connections,
+      blockcount: blockcount,
+      mempoolinfo: mempool
+    }]});
+  } catch (e: any) {
+    console.log(`/ext/summary: ${e.message}`);
+    return res.send({ error: `failed to fetch summary data` });
+  }
+});
+router.get('/ext/getmoneysupply', async (req, res) => {
+  const stats = await db.get_stats(settings.coin);
+  const supplyXPI = toXPI(stats.supply)
+  return res.send(` ${supplyXPI}`);
+});
+router.get('/ext/getburnedsupply', async (req, res) => {
+  const stats = await db.get_stats(settings.coin);
+  const burnedXPI = toXPI(stats.burned);
+  return res.send(` ${burnedXPI}`);
+});
+router.get('/ext/getaddress/:address', async (req, res) => {
+  const dataTableRows: Array<{
+    txid: string,
+    type: string
+  }> = [];
+  const { address } = req.params;
+  try {
+    const { sent, received, balance } = await db.get_address(address);
+    const { txs } = await db.get_address_txs_ajax(address, 0, settings.txcount);
+    txs.forEach(tx => {
+      const value = { vin: 0, vout: 0 };
+      value.vin += tx.vin?.find(vin => vin.addresses == address)?.amount ?? 0;
+      value.vout += tx.vout?.find(vout => vout.addresses == address)?.amount ?? 0;
+      const type = value.vin > value.vout ? 'vin': 'vout';
+      dataTableRows.push({ txid: tx.txid, type });
+    });
+    return res.send({
+      address,
+      sent: toXPI(sent),
+      received: toXPI(received),
+      balance: toXPI(balance),
+      last_txs: dataTableRows
+    });
+  } catch (e: any) {
+    console.log(`/ext/getaddress/${address}: ${e.message}`);
+    return res.send({ error: 'address not found', address });
+  }
+});
+router.get('/ext/gettx/:txid', async (req, res) => {
+  const { txid } = req.params;
+  try {
+    // process db tx
+    const dbTx = await db.get_tx(txid);
+    if (dbTx) {
+      return res.send(dbTx);
+    }
+    // check mempool for tx
+    // if tx isn't there either, assume invalid
+    const mempool = await lib.get_rawmempool();
+    if (!mempool.includes(txid)) {
+      throw new Error(`non-database tx not found in mempool: ${txid}`);
+    }
+    // process mempool tx
+    const tx = await lib.get_rawtransaction(txid);
+    const { vin } = await lib.prepare_vin(tx);
+    const { vout, burned } = await lib.prepare_vout(tx.vout);
+    const fee = await lib.calculate_fee(vout, vin);
+    const { time: timestamp, size, blockhash } = tx;
+    return res.send({
+      _id: null,
+      txid,
+      size,
+      timestamp,
+      blockhash,
+      fee,
+      vin,
+      vout,
+      blockindex: 0,
+      burned
+    });
+  } catch (e: any) {
+    console.log(`/ext/gettx/${txid}: ${e.message}`);
+    return res.send({ error: `tx not found`, txid });
+  }
+});
+router.get('/ext/getbalance/:address', async (req, res) => {
+  const { address } = req.params;
+  try {
+    const dbAddress = await db.get_address(address);
+    return res.send(toXPI(dbAddress.balance)
+      .toString()
+      .replace(/(^-+)/mg, ''));
+  } catch (e: any) {
+    console.log(`/ext/getbalance/${address}: ${e.message}`);
+    return res.send({ error: 'address not found', address });
+  }
+});
+router.get('/ext/getdistribution', async (req, res) => {
+  try {
+    const dbRichlist = await db.get_richlist(settings.coin);
+    const dbStats = await db.get_stats(settings.coin);
+    const dbDistribution = await db.get_distribution(dbRichlist, dbStats);
+    return res.send(dbDistribution);
+  } catch (e: any) {
+    console.log(`/ext/getdistribution: ${e.message}`);
+    return res.send({ error: `distribution for ${settings.coin} not found` });
+  }
+});
+router.get('/ext/getlastblocksajax', async (req, res) => {
+  const rowData: Array<[number, string, number, number, number, string]> = [];
+  let { start, length, draw } = ajaxParamTypeConverter(req.query);
+  if (!length || isNaN(length) || length > settings.index.last_txs) {
+    length = settings.index.last_blocks;
+  }
+  if (!start || isNaN(start) || start < 0) {
+    start = 0;
+  }
+  try {
+    const { blocks, count } = await db.get_last_blocks_ajax(start, length);
+    blocks.forEach(block => rowData.push([
+      block.height,
+      block.minedby,
+      block.size,
+      block.txcount,
+      toXPI(block.burned),
+      new Date((block.timestamp) * 1000).toUTCString()
+    ]));
+    return res.json({
+      draw,
+      data: rowData,
+      recordsTotal: count,
+      recordsFiltered: count,
+    });
+  } catch (e: any) {
+    console.log(`/ext/getlastblocksajax: ${e.message}`);
+    return res.send({ error: `failed to get last blocks via AJAX` });
+  }
+});
+router.get('/ext/getaddresstxsajax/:address', async (req, res) => {
+  const rowData: Array<[string, string, number, number, number]> = [];
+  let { start, length, draw } = ajaxParamTypeConverter(req.query);
+  const { address }: { address: string } = req.params;
+  if (!length || isNaN(length) || length > settings.index.last_txs) {
+    length = settings.index.last_blocks;
+  }
+  if (!start || isNaN(start) || start < 0) {
+    start = 0;
+  }
+  try {
+    const { txs, count } = await db.get_address_txs_ajax(address, start, length);
+    txs.forEach(tx => {
+      const value = { vin: 0, vout: 0 };
+      value.vin = tx.vin?.find(vin => vin.addresses == address)?.amount ?? 0;
+      value.vout = tx.vout?.find(vout => vout.addresses == address)?.amount ?? 0;
+      rowData.push([
+        new Date((tx.timestamp) * 1000).toUTCString(),
+        tx.txid,
+        value.vout,
+        value.vin,
+        tx.balance
+      ]);
+    });
+    return res.json({
+      draw,
+      data: rowData,
+      recordsTotal: count,
+      recordsFiltered: count,
+    });
+  } catch (e: any) {
+    console.log(`/ext/getaddresstxsajax/${address}: ${e.message}`);
+    return res.send({ error: `failed to get last address txs via AJAX` });
+  }
+});
+router.get('/ext/connections', async (req, res) => {
+  try {
+    const dbPeers = await db.get_peers();
+    return res.send({ data: dbPeers });
+  } catch (e: any) {
+    console.log(`/ext/connections: ${e.message}`);
+    return res.send({ error: `failed to get peers` });
+  }
 });
 
 export default router;
