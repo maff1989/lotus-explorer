@@ -2,9 +2,13 @@ import express from 'express';
 import { ChronikClient } from 'chronik-client';
 import { Script } from '@abcpros/bitcore-lib-xpi';
 import { Explorer } from '../lib/explorer';
+import settings from '../lib/settings';
 
 const lib = new Explorer()
-  , chronikClient = new ChronikClient('http://172.16.10.89:7123');
+  , chronikClient = new ChronikClient(
+    `http://${settings.chronik.host}:
+    ${settings.chronik.port}`
+  );
 const chronikRouter = express.Router();
 
 chronikRouter.get('/utxos/:address', async (req, res) => {
