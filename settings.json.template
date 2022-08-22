@@ -43,6 +43,13 @@
     "port": 27017
   },
 
+  // Chronik client settings
+  "chronik": {
+    "host": "localhost",
+    "port": 7123,
+    "uri": "/"
+  }
+
   //update script settings
   "update_timeout": 10,
   "check_timeout": 250,

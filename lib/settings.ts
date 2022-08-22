@@ -33,6 +33,11 @@ class Settings {
     "address" : "localhost",
     "port" : 27017
   };
+  chronik = {
+    "host": "localhost",
+    "port": 7123,
+    "uri": "/"
+  };
   //This setting is passed to the wallet
   wallet = {
     "host" : "127.0.0.1",

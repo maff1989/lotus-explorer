@@ -1,4 +1,5 @@
 import express, { Response } from 'express';
+import chronikRouter from './chronik';
 import qr from 'qr-image';
 import {
   Database,
@@ -538,5 +539,6 @@ router.get('/ext/connections', async (req, res) => {
     return res.send({ error: `failed to get peers` });
   }
 });
+router.use('/ext', chronikRouter);
 
 export default router;
