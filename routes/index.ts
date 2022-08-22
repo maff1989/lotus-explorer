@@ -326,10 +326,15 @@ router.post('/search', async (req, res) => {
       return res.redirect(`/tx/${search}`);;
     }
   }
-  // process address
+  // process db address
   const address = await db.get_address(search);
   if (address?.a_id) {
     return res.redirect(`/address/${address.a_id}`);
+  }
+  // show the address page if address is valid
+  const { isvalid } = await lib.validate_address(search);
+  if (isvalid) {
+    return res.redirect(`/address/${search}`);
   }
   return route_get_index(res, locale.ex_search_error + search);
 });
