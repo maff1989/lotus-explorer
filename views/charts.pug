@@ -3,7 +3,7 @@ extends layout
 block content
   script.
     // data from db queries
-    var chartData = {
+    const chartData = {
       BurnedDay: !{JSON.stringify(burnedDay)},
       BurnedWeek: !{JSON.stringify(burnedWeek)},
       BurnedMonth: !{JSON.stringify(burnedMonth)},
@@ -23,7 +23,7 @@ block content
     // var chartGetDataAjax = null;
     
     // plot objects
-    var plots = {
+    const plots = {
       plotChartBurnedDay: null,
       plotChartBurnedWeek: null,
       plotChartBurnedMonth: null,
@@ -39,12 +39,7 @@ block content
     }
       
     // pie chart legend location based on screen size
-    var pieLegendLocation;
-    if($(window).width() <= 768) {
-      pieLegendLocation = 's';
-    } else {
-      pieLegendLocation = 'e';
-    }
+    const pieLegendLocation = $(window).width() <= 768 ? 's' : 'e';
     
     // plot config objects
     var plotConfigs = {
@@ -333,7 +328,7 @@ block content
           }
         }],
         legend:{
-          show: false,
+          show: true,
           placement: 'outside',
           location: pieLegendLocation,
           //renderer: $.jqplot.EnhancedPieLegendRenderer,
@@ -362,7 +357,7 @@ block content
           }
         }],
         legend:{
-          show: false,
+          show: true,
           placement: 'outside',
           location: pieLegendLocation,
           //renderer: $.jqplot.EnhancedPieLegendRenderer,
@@ -377,13 +372,13 @@ block content
       }
     }
     
-    $(document).ready(function() {
+    $(document).ready(() => {
       // register jQuery event handler for changing between tabs
       $('.tabpanel .nav-link').on('click', function() {
-        var clicked = $(this).attr('aria-controls').replace('tab', '');
-        var chart = 'chart' + clicked;
-        var plot = 'plotChart' + clicked;
-        var plotConfig = 'plotConfig' + clicked;
+        const clicked = $(this).attr('aria-controls').replace('tab', '');
+        const chart = 'chart' + clicked;
+        const plot = 'plotChart' + clicked;
+        const plotConfig = 'plotConfig' + clicked;
         setTimeout(function() {
           var tabMiningDist = $('.tab-content .active div[id*="chartMiningDist"]').parent();
           if(plot.includes('MiningDist')) {
@@ -398,16 +393,26 @@ block content
           if(plots[plot] !== null) {
             plots[plot].destroy();
           }
-          plots[plot] = $.jqplot(chart, [chartData[clicked]], plotConfigs[clicked]);
-          plots[plot].replot({resetAxes: false});
+          plots[plot] = $.jqplot(
+            chart,
+            [chartData[clicked]],
+            plotConfigs[clicked]
+          );
+          plots[plot].replot({ resetAxes: false });
         }, 1);
       });
+      // Initial plot rendering
+      plots.plotChartTxDay = $.jqplot(
+        'chartTxDay',
+        [chartData.TxDay],
+        plotConfigs.TxDay
+      );
       
-      plots['plotChartTxDay'] = $.jqplot('chartTxDay', [chartData['TxDay']], plotConfigs['TxDay']);
-      //plotChartTxWeek = $.jqplot('chartTxWeek', [chartTxWeekData], plotConfigTxWeek);
-      //plotChartTxMonth = $.jqplot('chartTxMonth', [chartTxMonthData], plotConfigTxMonth);
-      
-      plots['plotChartDifficultyWeek'] = $.jqplot('chartDifficultyWeek', [chartData['DifficultyWeek']], plotConfigs['DifficultyWeek']);
+      plots.plotChartDifficultyWeek = $.jqplot(
+        'chartDifficultyWeek',
+        [chartData.DifficultyWeek],
+        plotConfigs.DifficultyWeek
+      );
       //plotChartDifficultyMonth = $.jqplot('chartDifficultyMonth', [difficultyMonth], plotConfigDifficultyMonth);
       
       if($(window).width() <= 768) {
@@ -415,7 +420,11 @@ block content
         $('#tabMiningDistWeek').css('height', '700px');
       }
       
-      plots['plotChartMiningDistDay'] = $.jqplot('chartMiningDistDay', [chartData['MiningDistDay']], plotConfigs['MiningDistDay']);
+      plots.plotChartMiningDistDay = $.jqplot(
+        'chartMiningDistDay',
+        [chartData.MiningDistDay],
+        plotConfigs.MiningDistDay)
+      ;
       // plots['plotChartMiningDistWeek'] = $.jqplot('chartMiningDistWeek', [chartData['MiningDistWeek']], plotConfigs['MiningDistWeek'];
       
       plots.plotChartBurnedDay = $.jqplot(
@@ -470,7 +479,8 @@ block content
         hr
 
       .col-md-6
-        h4 Burned XPI (OP_RETURN)
+        h4 Burned XPI - 
+          code OP_RETURN
         .tabpanel
           ul.nav.nav-tabs(role='tablist')
             li.nav-item(role='presentation')
@@ -486,8 +496,8 @@ block content
             div#chartBurnedWeek
           #tabBurnedMonth.tab-pane
             div#chartBurnedMonth
+        hr
 
- 
   .col-md-12
     .row
       .col-md-6
@@ -512,7 +522,11 @@ block content
           #tabDifficultyYear.tab-pane
             div#chartDifficultyYear
         hr
+      .col-md-6 
+        hr
 
+  .col-md-12
+    .row
       .col-md-6
         h4 Block Distribution
         .tabpanel
@@ -526,4 +540,4 @@ block content
             div#chartMiningDistDay(style='height:350px;')
           #tabMiningDistWeek.tab-pane
             div#chartMiningDistWeek(style='height:350px;')
-
+        hr
