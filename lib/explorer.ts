@@ -36,6 +36,9 @@ export type PeerInfo = {
   version: number,
   subver: string,
 };
+export type BlockStats = {
+  subsidy: number
+};
 export type TransactionInput = {
   txid: string,
   vout: number,
@@ -138,6 +141,14 @@ export class Explorer {
    */
   async get_block(hash: string): Promise<BlockInfo> {
     return await rpcCommand('getblock', hash);
+  };
+  /**
+   * RPC command - `getblockstats`
+   * @param hash Raw block hash
+   * @returns {Promise<BlockStats>} Raw block stats
+   */
+  async get_blockstats(hash: string): Promise<BlockStats> {
+    return await rpcCommand('getblockstats', hash);
   };
   /**
    * RPC command - `getrawtransaction`

@@ -165,6 +165,7 @@ const save_addresstx = async (
 const save_block = async (
   block: BlockInfo,
   fees: number,
+  subsidy: number,
   burned: number,
 ): Promise<void> => {
   try {
@@ -182,6 +183,7 @@ const save_block = async (
         .toLocaleString('en-us', { timeZone:"UTC" }),
       size: block.size,
       fees,
+      subsidy,
       burned,
       txcount: block.nTx
     });
@@ -1151,6 +1153,9 @@ export class Database {
         const timeStart = Date.now();
         const blockhash = await lib.get_blockhash(counter.currentBlockHeight);
         const block = await lib.get_block(blockhash);
+        // gather block subsidy in satoshis
+        const blockstats = await lib.get_blockstats(blockhash);
+        const subsidy = toSats(blockstats.subsidy);
         // save all txs in block
         const { fees, burned } = await this.create_txs(block);
         // calculate burned fees from total tx fees
@@ -1159,7 +1164,8 @@ export class Database {
         await save_block(
           block,
           fees,
-          burnedFees + burned
+          subsidy,
+          burnedFees + burned,
         );
         const timeEnd = Date.now();
         console.log('SAVE: block %s (%s txs) complete (%sms)',

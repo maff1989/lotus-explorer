@@ -10,6 +10,7 @@ export type Document = {
   difficulty: number,
   size: number,
   fees: number,
+  subsidy: number,
   burned: number,
   txcount: number,
 };
@@ -22,6 +23,7 @@ const BlockSchema = new Schema<Document>({
   difficulty: { type: Number, default: 0 },
   size: { type: Number, default: 0 },
   fees: { type: Number, default: 0 },
+  subsidy: { type: Number, default: 0 },
   burned: { type: Number, default: 0, index: true },
   txcount: { type: Number, default: 1 }, // blocks always have >=1 tx
 });
