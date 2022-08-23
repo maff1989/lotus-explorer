@@ -38,7 +38,7 @@ type SupplyDistribution = {
     total: number
   }
 };
-type ChartBurnedTimestamp = 'day' | 'week' | 'month'
+type ChartBurnedTimespan = 'day' | 'week' | 'month'
 type ChartTransactionTimespan = 'day' | 'week' | 'month';
 type ChartDifficultyTimespan = 'week' | 'month' | 'quarter' | 'year';
 type ChartDistributionTimespan = 'day' | 'week';
@@ -918,7 +918,7 @@ export class Database {
   };
 
   async gen_charts_burned(
-    timespan: ChartBurnedTimestamp
+    timespan: ChartBurnedTimespan
   ) {
     const data: {
       plot: MongoDB.Charts.PlotData,
