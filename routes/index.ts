@@ -239,6 +239,7 @@ router.get('/block/:blockhash', async (req, res) => {
           difficulty: block.difficulty,
           size: block.size,
           fees: 0,
+          subsidy: 0,
           burned: 0,
           txcount: block.nTx
         };
