@@ -4,6 +4,9 @@ block content
   script.
     // data from db queries
     const chartData = {
+      InflationDay: !{JSON.stringify(inflationDay)},
+      InflationWeek: !{JSON.stringify(inflationWeek)},
+      InflationMonth: !{JSON.stringify(inflationMonth)},
       BurnedDay: !{JSON.stringify(burnedDay)},
       BurnedWeek: !{JSON.stringify(burnedWeek)},
       BurnedMonth: !{JSON.stringify(burnedMonth)},
@@ -24,6 +27,9 @@ block content
     
     // plot objects
     const plots = {
+      plotChartInflationDay: null,
+      plotChartInflationWeek: null,
+      plotChartInflationMonth: null,
       plotChartBurnedDay: null,
       plotChartBurnedWeek: null,
       plotChartBurnedMonth: null,
@@ -43,6 +49,81 @@ block content
     
     // plot config objects
     var plotConfigs = {
+      InflationDay: {
+        title: "!{parseInt(inflationDay_total).toLocaleString('en')} XPI Total",
+        highlighter:{
+          show: true
+        },
+        axes:{
+          xaxis:{
+            show: true,
+            renderer:$.jqplot.DateAxisRenderer,
+            tickInterval:'6 hour',
+            tickOptions:{
+              formatString:'%a %#H:%M',
+            }
+          },
+          yaxis:{
+            show: true,
+          }
+        },
+        series:[{
+          rendererOptions:{
+            //smooth: true,
+          },
+          lineWidth: 1.5,
+          showMarker: false,
+        }]
+      },
+      InflationWeek: {
+        title: "!{parseInt(inflationWeek_total).toLocaleString('en')} XPI Total",
+        highlighter:{
+          show: true
+        },
+        axes:{
+          xaxis:{
+            show: true,
+            renderer:$.jqplot.DateAxisRenderer,
+            tickInterval:'24 hour',
+            tickOptions:{
+              formatString:'%m/%d',
+            },
+          },
+          yaxis:{
+            show: true,
+          }
+        },
+        series:[{
+          rendererOptions:{
+            //smooth: true,
+          },
+          lineWidth: 1.5,
+          showMarker: false,
+        }]
+      },
+      InflationMonth: {
+        title: "!{parseInt(inflationMonth_total).toLocaleString('en')} XPI Total",
+        axes:{
+          xaxis:{
+            show: true,
+            renderer:$.jqplot.DateAxisRenderer,
+            tickInterval:'4 day',
+            tickOptions:{
+              formatString:'%m/%d',
+            },
+          },
+          yaxis:{
+            show: true,
+          }
+        },
+        series:[{
+          rendererOptions:{
+            //smooth: true,
+          },
+          lineWidth: 1.5,
+          showMarker: false,
+        }]
+      },
       BurnedDay: {
         title: "!{parseInt(burnedDay_total).toLocaleString('en')} XPI Total",
         highlighter:{
@@ -432,6 +513,12 @@ block content
         [chartData.BurnedDay],
         plotConfigs.BurnedDay
       );
+
+      plots.plotChartInflationDay = $.jqplot(
+        'chartInflationDay',
+        [chartData.InflationDay],
+        plotConfigs.InflationDay
+      );
     });
     
     $(window).resize(function () {
@@ -522,7 +609,23 @@ block content
           #tabDifficultyYear.tab-pane
             div#chartDifficultyYear
         hr
-      .col-md-6 
+      .col-md-6
+        h4 Inflation XPI
+        .tabpanel
+          ul.nav.nav-tabs(role='tablist')
+            li.nav-item(role='presentation')
+              a.nav-link.active(href='#tabInflationDay', aria-controls='tabInflationDay', role='tab', data-toggle='tab') Day
+            li.nav-item(role='presentation')
+              a.nav-link(href='#tabInflationWeek', aria-controls='tabInflationWeek', role='tab', data-toggle='tab') Week
+            li.nav-item(role='presentation')
+              a.nav-link(href='#tabInflationMonth', aria-controls='tabInflationMonth', role='tab', data-toggle='tab') Month
+        .tab-content 
+          #tabInflationDay.tab-pane.active
+            div#chartInflationDay
+          #tabInflationWeek.tab-pane
+            div#chartInflationWeek
+          #tabInflationMonth.tab-pane 
+            div#chartInflationMonth
         hr
 
   .col-md-12

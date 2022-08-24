@@ -14,6 +14,7 @@ import {
   toSats,
   toXPI,
   chartsDifficultyAggregation,
+  chartsInflationAggregation,
 } from './util';
 import * as Markets from './markets';
 import * as MongoDB from '../models';
@@ -38,7 +39,8 @@ type SupplyDistribution = {
     total: number
   }
 };
-type ChartBurnedTimespan = 'day' | 'week' | 'month'
+type ChartBurnedTimespan = 'day' | 'week' | 'month';
+type ChartInflationTimespan = 'day' | 'week' | 'month';
 type ChartTransactionTimespan = 'day' | 'week' | 'month';
 type ChartDifficultyTimespan = 'week' | 'month' | 'quarter' | 'year';
 type ChartDistributionTimespan = 'day' | 'week';
@@ -949,6 +951,42 @@ export class Database {
     }
   };
 
+  async gen_charts_inflation(
+    timespan: ChartInflationTimespan
+  ) {
+    const blockspan = BLOCKSPANS[timespan]
+    const data: {
+      plot: MongoDB.Charts.PlotData,
+      inflationTotal: number
+    } = { plot: [], inflationTotal: 0 };
+    try {
+      const dbBlock = await this.get_latest_block();
+      // fetch all subsidies
+      const result: Array<{
+        _id: string,
+        inflation: number
+      }> = await MongoDB.Block.Model.aggregate([
+        { $match: { height: { $gte: (dbBlock.height - blockspan) }}},
+        ...chartsInflationAggregation[timespan],
+        { $sort: { height: 1 }}
+      ]);
+      const [{ inflationTotal }] = await MongoDB.Block.Model.aggregate([
+        { $match: { height: { $gte: (dbBlock.height - blockspan) }}},
+        { $group: {
+          _id: null,
+          inflationTotal: { $sum: { $subtract: [ "$subsidy", "$burned" ]}}
+        }}
+      ]);
+      data.inflationTotal = toXPI(inflationTotal);
+      data.plot = result.map(({ _id, inflation }) => {
+        return [ _id, toXPI(inflation) ];
+      });
+      return data;
+    } catch (e: any) {
+      throw new Error(`gen_charts_inflation(${timespan}): ${e.message}`);
+    }
+  };
+
   // gather and prepare chart data for transaction count based on timespan
   async get_charts_txs(
     timespan: ChartTransactionTimespan
@@ -989,6 +1027,19 @@ export class Database {
   async update_charts_db(): Promise<void> {
     const start = Date.now();
     try {
+      // Inflation XPI Charts
+      const {
+        plot: inflationDay,
+        inflationTotal: inflationDay_total
+      } = await this.gen_charts_inflation('day');
+      const {
+        plot: inflationWeek,
+        inflationTotal: inflationWeek_total
+      } = await this.gen_charts_inflation('week');
+      const {
+        plot: inflationMonth,
+        inflationTotal: inflationMonth_total
+      } = await this.gen_charts_inflation('month');
       // Burned XPI Charts
       const {
         plot: burnedDay,
@@ -1030,6 +1081,10 @@ export class Database {
       const { plot: difficultyQuarter } = await this.get_charts_difficulty('quarter');
       const { plot: difficultyYear } = await this.get_charts_difficulty('year');
       await MongoDB.Charts.Model.findOneAndUpdate({}, {
+        // inflation
+        inflationDay, inflationDay_total,
+        inflationWeek, inflationWeek_total,
+        inflationMonth, inflationMonth_total,
         // burned
         burnedDay, burnedDay_total,
         burnedWeek, burnedWeek_total,

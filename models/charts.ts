@@ -6,6 +6,12 @@ export type PlotData = Array<(string | number)[]>;
  * This is used to render the graphs on the `/charts` page
  */
 export type Document = {
+  inflationDay: PlotData,
+  inflationWeek: PlotData,
+  inflationMonth: PlotData,
+  inflationDay_total: number,
+  inflationWeek_total: number,
+  inflationMonth_total: number,
   burnedDay: PlotData,
   burnedWeek: PlotData,
   burnedMonth: PlotData,
@@ -34,6 +40,13 @@ export type Document = {
 };
 export const Model = model('Charts',
   new Schema<Document>({
+    // Inflation XPI
+    inflationDay: { type: <PlotData>[], default: [] },
+    inflationWeek: { type: <PlotData>[], default: [] },
+    inflationMonth: { type: <PlotData>[], default: [] },
+    inflationDay_total: { type: Number, default: 0 },
+    inflationWeek_total: { type: Number, default: 0 },
+    inflationMonth_total: { type: Number, default: 0 },
     // Burned XPI (OP_RETURN)
     burnedDay: { type: <PlotData>[], default: [] },
     burnedWeek: { type: <PlotData>[], default: [] },
