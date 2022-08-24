@@ -40,9 +40,10 @@ const route_get_index = async (
   res: Response,
   error: string
 ): Promise<void> => {
-  return (await is_locked('index'))
-    ? res.render('index', { active: 'home', error: error, warning: locale.initial_index_alert })
-    : res.render('index', { active: 'home', error: error, warning: null });
+  const warning = await is_locked('index')
+    ? locale.initial_index_alert
+    : null;
+  return res.render('index', { active: 'home', error, warning });
 };
 /*
  *
@@ -199,13 +200,13 @@ router.get('/tx/:txid', async (req, res) => {
 });
 router.get('/block/:blockhash', async (req, res) => {
   const { blockhash } = req.params;
-  // process height
-  const height = Number(blockhash);
-  if (!isNaN(height)) {
-    const hash = await lib.get_blockhash(height);
-    return res.redirect(`/block/${hash}`);
-  }
   try {
+    // process height
+    const height = Number(blockhash);
+    if (!isNaN(height)) {
+      const hash = await lib.get_blockhash(height);
+      return res.redirect(`/block/${hash}`);
+    }
     const block = await lib.get_block(blockhash);
     const renderData: {
       active: string,
