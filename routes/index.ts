@@ -1,6 +1,7 @@
 import express, { Response } from 'express';
 import chronikRouter from './chronik';
 import qr from 'qr-image';
+import { Address } from '@abcpros/bitcore-lib-xpi';
 import {
   Database,
   is_locked
@@ -264,8 +265,7 @@ router.get('/block/:blockhash', async (req, res) => {
 });
 router.get('/address/:address', async (req, res) => {
   const { address } = req.params;
-  const { isvalid } = await lib.validate_address(address);
-  if (!isvalid) {
+  if (!Address.isValid(address)) {
     return route_get_index(res, `Address is invalid: ${address}`);
   }
   const renderData = {
@@ -335,8 +335,7 @@ router.post('/search', async (req, res) => {
     return res.redirect(`/address/${address.a_id}`);
   }
   // show the address page if address is valid
-  const { isvalid } = await lib.validate_address(search);
-  if (isvalid) {
+  if (Address.isValid(search)) {
     return res.redirect(`/address/${search}`);
   }
   return route_get_index(res, locale.ex_search_error + search);
