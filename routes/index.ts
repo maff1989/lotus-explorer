@@ -540,6 +540,6 @@ router.get('/ext/connections', async (req, res) => {
     return res.send({ error: `failed to get peers` });
   }
 });
-router.use('/ext', chronikRouter);
+router.use('/chronik', chronikRouter);
 
 export default router;
