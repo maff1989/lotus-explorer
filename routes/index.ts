@@ -3,6 +3,9 @@ import chronikRouter from './chronik';
 import qr from 'qr-image';
 import { Address } from '@abcpros/bitcore-lib-xpi';
 import {
+  Chronik
+} from '../lib/chronik';
+import {
   Database,
   is_locked
 } from '../lib/database';
@@ -19,7 +22,14 @@ import settings from '../lib/settings';
 import locale from '../lib/locale';
 
 const db = new Database()
-  , lib = new Explorer();
+  , lib = {
+    explorer: new Explorer(),
+    chronik: new Chronik(
+      `http://${settings.chronik.host}:
+      ${settings.chronik.port}
+      ${settings.chronik.uri}`
+    )
+};
 /*
  *
  *      Handler Functions
@@ -171,16 +181,16 @@ router.get('/tx/:txid', async (req, res) => {
       return res.render('tx', renderData);
     }
     // check mempool for tx
-    const mempool = await lib.get_rawmempool();
+    const mempool = await lib.explorer.get_rawmempool();
     // if tx isn't there either, assume invalid
     if (!mempool.includes(txid)) {
       return route_get_index(res, `Transaction not found: ${txid}`);
     }
     // process mempool tx
-    const tx = await lib.get_rawtransaction(txid);
-    const { vin } = await lib.prepare_vin(tx);
-    const { vout, burned } = await lib.prepare_vout(tx.vout);
-    const fee = await lib.calculate_fee(vout, vin);
+    const tx = await lib.explorer.get_rawtransaction(txid);
+    const { vin } = await lib.explorer.prepare_vin(tx);
+    const { vout, burned } = await lib.explorer.prepare_vout(tx.vout);
+    const fee = await lib.explorer.calculate_fee(vout, vin);
     renderData.tx = {
       txid: tx.txid,
       size: tx.size,
@@ -205,10 +215,10 @@ router.get('/block/:blockhash', async (req, res) => {
     // process height
     const height = Number(blockhash);
     if (!isNaN(height)) {
-      const hash = await lib.get_blockhash(height);
+      const hash = await lib.explorer.get_blockhash(height);
       return res.redirect(`/block/${hash}`);
     }
-    const block = await lib.get_block(blockhash);
+    const block = await lib.explorer.get_block(blockhash);
     const renderData: {
       active: string,
       confirmations: number,
@@ -313,18 +323,18 @@ router.post('/search', async (req, res) => {
   // process block height
   const height = Number(search);
   if (!isNaN(height)) {
-    const blockhash = await lib.get_blockhash(height);
+    const blockhash = await lib.explorer.get_blockhash(height);
     return res.redirect(`/block/${blockhash}`);
   }
   // process block/tx
   if (search.length == 64) {
-    const block = await lib.get_block(search);
+    const block = await lib.explorer.get_block(search);
     if (block?.hash) {
       return res.redirect(`/block/${block.hash}`);
     }
     // check db/mempool for tx
     const dbTx = await db.get_tx(search);
-    const mempool = await lib.get_rawmempool();
+    const mempool = await lib.explorer.get_rawmempool();
     if (dbTx?.txid || mempool.includes(search)) {
       return res.redirect(`/tx/${search}`);;
     }
@@ -347,11 +357,11 @@ router.post('/search', async (req, res) => {
  */
 router.get('/ext/summary', async (req, res) => {
   try {
-    const difficulty = await lib.get_difficulty();
-    const hashrate = await lib.get_hashrate();
-    const connections = await lib.get_connectioncount();
-    const blockcount = await lib.get_blockcount();
-    const mempool = await lib.get_mempoolinfo();
+    const difficulty = await lib.explorer.get_difficulty();
+    const hashrate = await lib.explorer.get_hashrate();
+    const connections = await lib.explorer.get_connectioncount();
+    const blockcount = await lib.explorer.get_blockcount();
+    const mempool = await lib.explorer.get_mempoolinfo();
     const dbStats = await db.get_stats(settings.coin);
     return res.send({ data: [{
       difficulty: difficulty,
@@ -416,15 +426,15 @@ router.get('/ext/gettx/:txid', async (req, res) => {
     }
     // check mempool for tx
     // if tx isn't there either, assume invalid
-    const mempool = await lib.get_rawmempool();
+    const mempool = await lib.explorer.get_rawmempool();
     if (!mempool.includes(txid)) {
       throw new Error(`non-database tx not found in mempool: ${txid}`);
     }
     // process mempool tx
-    const tx = await lib.get_rawtransaction(txid);
-    const { vin } = await lib.prepare_vin(tx);
-    const { vout, burned } = await lib.prepare_vout(tx.vout);
-    const fee = await lib.calculate_fee(vout, vin);
+    const tx = await lib.explorer.get_rawtransaction(txid);
+    const { vin } = await lib.explorer.prepare_vin(tx);
+    const { vout, burned } = await lib.explorer.prepare_vout(tx.vout);
+    const fee = await lib.explorer.calculate_fee(vout, vin);
     const { time: timestamp, size, blockhash } = tx;
     return res.send({
       _id: null,

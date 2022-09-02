@@ -1,15 +1,15 @@
 import express from 'express';
-import { ChronikClient } from 'chronik-client';
 import { Script, Address } from '@abcpros/bitcore-lib-xpi';
+import { Chronik } from '../lib/chronik';
 import settings from '../lib/settings';
 
-const chronikClient = new ChronikClient(
-    `http://${settings.chronik.host}:
-    ${settings.chronik.port}/
-    ${settings.chronik.uri}`
-  );
-const chronikRouter = express.Router();
+const chronik = new Chronik(
+  `http://${settings.chronik.host}:` +
+  `${settings.chronik.port}` +
+  `${settings.chronik.uri}`
+);
 
+const chronikRouter = express.Router();
 chronikRouter.get('/utxos/:address', async (req, res) => {
   const { address } = req.params;
   try {
