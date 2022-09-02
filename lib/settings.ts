@@ -33,10 +33,13 @@ class Settings {
     "address" : "localhost",
     "port" : 27017
   };
+  // use Chronik back-end for retrieving indexed data
+  use_chronik = true;
+  // Chronik back-end settings
   chronik = {
     "host": "localhost",
     "port": 7123,
-    "uri": "/"
+    "uri": ""
   };
   //This setting is passed to the wallet
   wallet = {
