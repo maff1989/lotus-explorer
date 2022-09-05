@@ -840,14 +840,12 @@ export class Database {
 
   /*
    *
-   *    Get Database Charts
+   *    Generate Database Charts Data
    * 
    */
-  async get_charts_difficulty(
+  async gen_charts_difficulty(
     timespan: ChartDifficultyTimespan
-  ): Promise<{
-    plot: MongoDB.Charts.PlotData
-  }> {
+  ) {
     const seconds = TIMESPANS[timespan];
     const data: {
       plot: MongoDB.Charts.PlotData
@@ -873,11 +871,11 @@ export class Database {
       });
       return data;
     } catch (e: any) {
-      throw new Error(`get_charts_difficulty(${timespan}): ${e.message}`);
+      throw new Error(`gen_charts_difficulty(${timespan}): ${e.message}`);
     }
   };
   
-  async get_charts_reward_distribution(
+  async gen_charts_reward_distribution(
     timespan: ChartDistributionTimespan
   ) {
     const seconds = TIMESPANS[timespan];
@@ -917,7 +915,7 @@ export class Database {
       data.minerTotal = Object.keys(minerBlockCounts).length;
       return data;
     } catch (e: any) {
-      throw new Error(`get_charts_reward_distribution(${timespan}): ${e.message}`);
+      throw new Error(`gen_charts_reward_distribution(${timespan}): ${e.message}`);
     }
   };
 
@@ -988,7 +986,7 @@ export class Database {
   };
 
   // gather and prepare chart data for transaction count based on timespan
-  async get_charts_txs(
+  async gen_charts_txs(
     timespan: ChartTransactionTimespan
   ) {
     const seconds = TIMESPANS[timespan];
@@ -1014,7 +1012,7 @@ export class Database {
       data.plot = Object.entries(arranged_data);
       return data;
     } catch (e: any) {
-      throw new Error(`get_charts_txs(${timespan}): ${e.message}`);
+      throw new Error(`gen_charts_txs(${timespan}): ${e.message}`);
     }
   };
   
@@ -1057,29 +1055,29 @@ export class Database {
       const {
         plot: txsDay,
         txTotal: txsDay_count
-      } = await this.get_charts_txs('day');
+      } = await this.gen_charts_txs('day');
       const {
         plot: txsWeek,
         txTotal: txsWeek_count
-      } = await this.get_charts_txs('week');
+      } = await this.gen_charts_txs('week');
       const {
         plot: txsMonth,
         txTotal: txsMonth_count
-      } = await this.get_charts_txs('month');
+      } = await this.gen_charts_txs('month');
       // Reward Distribution Charts
       const {
         plot: miningDistDay,
         minerTotal: totalMinersDay
-      } = await this.get_charts_reward_distribution('day');
+      } = await this.gen_charts_reward_distribution('day');
       const {
         plot: miningDistWeek,
         minerTotal: totalMinersWeek
-      } = await this.get_charts_reward_distribution('week');
+      } = await this.gen_charts_reward_distribution('week');
       // Difficulty Charts
-      const { plot: difficultyWeek } = await this.get_charts_difficulty('week');
-      const { plot: difficultyMonth } = await this.get_charts_difficulty('month');
-      const { plot: difficultyQuarter } = await this.get_charts_difficulty('quarter');
-      const { plot: difficultyYear } = await this.get_charts_difficulty('year');
+      const { plot: difficultyWeek } = await this.gen_charts_difficulty('week');
+      const { plot: difficultyMonth } = await this.gen_charts_difficulty('month');
+      const { plot: difficultyQuarter } = await this.gen_charts_difficulty('quarter');
+      const { plot: difficultyYear } = await this.gen_charts_difficulty('year');
       await MongoDB.Charts.Model.findOneAndUpdate({}, {
         // inflation
         inflationDay, inflationDay_total,

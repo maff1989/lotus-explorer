@@ -38,9 +38,9 @@ const main = async () => {
   const market = await db.get_market(settings.markets.default);
   const peer = await db.get_peer('1.2.3.4');
   const peers = await db.get_peers();
-  const chartsTxs = await db.get_charts_txs('day');
-  const chartsRewards = await db.get_charts_reward_distribution('day');
-  const chartsDifficulty = await db.get_charts_difficulty('week');
+  const chartsTxs = await db.gen_charts_txs('day');
+  const chartsRewards = await db.gen_charts_reward_distribution('day');
+  const chartsDifficulty = await db.gen_charts_difficulty('week');
   const lastBlocks = await db.get_last_blocks_ajax(0, 10);
   const addressTxs = await db.get_address_txs_ajax(address, 0, 10);
   console.log('addressDocument', addressDocument);
