@@ -1133,7 +1133,8 @@ export class Database {
         chartdata: JSON.stringify(data.chartdata),
         buys: data.buys,
         sells: data.sells,
-        history: data.trades
+        history: data.trades,
+        summary: data.summary,
       });
     } catch (e: any) {
       throw new Error(`update_markets_db: ${e.message}`);

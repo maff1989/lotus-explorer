@@ -476,6 +476,19 @@ router.get('/ext/getdistribution', async (req, res) => {
     return res.send({ error: `distribution for ${settings.coin} not found` });
   }
 });
+router.get('/ext/getlastprice/:market', async (req, res) => {
+  const market = String(req.params.market);
+  try {
+    if (!settings.markets.enabled.includes(market)) {
+      throw new Error(`market not enabled`);
+    }
+    const { summary: { last }} = await db.get_market(market);
+    res.send({ [settings.markets.exchange.toLowerCase()]: last });
+  } catch (e: any) {
+    console.log(`/ext/getlastprice/${market}: ${e.message}`);
+    return res.send({ error: `failed to get price from market ${market}` });
+  }
+});
 router.get('/ext/getlastblocksajax', async (req, res) => {
   const rowData: Array<[number, string, number, number, number, string]> = [];
   let { start, length, draw } = ajaxParamTypeConverter(req.query);

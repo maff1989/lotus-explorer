@@ -6,7 +6,16 @@ import { Schema, model } from 'mongoose';
  */
 export type Document = {
   market: string,
-  summary: object,
+  summary: {
+    low: number,
+    high: number,
+    last: number,
+    change: string,
+    bid: number,
+    ask: number,
+    volume_exchange: number,
+    volume_xpi: number,
+  },
   // chartData?,
   buys: Array<{
     amount: string,

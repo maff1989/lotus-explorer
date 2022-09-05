@@ -23,7 +23,7 @@ type ParsedOrder = {
 };
 
 type ParsedData = {
-  stats: Summary,
+  summary: Summary,
   trades: API.Trade[],
   buys: ParsedOrder[],
   sells: ParsedOrder[]
@@ -44,7 +44,7 @@ export default class {
     return {
       buys, sells,
       trades: await this.get_trades(),
-      stats: await this.get_summary(),
+      summary: await this.get_summary(),
     }
   };
 

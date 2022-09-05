@@ -159,7 +159,13 @@ block content
               em Returns wealth distribution stats
               br
               a(href='/ext/getdistribution') #{address}/ext/getdistribution               
-
+          li
+            p
+              strong getlastprice (/ext/getlastprice/:market)
+              br
+              em Return latest price per XPI in configured exchange pair (likely USDT)
+              br
+              a(href='/ext/getlastprice/' + settings.markets.default') #{address}/ext/getlastprice/#{settings.markets.default}
           li
             p
               strong getaddress (/ext/getaddress/hash)
