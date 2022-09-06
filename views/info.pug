@@ -165,7 +165,7 @@ block content
               br
               em Return latest price per XPI in configured exchange pair (likely USDT)
               br
-              a(href='/ext/getlastprice/' + settings.markets.default') #{address}/ext/getlastprice/#{settings.markets.default}
+              a(href='/ext/getlastprice/' + settings.markets.default) #{address}/ext/getlastprice/#{settings.markets.default}
           li
             p
               strong getaddress (/ext/getaddress/hash)
@@ -199,6 +199,36 @@ block content
               a(href='/ext/getlastblocksajax') #{address}/ext/getlastblocksajax
       
         hr
+        h3 Chronik
+        p
+          em Return data from Chronik indexer
+        ul
+          li
+            p
+              strong utxos (/chronik/utxos/:address)
+              br
+              a(href='/chronik/utxos/' + hashes.address) #{address}/chronik/utxos/#{hashes.address}
+          
+          li
+            p
+              strong block (/chronik/block/:hashOrHeight)
+              br
+              a(href='/chronik/block/' + hashes.blockindex) #{address}/chronik/block/#{hashes.blockindex}
+              br
+              a(href='/chronik/block/' + hashes.blockhash) #{address}/chronik/block/#{hashes.blockhash}
+          
+          li
+            p
+              strong tx (/chronik/tx/:txid)
+              br
+              a(href='chronik/tx/' + hashes.txhash) #{address}/chronik/block/#{hashes.txhash}
+          
+          li
+            p
+              strong sendtx (/chronik/sendtx/:rawTx)
+              br
+              em broadcast hex-encoded signed tx to #{settings.coin} network
+
         h3 Linking (GET)
         p
           em Linking to the block explorer
