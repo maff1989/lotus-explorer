@@ -563,6 +563,11 @@ router.get('/ext/connections', async (req, res) => {
     return res.send({ error: `failed to get peers` });
   }
 });
+/*
+ *
+ *      Chronik API
+ * 
+ */
 router.use('/chronik', chronikRouter);
 
 export default router;

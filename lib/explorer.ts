@@ -210,23 +210,6 @@ export class Explorer {
     return data.totalBalance;
   };
   /**
-   * Fetch all transactions from specified block from database and calculate fees paid/burned
-   * @param height Block height
-   * @returns Object containing blockFees and blockFeesBurned in satoshis
-   */
-  async get_block_fees(height: number): Promise<{
-    blockFees: number,
-    blockFeesBurned: number,
-  }> {
-    const data = { blockFees: 0, blockFeesBurned: 0 };
-    const docs: MongoDB.Tx.Document[] = await MongoDB.Tx.Model
-      .find({ blockindex: height }, 'fee')
-      .lean();
-    docs.forEach(doc => data.blockFees += doc.fee);
-    data.blockFeesBurned = Math.round(data.blockFees / 2);
-    return data;
-  };
-  /**
    * Fetch all blocks from database and calculate burned supply
    * @returns {Promise<number>} Total burned supply in satoshis
    */
@@ -240,7 +223,7 @@ export class Explorer {
   };
   /**
    * Fetch the available supply
-   * @returns {Promise<number>} Total supply in XPI
+   * @returns {Promise<number>} Total supply in satoshis
    */
   async get_supply(): Promise<number> {
     // only supports BALANCE supply

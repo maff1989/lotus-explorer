@@ -282,7 +282,7 @@ const rewind_update_address = async (
   }
   try {
     // capture updated document
-    const newAddress = await MongoDB.Address.Model
+    const { sent, received, balance } = await MongoDB.Address.Model
       .findOneAndUpdate(
         { a_id: address },
         { $inc: addr_inc },
@@ -291,9 +291,9 @@ const rewind_update_address = async (
     // delete address if sent, received, and balance are all 0
     // i.e. assume no transactions exist for address
     if (
-      newAddress.sent == 0
-      && newAddress.received == 0
-      && newAddress.balance == 0
+      sent == 0 &&
+      received == 0 &&
+      balance == 0
     ) {
       await MongoDB.Address.Model.deleteOne({ a_id: address });
     }
@@ -596,7 +596,7 @@ export class Database {
         .find()
         .sort({ timestamp: -1 })
         .limit(1);
-      return <MongoDB.Block.Document>result.pop();
+      return result.pop();
     } catch (e: any) {
       throw new Error(`get_latest_block: ${e.message}`);
     }
@@ -796,7 +796,8 @@ export class Database {
     } = { txs: [], count: 0 };
     try {
       data.count = await MongoDB.AddressTx.Model
-        .find({ a_id: address })
+        .findOne({ a_id: address })
+        .lean()
         .count();
       // return default data if no db entries for address
       if (data.count < 1) {
@@ -853,9 +854,7 @@ export class Database {
     try {
       const dbBlock = await this.get_latest_block();
       const agg: PipelineStage[] = [
-        { '$match': {
-          'timestamp': { '$gte': (dbBlock.timestamp - seconds) }
-        }},
+        { $match: { timestamp: { $gte: (dbBlock.timestamp - seconds) }}},
       ];
       // filter agg results depending on blockspan to reduce data load
       agg.push(...chartsDifficultyAggregation[timespan]);
@@ -922,6 +921,7 @@ export class Database {
   async gen_charts_burned(
     timespan: ChartBurnedTimespan
   ) {
+    const seconds = TIMESPANS[timespan];
     const data: {
       plot: MongoDB.Charts.PlotData,
       burnedTotal: number
@@ -930,7 +930,7 @@ export class Database {
       const dbBlock = await this.get_latest_block();
       const txs = await MongoDB.Tx.Model
         .find({
-          timestamp: { $gte: (dbBlock.timestamp - TIMESPANS[timespan]) },
+          timestamp: { $gte: (dbBlock.timestamp - seconds) },
           burned: { $gt: 0 }
         })
         .select({ localeTimestamp: 1, burned: 1 });
@@ -1004,7 +1004,7 @@ export class Database {
         .select({ localeTimestamp: 1, txcount: 1 })
         .lean();
       const arranged_data: { [x: string]: number } = {};
-      blocks.forEach((block: MongoDB.Block.Document) => {
+      blocks.forEach(block => {
         const txcount = block.txcount - 1;
         arranged_data[block.localeTimestamp] = txcount;
         data.txTotal += txcount;
