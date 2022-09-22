@@ -53,7 +53,7 @@ export default class {
     try {
       const { ticker }: API.Tickers = await request.get({
         uri: this.URI + `/tickers`,
-        json: true,
+        ...API.OPTIONS
       });
       return {
         volume_exchange: Number(ticker.volume),
@@ -90,7 +90,7 @@ export default class {
     try {
       const { bids, asks }: API.OrderBook = await request.get({
         uri: this.URI + `/order-book?asks_limit=50&bid_limit=50`,
-        json: true,
+        ...API.OPTIONS
       }) || { bids: [], asks: [] };
       const buys = bids.map(bid => processor(bid));
       const sells = asks.map(ask => processor(ask));
@@ -105,7 +105,7 @@ export default class {
     try {
       return await request.get({
         uri: this.URI + `/trades?limit=100`,
-        json: true,
+        ...API.OPTIONS
       });
     } catch (e: any) {
       throw new Error(`Exbitron.get_trades: ${e.message}`);

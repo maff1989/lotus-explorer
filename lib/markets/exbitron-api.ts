@@ -1,5 +1,9 @@
 export const BASE_URL = 'https://www.exbitron.com/api/v2/peatio/public'
 export const MARKETS_URL = 'markets';
+export const OPTIONS = {
+  json: true,
+  timeout: 5000,
+};
 export type Tickers = {
   at: string, // unix timestamp
   ticker: {
