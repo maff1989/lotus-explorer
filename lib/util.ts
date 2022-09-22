@@ -61,7 +61,7 @@ export const chartsInflationAggregation: {
     },
     { $group: {
       _id: {
-        "$dateToString": {
+        $dateToString: {
           "format": "%m-%d-%Y %H:%M",
           "date": {
             $dateFromString: { dateString: "$localeTimestamp" }
@@ -115,7 +115,7 @@ export const chartsInflationAggregation: {
     },
     { $group: {
       _id: {
-        "$dateToString": {
+        $dateToString: {
           "format": "%m-%d-%Y %H",
           "date": {
             $dateFromString: { dateString: "$localeTimestamp" }
