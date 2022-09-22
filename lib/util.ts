@@ -32,21 +32,29 @@ export const chartsInflationAggregation: {
   ],
   week: [
     {
+      $project: {
+        minute: { $minute: { $dateFromString: { dateString: "$localeTimestamp" }}},
+        localeTimestamp: "$localeTimestamp",
+        subsidy: "$subsidy",
+        burned: "$burned"        
+      }
+    },
+    {
       $match: {
         $expr: {
           $or: [
-            { $eq: [{ $minute: { $dateFromString: { dateString: "$localeTimestamp" }}}, 0]},
-            { $eq: [{ $minute: { $dateFromString: { dateString: "$localeTimestamp" }}}, 5]},
-            { $eq: [{ $minute: { $dateFromString: { dateString: "$localeTimestamp" }}}, 10]},
-            { $eq: [{ $minute: { $dateFromString: { dateString: "$localeTimestamp" }}}, 15]},
-            { $eq: [{ $minute: { $dateFromString: { dateString: "$localeTimestamp" }}}, 20]},
-            { $eq: [{ $minute: { $dateFromString: { dateString: "$localeTimestamp" }}}, 25]},
-            { $eq: [{ $minute: { $dateFromString: { dateString: "$localeTimestamp" }}}, 30]},
-            { $eq: [{ $minute: { $dateFromString: { dateString: "$localeTimestamp" }}}, 35]},
-            { $eq: [{ $minute: { $dateFromString: { dateString: "$localeTimestamp" }}}, 40]},
-            { $eq: [{ $minute: { $dateFromString: { dateString: "$localeTimestamp" }}}, 45]},
-            { $eq: [{ $minute: { $dateFromString: { dateString: "$localeTimestamp" }}}, 50]},
-            { $eq: [{ $minute: { $dateFromString: { dateString: "$localeTimestamp" }}}, 55]},
+            { $and: [
+              { $gte: ["$minute", 0]},
+              { $lte: ["$minute", 19]},
+            ]},
+            { $and: [
+              { $gte: ["$minute", 20]},
+              { $lte: ["$minute", 39]},
+            ]},
+            { $and: [
+              { $gte: ["$minute", 40]},
+              { $lte: ["$minute", 59]},
+            ]},
           ]
         }
       }
@@ -66,21 +74,41 @@ export const chartsInflationAggregation: {
   ],
   month: [
     {
+      $project: {
+        hour: { $hour: { $dateFromString: { dateString: "$localeTimestamp" }}},
+        localeTimestamp: "$localeTimestamp",
+        subsidy: "$subsidy",
+        burned: "$burned"        
+      }
+    },
+    {
       $match: {
         $expr: {
           $or: [
-            { $eq: [{ $hour: { $dateFromString: { dateString: "$localeTimestamp" }}}, 0]},
-            { $eq: [{ $hour: { $dateFromString: { dateString: "$localeTimestamp" }}}, 2]},
-            { $eq: [{ $hour: { $dateFromString: { dateString: "$localeTimestamp" }}}, 4]},
-            { $eq: [{ $hour: { $dateFromString: { dateString: "$localeTimestamp" }}}, 6]},
-            { $eq: [{ $hour: { $dateFromString: { dateString: "$localeTimestamp" }}}, 8]},
-            { $eq: [{ $hour: { $dateFromString: { dateString: "$localeTimestamp" }}}, 10]},
-            { $eq: [{ $hour: { $dateFromString: { dateString: "$localeTimestamp" }}}, 12]},
-            { $eq: [{ $hour: { $dateFromString: { dateString: "$localeTimestamp" }}}, 14]},
-            { $eq: [{ $hour: { $dateFromString: { dateString: "$localeTimestamp" }}}, 16]},
-            { $eq: [{ $hour: { $dateFromString: { dateString: "$localeTimestamp" }}}, 18]},
-            { $eq: [{ $hour: { $dateFromString: { dateString: "$localeTimestamp" }}}, 20]},
-            { $eq: [{ $hour: { $dateFromString: { dateString: "$localeTimestamp" }}}, 22]},
+            { $and: [
+              { $gte: ["$hour", 0]},
+              { $lte: ["$hour", 3]},
+            ]},
+            { $and: [
+              { $gte: ["$hour", 4]},
+              { $lte: ["$hour", 7]},
+            ]},
+            { $and: [
+              { $gte: ["$hour", 8]},
+              { $lte: ["$hour", 11]},
+            ]},
+            { $and: [
+              { $gte: ["$hour", 12]},
+              { $lte: ["$hour", 15]},
+            ]},
+            { $and: [
+              { $gte: ["$hour", 16]},
+              { $lte: ["$hour", 19]},
+            ]},
+            { $and: [
+              { $gte: ["$hour", 20]},
+              { $lte: ["$hour", 23]},
+            ]},
           ]
         }
       }
