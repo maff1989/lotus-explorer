@@ -26,8 +26,8 @@ export const chartsInflationAggregation: {
   day: [
     { $group: {
       _id: "$localeTimestamp",
-      height: { $first: "$height" },
       inflation: { $min: { $subtract: [ "$subsidy", "$burned" ]}},
+      inflationTotal: { $sum: { $subtract: [ "$subsidy", "$burned" ]}},
     }}
   ],
   week: [
@@ -60,8 +60,8 @@ export const chartsInflationAggregation: {
           }
         }
       },
-      height: { $first: "$height" },
       inflation: { $min: { $subtract: [ "$subsidy", "$burned" ]}},
+      inflationTotal: { $sum: { $subtract: [ "$subsidy", "$burned" ]}},
     }}
   ],
   month: [
@@ -94,8 +94,8 @@ export const chartsInflationAggregation: {
           }
         }
       },
-      height: { $first: "$height" },
       inflation: { $min: { $subtract: [ "$subsidy", "$burned" ]}},
+      inflationTotal: { $sum: { $subtract: [ "$subsidy", "$burned" ]}},
     }}
   ],
 };

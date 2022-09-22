@@ -962,19 +962,13 @@ export class Database {
       // fetch all subsidies
       const result: Array<{
         _id: string,
-        inflation: number
+        inflation: number,
+        inflationTotal: number,
       }> = await MongoDB.Block.Model.aggregate([
         { $match: { height: { $gte: (dbBlock.height - blockspan) }}},
-        ...chartsInflationAggregation[timespan],
-        { $sort: { height: 1 }}
+        ...chartsInflationAggregation[timespan]
       ]);
-      const [{ inflationTotal }] = await MongoDB.Block.Model.aggregate([
-        { $match: { height: { $gte: (dbBlock.height - blockspan) }}},
-        { $group: {
-          _id: null,
-          inflationTotal: { $sum: { $subtract: [ "$subsidy", "$burned" ]}}
-        }}
-      ]);
+      const inflationTotal = result.reduce((a, b) => a + b.inflationTotal, 0);
       data.inflationTotal = toXPI(inflationTotal);
       data.plot = result.map(({ _id, inflation }) => {
         return [ _id, toXPI(inflation) ];
