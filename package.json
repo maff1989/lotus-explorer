@@ -13,7 +13,7 @@
     "bitcoin-node-api": "git+http://git@github.com/uaktags/Bitcoin-Node-Api.git",
     "bitcoin-rpc-promise": "2.1.6",
     "body-parser": "1.19.0",
-    "chronik-client": "^0.8.0",
+    "chronik-client": "^0.8.1",
     "cookie-parser": "1.4.4",
     "debug": "~4.1.1",
     "express": "~4.17.1",
