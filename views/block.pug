@@ -81,16 +81,19 @@ block content
           thead
             tr
               th.d-none.d-lg-table-cell #{settings.locale.tx_hash}
+              th #{settings.locale.block_burned} (#{settings.symbol})
               th #{settings.locale.size}
               th #{settings.locale.tx_recipients}
               th #{settings.locale.mkt_amount}
               th
           tbody
             each txn in txs
+              - const burnedXPI = txn.burned > 0 ? parseFloat(txn.burned / 1000000).toLocaleString('en', {'minimumFractionDigits':6}): '-'
               tr
                 td.d-none.d-lg-table-cell
                   a(href='/tx/'+txn.txid) #{txn.txid}
                 - var tx_size = parseInt(txn.size).toLocaleString('en');
+                td #{burnedXPI}
                 td #{tx_size} Bytes
                 td #{txn.vout.length}
                 if txn.vout.length > 0
