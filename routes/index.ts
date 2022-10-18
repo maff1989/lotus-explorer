@@ -172,9 +172,32 @@ router.get('/tx/:txid', async (req, res) => {
     blockcount: null
   };
   try {
-    // process db tx
     const { last: blockcount } = await db.get_stats(settings.coin);
-    renderData.blockcount = blockcount;
+    if (settings.use_chronik) {
+      const tx = await lib.chronik.txFetch(txid);
+      const timestamp = tx.block?.timestamp ?? tx.timeFirstSeen;
+      // No fees in coinbase tx
+      const fee = tx.isCoinbase
+        ? 0
+        : lib.chronik.txCalculateFee(tx.inputs, tx.outputs);
+      // Set default vin for coinbase tx
+      const { vin } = lib.chronik.txPrepareVin(tx.inputs);
+      const { vout, burned } = lib.chronik.txPrepareVout(tx.outputs);
+      renderData.tx = {
+        txid: txid,
+        size: tx.size,
+        timestamp: Number(timestamp),
+        blockhash: tx.block?.hash ?? '-',
+        blockindex: tx.block?.height ?? 0,
+        fee: fee,
+        vin: vin,
+        vout: vout,
+        burned: burned
+      }
+      renderData.blockcount = tx.block ? -1 : blockcount;
+      return res.render('tx', renderData);
+    }
+    // process db tx
     const dbTx = await db.get_tx(txid);
     if (dbTx) {
       renderData.tx = dbTx;
