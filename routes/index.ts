@@ -1,7 +1,7 @@
 import express, { Response } from 'express';
-import chronikRouter from './chronik';
 import qr from 'qr-image';
 import { Address } from '@abcpros/bitcore-lib-xpi';
+import chronikRouter from './chronik';
 import {
   Chronik
 } from '../lib/chronik';
@@ -25,9 +25,9 @@ const db = new Database()
   , lib = {
     explorer: new Explorer(),
     chronik: new Chronik(
-      `http://${settings.chronik.host}:
-      ${settings.chronik.port}
-      ${settings.chronik.uri}`
+      `http://${settings.chronik.host}:` +
+      `${settings.chronik.port}` +
+      `${settings.chronik.uri}`
     )
 };
 /*
@@ -209,16 +209,17 @@ router.get('/tx/:txid', async (req, res) => {
     return route_get_index(res, `Transaction not found: ${txid}`);
   }
 });
-router.get('/block/:blockhash', async (req, res) => {
-  const { blockhash } = req.params;
+router.get('/block/:hashOrHeight', async (req, res) => {
+  const { hashOrHeight } = req.params;
   try {
     // process height
-    const height = Number(blockhash);
+    const height = Number(hashOrHeight);
     if (!isNaN(height)) {
-      const hash = await lib.explorer.get_blockhash(height);
-      return res.redirect(`/block/${hash}`);
+      const blockhash = await lib.explorer.get_blockhash(height);
+      return res.redirect(`/block/${blockhash}`);
     }
-    const block = await lib.explorer.get_block(blockhash);
+    // process hash
+    const block = await lib.explorer.get_block(hashOrHeight);
     const renderData: {
       active: string,
       confirmations: number,
@@ -240,7 +241,7 @@ router.get('/block/:blockhash', async (req, res) => {
       case block instanceof Error:
         throw <any>block as Error;
       // genesis block handler
-      case blockhash === settings.genesis_block:
+      case hashOrHeight === settings.genesis_block:
         renderData.txs = 'GENESIS';
         renderData.blockDocument = {
           height: block.height,
@@ -269,8 +270,8 @@ router.get('/block/:blockhash', async (req, res) => {
         return res.render('block', renderData);
     }
   } catch (e: any) {
-    console.log(`/block/${blockhash}: ${e.message}`);
-    return route_get_index(res, `Block not found: ${blockhash}`);
+    console.log(`/block/${hashOrHeight}: ${e.message}`);
+    return route_get_index(res, `Block not found: ${hashOrHeight}`);
   }
 });
 router.get('/address/:address', async (req, res) => {
@@ -298,7 +299,7 @@ router.get('/address/:address', async (req, res) => {
       address: dbAddress,
     });
   } catch (e: any) {
-    console.log(`route_get_address: ${address}: ${e.message}`);
+    console.log(`/address/${address}: ${e.message}`);
     return route_get_index(res, `Address not found: ${address}`);
   }
 });
@@ -316,39 +317,43 @@ router.get('/qr/:string', async (req, res) => {
   }
 });
 router.post('/search', async (req, res) => {
-  const search = String(req.body.search).trim();
-  if (!search) {
+  const search: string = String(req.body.search).trim();
+  try {
+    if (!search) {
+      throw new Error(`undefined search body`);
+    }
+    // process block height
+    const height = Number(search);
+    if (!isNaN(height)) {
+      const blockhash = await lib.explorer.get_blockhash(height);
+      return res.redirect(`/block/${blockhash}`);
+    }
+    // process block/tx
+    if (search.length == 64) {
+      const block = await lib.explorer.get_block(search);
+      if (block?.hash) {
+        return res.redirect(`/block/${block.hash}`);
+      }
+      // check db/mempool for tx
+      const dbTx = await db.get_tx(search);
+      const mempool = await lib.explorer.get_rawmempool();
+      if (dbTx?.txid || mempool.includes(search)) {
+        return res.redirect(`/tx/${search}`);;
+      }
+    }
+    // process db address
+    const address = await db.get_address(search);
+    if (address?.a_id) {
+      return res.redirect(`/address/${address.a_id}`);
+    }
+    // show the address page if address is valid
+    if (Address.isValid(search)) {
+      return res.redirect(`/address/${search}`);
+    }
+  } catch (e: any) {
+    console.log(`/search: ${search}: ${e.message}`);
     return route_get_index(res, locale.ex_search_error + search);
   }
-  // process block height
-  const height = Number(search);
-  if (!isNaN(height)) {
-    const blockhash = await lib.explorer.get_blockhash(height);
-    return res.redirect(`/block/${blockhash}`);
-  }
-  // process block/tx
-  if (search.length == 64) {
-    const block = await lib.explorer.get_block(search);
-    if (block?.hash) {
-      return res.redirect(`/block/${block.hash}`);
-    }
-    // check db/mempool for tx
-    const dbTx = await db.get_tx(search);
-    const mempool = await lib.explorer.get_rawmempool();
-    if (dbTx?.txid || mempool.includes(search)) {
-      return res.redirect(`/tx/${search}`);;
-    }
-  }
-  // process db address
-  const address = await db.get_address(search);
-  if (address?.a_id) {
-    return res.redirect(`/address/${address.a_id}`);
-  }
-  // show the address page if address is valid
-  if (Address.isValid(search)) {
-    return res.redirect(`/address/${search}`);
-  }
-  return route_get_index(res, locale.ex_search_error + search);
 });
 /*
  *
@@ -490,7 +495,6 @@ router.get('/ext/getlastprice/:market', async (req, res) => {
   }
 });
 router.get('/ext/getlastblocksajax', async (req, res) => {
-  const rowData: Array<[number, string, number, number, number, string]> = [];
   let { start, length, draw } = ajaxParamTypeConverter(req.query);
   if (!length || isNaN(length) || length > settings.index.last_txs) {
     length = settings.index.last_blocks;
@@ -499,6 +503,7 @@ router.get('/ext/getlastblocksajax', async (req, res) => {
     start = 0;
   }
   try {
+    const rowData: Array<[number, string, number, number, number, string]> = [];
     const { blocks, count } = await db.get_last_blocks_ajax(start, length);
     blocks.forEach(block => rowData.push([
       block.height,
@@ -520,7 +525,6 @@ router.get('/ext/getlastblocksajax', async (req, res) => {
   }
 });
 router.get('/ext/getaddresstxsajax/:address', async (req, res) => {
-  const rowData: Array<[string, string, number, number, number]> = [];
   let { start, length, draw } = ajaxParamTypeConverter(req.query);
   const { address }: { address: string } = req.params;
   if (!length || isNaN(length) || length > settings.index.last_txs) {
@@ -530,6 +534,7 @@ router.get('/ext/getaddresstxsajax/:address', async (req, res) => {
     start = 0;
   }
   try {
+    const rowData: Array<[string, string, number, number, number]> = [];
     const { txs, count } = await db.get_address_txs_ajax(address, start, length);
     txs.forEach(tx => {
       const value = { vin: 0, vout: 0 };
