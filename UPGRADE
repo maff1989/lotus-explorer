@@ -1,4 +1,12 @@
 Note: All updates require the explorer to be restarted
+2.2.0 -> 2.3.0
+* Update chronik-client to 0.8.1
+* Expand Chronik wrapper library
+* Add Chronik `history` API endpoint for addresses
+* Adjust Inflation chart data aggregation/display
+* Add "Burned" column to tx table on Block page
+* Misc fixes/tweaks
+
 2.1.0 -> 2.2.0
 * Add Inflation XPI chart to Charts page
   * Shows amount of XPI entering/leaving circulation per block
