@@ -45,7 +45,7 @@ chronikRouter.get('/block/:hashOrHeight', async (req, res) => {
     return res.json({ error: `failed to fetch block for ${hashOrHeight}` });
   }
 });
-chronikRouter.get('sendtx/:rawTx', async (req, res) => {
+chronikRouter.get('/sendtx/:rawTx', async (req, res) => {
   const rawTx = String(req.params.rawTx);
   const skipSlpCheck = true;
   try {
