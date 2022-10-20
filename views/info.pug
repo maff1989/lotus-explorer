@@ -211,6 +211,12 @@ block content
           
           li
             p
+              strong history (/chronik/history/:address/:page/:pageSize)
+              br
+              a(href='/chronik/history/' + hashes.address + '/0/50') #{address}/chronik/history/#{hashes.address}/0/50
+          
+          li
+            p
               strong block (/chronik/block/:hashOrHeight)
               br
               a(href='/chronik/block/' + hashes.blockindex) #{address}/chronik/block/#{hashes.blockindex}
@@ -227,7 +233,7 @@ block content
             p
               strong sendtx (/chronik/sendtx/:rawTx)
               br
-              em broadcast hex-encoded signed tx to #{settings.coin} network
+              em Broadcast hex-encoded signed tx to #{settings.coin} network
 
         h3 Linking (GET)
         p
