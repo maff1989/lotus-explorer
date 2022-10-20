@@ -34,7 +34,7 @@ class Settings {
     "port" : 27017
   };
   // use Chronik back-end for retrieving indexed data
-  use_chronik = true;
+  use_chronik = false;
   // Chronik back-end settings
   chronik = {
     "host": "localhost",
