@@ -19,12 +19,12 @@ chronikRouter.get('/utxos/:address', async (req, res) => {
     return res.json({ error: `failed to fetch UTXOs for ${address}` });
   }
 });
-chronikRouter.get('/history/:address/:page?/:length?', async (req, res) => {
-  const { address, page, length } = req.params;
+chronikRouter.get('/history/:address/:page?/:pageSize?', async (req, res) => {
+  const { address, page, pageSize } = req.params;
   const p = page ? Number(page): 0;
-  const l = length ? Number(length): settings.txcount_per_page;
+  const s = pageSize ? Number(pageSize): settings.txcount_per_page;
   try {
-    const history = await chronik.addressGetHistory(address, p, l);
+    const history = await chronik.addressGetHistory(address, p, s);
     return res.json(history);
   } catch (e: any) {
     console.log(`${req.originalUrl}: ${e.message}`);
