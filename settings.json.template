@@ -80,7 +80,7 @@
   "display": {
     "api": true,
     "markets": false,
-    "charts": true,
+    "stats": true,
     "richlist": true,
     "twitter": true,
     "facebook": false,

@@ -54,7 +54,7 @@ class Settings {
   display = {
     "api": true,
     "markets": true,
-    "charts": true,
+    "stats": true,
     "twitter": true,
     "facebook": false,
     "googleplus": false,

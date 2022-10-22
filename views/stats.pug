@@ -2,6 +2,8 @@ extends layout
 
 block content
   script.
+    // network stats
+    const stats = !{JSON.stringify(stats)};
     // data from db queries
     const chartData = {
       InflationDay: !{JSON.stringify(inflationDay)},
@@ -540,10 +542,90 @@ block content
         }
       });
     });
-  
-  
-  //code Number of TX last 24h: #{txs_day.length}
-  //code #{JSON.stringify(txsDay)}
+  .col-md-12
+    .row.text-center.d-flex.justify-content-center
+      - const difficulty = stats.difficulty.toFixed(5);
+      - const mempoolSize = stats.mempool.size.toLocaleString('en');
+      - const mempoolKB = stats.mempool.bytes.toFixed(3) / 1000;
+      - const hashrate = stats.hashrate.toLocaleString('en');
+      - const supply = (stats.dbStats.supply / 1000000).toLocaleString('en', { 'maximumFractionDigits': 0 });
+      - const burned = (stats.dbStats.burned / 1000000).toLocaleString('en', { 'maximumFractionDigits': 2 });
+      .col-md-2
+        .card.card-default.d-none.d-sm-block.d-block
+          .card-header
+            if settings.nethash_units == 'K'
+              strong #{settings.locale.network} (KH/s)
+            else if settings.nethash_units == 'M'
+              strong #{settings.locale.network} (MH/s)
+            else if settings.nethash_units == 'G'
+              strong #{settings.locale.network} (GH/s)
+            else if settings.nethash_units == 'T'
+              strong #{settings.locale.network} (TH/s)
+            else if settings.nethash_units == 'P'
+              strong #{settings.locale.network} (PH/s)
+            else if settings.nethash_units == 'H'
+              strong #{settings.locale.network} (H/s)
+          .card-body
+            #hashratecard
+              span.header-icons.fa.fa-gears
+              if settings.index.difficulty == 'Hybrid'
+                label#hashrate #{hashrate}
+                <br>
+                label#lblX1
+              else
+                label#hashrate #{hashrate}
+      .col-md-2
+        .card.card-default.d-none.d-sm-block.d-block
+          .card-header
+            strong #{settings.locale.difficulty}
+          .card-body
+            #difficultycard
+              span.header-icons.fa.fa-sliders
+              if settings.index.difficulty == 'Hybrid'
+                label#difficulty #{difficulty}
+                <br>
+                label#difficultyHybrid -
+              else
+                label#difficulty #{difficulty}
+      //-
+        .col-md-2.col-md-12
+            img(src=settings.logo, style='margin-top:-15px;height:128px;')
+          
+      .col-md-2
+        .card.card-default.d-none.d-sm-block.d-block
+          .card-header
+            strong #{settings.locale.ex_supply} (#{settings.symbol})
+          .card-body
+            #supplycard
+              span.header-icons.fa.fa-pie-chart
+              if settings.index.difficulty == 'Hybrid'
+                label#supply ~#{supply}
+                <br>
+                label#lblX1
+              else
+                label#supply ~#{supply}
+              if settings.index.show_market_cap == true && settings.index.show_market_cap_over_price != true  
+                <br>  
+                label ( 
+                label#marketCap - 
+                label )
+      .col-md-2
+        .card.card-default.d-none.d-sm-block.d-block
+          .card-header
+            strong Burned Supply (#{settings.symbol})
+          .card-body
+            span.header-icons.fa.fa-fire
+            label#burnedSupply #{burned}
+
+      .col-md-2
+        .card.card-default.d-none.d-sm-block.d-block
+          .card-header
+            strong #{settings.locale.ex_mempoolinfo}
+          .card-body
+            #mempoolinfocard
+              span.header-icons.fa.fa-th-list
+              label#mempoolinfo #{mempoolSize} (#{mempoolKB} KB)
+  hr
   .col-md-12
     .row
       .col-md-6

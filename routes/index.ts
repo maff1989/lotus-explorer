@@ -137,22 +137,31 @@ router.get('/richlist', async (req, res) => {
     return route_get_index(res, `Richlist not found for coin ${settings.coin}`);
   }
 });
-router.get('/charts', async (req, res) => {
-  if (!settings.display.charts) {
+router.get('/stats', async (req, res) => {
+  if (!settings.display.stats) {
     return route_get_index(res, null);
   }
   try {
+    const stats = {
+      difficulty: await lib.explorer.get_difficulty(),
+      hashrate: await lib.explorer.get_hashrate(),
+      connections: await lib.explorer.get_connectioncount(),
+      blockcount: await lib.explorer.get_blockcount(),
+      mempool: await lib.explorer.get_mempoolinfo(),
+      dbStats: await db.get_stats(settings.coin)
+    };
     const dbCharts = await db.get_charts();
-    return res.render('charts', {
-      active: 'charts',
+    return res.render('stats', {
+      active: 'stats',
+      stats,
       ...dbCharts,
       burnedDay_total: toXPI(dbCharts.burnedDay_total),
       burnedWeek_total: toXPI(dbCharts.burnedWeek_total),
-      burnedMonth_total: toXPI(dbCharts.burnedMonth_total)
+      burnedMonth_total: toXPI(dbCharts.burnedMonth_total),
     });
   } catch (e: any) {
-    console.log(`/charts: ${e.message}`);
-    return route_get_index(res, `Failed to render Charts page, please contact the site admin`);
+    console.log(`/stats: ${e.message}`);
+    return route_get_index(res, `Failed to render Stats page, please contact the site admin`);
   }
 });
 router.get('/network', async (req, res) => {
@@ -383,29 +392,6 @@ router.post('/search', async (req, res) => {
  *      Extended API
  * 
  */
-router.get('/ext/summary', async (req, res) => {
-  try {
-    const difficulty = await lib.explorer.get_difficulty();
-    const hashrate = await lib.explorer.get_hashrate();
-    const connections = await lib.explorer.get_connectioncount();
-    const blockcount = await lib.explorer.get_blockcount();
-    const mempool = await lib.explorer.get_mempoolinfo();
-    const dbStats = await db.get_stats(settings.coin);
-    return res.send({ data: [{
-      difficulty: difficulty,
-      supply: toXPI(dbStats.supply),
-      burned: toXPI(dbStats.burned),
-      hashrate: hashrate,
-      // lastPrice: dbStats.last_price,
-      connections: connections,
-      blockcount: blockcount,
-      mempoolinfo: mempool
-    }]});
-  } catch (e: any) {
-    console.log(`/ext/summary: ${e.message}`);
-    return res.send({ error: `failed to fetch summary data` });
-  }
-});
 router.get('/ext/getmoneysupply', async (req, res) => {
   const stats = await db.get_stats(settings.coin);
   const supplyXPI = toXPI(stats.supply)

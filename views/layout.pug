@@ -91,10 +91,12 @@ html
         $(window).resize(function () {
           $($.fn.dataTable.tables( true ) ).DataTable().columns.adjust();
         });
+        /*
         setInterval( function() {
           update_stats();
         }, 10000);
         update_stats();
+        */
       });
     style(type="text/css").
       .header-icons {
@@ -179,11 +181,11 @@ html
               a.nav-link(href='/richlist')
                 span.fa.fa-btc
                 span.menu-text #{settings.locale.menu_richlist}
-          if settings.display.charts == true
-            li#charts
-              a.nav-link.loading(href='/charts')
+          if settings.display.stats == true
+            li#stats
+              a.nav-link.loading(href='/stats')
                 span.fa.fa-bar-chart
-                span.menu-text #{settings.locale.menu_charts}
+                span.menu-text #{settings.locale.menu_stats}
           if settings.display.markets == true
             li#markets
               a.nav-link.loading(href='/markets/'+settings.markets.default)
@@ -196,83 +198,6 @@ html
                 span.menu-text #{settings.locale.menu_api}
     .col-md-12
       .row.text-center.d-flex.justify-content-center
-
-        .col-md-2
-          .card.card-default.d-none.d-sm-block.d-block
-            .card-header
-              if settings.nethash_units == 'K'
-                strong #{settings.locale.network} (KH/s)
-              else if settings.nethash_units == 'M'
-                strong #{settings.locale.network} (MH/s)
-              else if settings.nethash_units == 'G'
-                strong #{settings.locale.network} (GH/s)
-              else if settings.nethash_units == 'T'
-                strong #{settings.locale.network} (TH/s)
-              else if settings.nethash_units == 'P'
-                strong #{settings.locale.network} (PH/s)
-              else if settings.nethash_units == 'H'
-                strong #{settings.locale.network} (H/s)
-            .card-body
-              #hashratecard
-                span.header-icons.fa.fa-gears
-                if settings.index.difficulty == 'Hybrid'
-                  label#hashrate -
-                  <br>
-                  label#lblX1
-                else
-                  label#hashrate -
-        .col-md-2
-          .card.card-default.d-none.d-sm-block.d-block
-            .card-header
-              strong #{settings.locale.difficulty}
-            .card-body
-              #difficultycard
-                span.header-icons.fa.fa-sliders
-                if settings.index.difficulty == 'Hybrid'
-                  label#difficulty -
-                  <br>
-                  label#difficultyHybrid -
-                else
-                  label#difficulty -
-        //-
-          .col-md-2.col-md-12
-              img(src=settings.logo, style='margin-top:-15px;height:128px;')
-            
-        .col-md-2
-          .card.card-default.d-none.d-sm-block.d-block
-            .card-header
-              strong #{settings.locale.ex_supply} (#{settings.symbol})
-            .card-body
-              #supplycard
-                span.header-icons.fa.fa-pie-chart
-                if settings.index.difficulty == 'Hybrid'
-                  label#supply -
-                  <br>
-                  label#lblX1
-                else
-                  label#supply -
-                if settings.index.show_market_cap == true && settings.index.show_market_cap_over_price != true  
-                  <br>  
-                  label ( 
-                  label#marketCap - 
-                  label )
-        .col-md-2
-          .card.card-default.d-none.d-sm-block.d-block
-            .card-header
-              strong Burned Supply (#{settings.symbol})
-            .card-body
-              span.header-icons.fa.fa-fire
-              label#burnedSupply -
-
-        .col-md-2
-          .card.card-default.d-none.d-sm-block.d-block
-            .card-header
-              strong #{settings.locale.ex_mempoolinfo}
-            .card-body
-              #mempoolinfocard
-                span.header-icons.fa.fa-th-list
-                label#mempoolinfo - (- KB)
-                
       //- don't need the BTC Price card
         .col-md-2
           .card.card-default.d-none.d-md-block.d-block

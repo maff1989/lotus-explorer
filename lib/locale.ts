@@ -6,7 +6,7 @@ class Locale {
   menu_explorer = "Explorer";
   menu_api = "API";
   menu_markets = "Markets";
-  menu_charts = "Charts";
+  menu_stats = "Stats";
   menu_richlist = "Rich List";
   menu_reward = "Reward";
   menu_movement = "Movement";
