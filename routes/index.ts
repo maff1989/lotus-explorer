@@ -142,13 +142,25 @@ router.get('/stats', async (req, res) => {
     return route_get_index(res, null);
   }
   try {
+    const difficulty = await lib.explorer.get_difficulty();
+    const hashrate = await lib.explorer.get_hashrate();
+    const connections = await lib.explorer.get_connectioncount();
+    const blockcount = await lib.explorer.get_blockcount();
+    const mempool = await lib.explorer.get_mempoolinfo();
+    const dbStats = await db.get_stats(settings.coin);
+    // calculate runrate inflation
+    // 
+    const block = await db.get_latest_block();
+    const inflation =
+      ((block.subsidy - block.burned) * 720 * 365) / dbStats.supply;
     const stats = {
-      difficulty: await lib.explorer.get_difficulty(),
-      hashrate: await lib.explorer.get_hashrate(),
-      connections: await lib.explorer.get_connectioncount(),
-      blockcount: await lib.explorer.get_blockcount(),
-      mempool: await lib.explorer.get_mempoolinfo(),
-      dbStats: await db.get_stats(settings.coin)
+      difficulty,
+      hashrate,
+      connections,
+      blockcount,
+      mempool,
+      inflation,
+      dbStats
     };
     const dbCharts = await db.get_charts();
     return res.render('stats', {
