@@ -1,4 +1,10 @@
 Note: All updates require the explorer to be restarted
+2.3.0 -> 2.4.0
+* Consolidate Charts and Summary data (hashrate, diff, etc.) into a single Stats page
+* Add Inflation runrate stat to Stats page
+* Upgrade Font Awesome 4.3.0 -> 4.7.0
+* Misc fixes/tweaks
+
 2.2.0 -> 2.3.0
 * Update chronik-client to 0.8.1
 * Expand Chronik wrapper library
