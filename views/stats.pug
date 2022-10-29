@@ -544,6 +544,7 @@ block content
     });
   .col-md-12
     .row.text-center.d-flex.justify-content-center
+      - const inflation = (stats.inflation * 100).toFixed(3);
       - const difficulty = stats.difficulty.toFixed(5);
       - const mempoolSize = stats.mempool.size.toLocaleString('en');
       - const mempoolKB = stats.mempool.bytes.toFixed(3) / 1000;
@@ -587,6 +588,14 @@ block content
                 label#difficultyHybrid -
               else
                 label#difficulty #{difficulty}
+      .col-md-2
+        .card.card-default.d-none.d-sm-block.d-block
+          .card-header
+            strong #{settings.locale.ex_mempoolinfo}
+          .card-body
+            #mempoolinfocard
+              span.header-icons.fa.fa-th-list
+              label#mempoolinfo #{mempoolSize} (#{mempoolKB} KB)
       //-
         .col-md-2.col-md-12
             img(src=settings.logo, style='margin-top:-15px;height:128px;')
@@ -616,15 +625,22 @@ block content
           .card-body
             span.header-icons.fa.fa-fire
             label#burnedSupply #{burned}
-
       .col-md-2
         .card.card-default.d-none.d-sm-block.d-block
           .card-header
-            strong #{settings.locale.ex_mempoolinfo}
+            strong Inflation 
+              span.fa.fa-info-circle(
+                data-toggle = 'popover'
+                data-content = 'At the inflation rate of the latest block, supply will increase by this % over the span of 1 year'
+              )#inflationPopover
           .card-body
-            #mempoolinfocard
-              span.header-icons.fa.fa-th-list
-              label#mempoolinfo #{mempoolSize} (#{mempoolKB} KB)
+            span.header-icons.fa.fa-percent
+            label#inflation #{inflation}
+        script.
+          $('#inflationPopover').popover({
+            placement: 'top',
+            trigger: 'hover'
+          });
   hr
   .col-md-12
     .row
