@@ -15,7 +15,7 @@ html
     link(rel='stylesheet', href='/vendor/flags-css/css/flag-icon.min.css')
     link(res='stylesheet', href='//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.1.1/css/bootstrap.css')
     link(rel='stylesheet', href='//cdn.datatables.net/1.10.19/css/dataTables.bootstrap4.min.css')
-    link(rel='stylesheet', href='//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css')
+    link(rel='stylesheet', href='//maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css')
     link(rel='stylesheet', href='/stylesheets/style.css')
     script(src='https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js')
     script(src='//stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.bundle.min.js')
@@ -197,28 +197,6 @@ html
                 span.fa.fa-info-circle
                 span.menu-text #{settings.locale.menu_api}
     .col-md-12
-      .row.text-center.d-flex.justify-content-center
-      //- don't need the BTC Price card
-        .col-md-2
-          .card.card-default.d-none.d-md-block.d-block
-            if settings.index.show_market_cap != true || settings.index.show_market_cap_over_price != true
-              .card-header
-                strong #{settings.markets.exchange} Price
-              .card-body
-                #pricecard
-                  span.header-icons.fa.fa-rocket
-                  if settings.index.difficulty == 'Hybrid'
-                    label#lastPrice -
-                    <br>
-                    label#lblX1
-                  else
-                    label#lastPrice -
-          if settings.index.show_market_cap == true && settings.index.show_market_cap_over_price == true
-            .card-header
-              strong Market Cap
-            .card-body
-              label#marketCap -
-
       .row.text-center(style='margin-top:10px;margin-bottom:20px;')
         form.form-inline.col-12.d-flex.justify-content-center(method='post', action='/search')
           #index-search.form-group.d-flex.justify-content-center
