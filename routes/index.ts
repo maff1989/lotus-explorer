@@ -221,6 +221,7 @@ router.get('/tx/:txid', async (req, res) => {
     // process db tx
     const dbTx = await db.get_tx(txid);
     if (dbTx) {
+      renderData.blockcount = blockcount;
       renderData.tx = dbTx;
       return res.render('tx', renderData);
     }
