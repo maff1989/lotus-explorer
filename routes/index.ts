@@ -215,7 +215,7 @@ router.get('/tx/:txid', async (req, res) => {
         vout: vout,
         burned: burned
       }
-      renderData.blockcount = tx.block ? -1 : blockcount;
+      renderData.blockcount = tx.block ? blockcount : -1;
       return res.render('tx', renderData);
     }
     // process db tx
