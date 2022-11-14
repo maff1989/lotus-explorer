@@ -75,6 +75,9 @@ router.get('/info', async (req, res) => {
 router.get('/markets/:market', async (req, res) => {
   const { market } = req.params;
   try {
+    if (!settings.display.markets) {
+      return route_get_index(res, null);
+    }
     if (!settings.markets.enabled.includes(market)) {
       throw new Error(`Market "${market}" not enabled in settings.json`);
     }
