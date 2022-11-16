@@ -1,4 +1,7 @@
 Note: All updates require the explorer to be restarted
+2.4.2 -> 2.4.3
+* Misc fixes
+
 2.4.1 -> 2.4.2
 * Fix inverted conditional when processing tx using Chronik
 * Add link on home page to GiveLotus Blog
