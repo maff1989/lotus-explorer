@@ -1,4 +1,7 @@
 Note: All updates require the explorer to be restarted
+2.4.3 -> 2.4.4
+* Bugfix: Properly calculate Top 100 wealth distribution percentage
+
 2.4.2 -> 2.4.3
 * Misc fixes
 
