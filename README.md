@@ -1,4 +1,4 @@
-Lotus Explorer - 2.4.4
+Lotus Explorer - 2.4.5
 ================
 
 Lotus block explorer written in TypeScript for node.js
