@@ -242,7 +242,7 @@ export class Explorer {
   ): Promise<number> {
     const blockhash = await this.get_blockhash(height);
     const block = await this.get_block(blockhash);
-    if (block?.confirmations > 0) {
+    if (block?.confirmations > -1) {
       return height;
     }
     return await this.is_block_orphaned(height - 1);
