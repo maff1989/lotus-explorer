@@ -178,7 +178,7 @@ const save_block = async (
     const newBlock = new MongoDB.Block.Model({
       height: block.height,
       minedby: miner,
-      //hash: block.hash,
+      hash: block.hash,
       difficulty: block.difficulty,
       timestamp: block.time,
       localeTimestamp: new Date(block.time * 1000)

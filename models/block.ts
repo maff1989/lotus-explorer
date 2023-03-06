@@ -4,6 +4,7 @@ import { Schema, model } from 'mongoose';
  */
 export type Document = {
   height: number,
+  hash: string,
   minedby: string,
   timestamp: number,
   localeTimestamp: string,
@@ -16,7 +17,7 @@ export type Document = {
 };
 const BlockSchema = new Schema<Document>({
   height: {type: Number, default: 0, unique: true, index: true},
-  //hash: { type: String, index: true },
+  hash: { type: String, default: null, unique: true, index: true },
   minedby: { type: String, default: "", index: true },
   timestamp: { type: Number, default: 0, index: true },
   localeTimestamp: { type: String }, // for jqPlot charts

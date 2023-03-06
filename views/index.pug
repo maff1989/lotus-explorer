@@ -30,13 +30,13 @@ block content
         ajax: '/ext/getlastblocksajax',
         rowCallback: function(row, data, index) {
           var height = data[0];
-          var minedby = data[1];
+          var hash = data[1];
           var size = data[2];
           var txcount = data[3];
           var burned = data[4];
           var timestamp = data[5];
           $("td:eq(0)", row).html('<a href="/block/' + height + '">' + height + '</a>');
-          $("td:eq(1)", row).html('<a href="/address/' + minedby + '">' + minedby + '</a>').addClass("d-none d-md-none d-lg-table-cell");
+          $("td:eq(1)", row).html('<a href="/block/' + hash + '">' + hash + '</a>').addClass("d-none d-md-none d-lg-table-cell");
           $("td:eq(2)", row).html(parseFloat(size / 1000).toLocaleString('en', {'maximumFractionDigits':3}) + ' KB');
           $("td:eq(3)", row).html(parseInt(txcount).toLocaleString('en'));
           $("td:eq(4)", row).html(burned > 0 ? parseFloat(burned).toLocaleString('en', {'minimumFractionDigits':6}): '-');
@@ -122,7 +122,7 @@ block content
         thead
           tr
             th.text-center #{settings.locale.height}
-            th.d-none.d-md-none.d-lg-table-cell.text-center #{settings.locale.block_mined_by}
+            th.d-none.d-md-none.d-lg-table-cell.text-center #{settings.locale.tx_block_hash}
             th.text-center #{settings.locale.size}
             th.text-center #{settings.locale.block_tx_count}
             th.text-center #{settings.locale.block_burned} (#{settings.symbol})

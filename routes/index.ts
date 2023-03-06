@@ -293,6 +293,7 @@ router.get('/block/:hashOrHeight', async (req, res) => {
         renderData.txs = 'GENESIS';
         renderData.blockDocument = {
           height: block.height,
+          hash: settings.genesis_block,
           minedby: '-',
           timestamp: block.time,
           localeTimestamp: new Date(block.time * 1000)
@@ -532,7 +533,7 @@ router.get('/ext/getlastblocksajax', async (req, res) => {
     const { blocks, count } = await db.get_last_blocks_ajax(start, length);
     blocks.forEach(block => rowData.push([
       block.height,
-      block.minedby,
+      block.hash,
       block.size,
       block.txcount,
       toXPI(block.burned),
