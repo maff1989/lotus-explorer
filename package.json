@@ -1,6 +1,6 @@
 {
   "name": "lotus-explorer",
-  "version": "2.4.5",
+  "version": "2.4.6",
   "private": true,
   "scripts": {
     "start": "./node_modules/typescript/bin/tsc && node --stack-size=10000 ./bin/cluster.js",

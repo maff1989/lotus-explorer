@@ -1,4 +1,4 @@
-Lotus Explorer - 2.4.5
+Lotus Explorer - 2.4.6
 ================
 
 Lotus block explorer written in TypeScript for node.js
@@ -123,7 +123,7 @@ Where [SIZE] is an integer higher than the default.
 
 ### License
 
-Copyright (c) 2021-2022 maff1989  
+Copyright (c) 2021-2023 maff1989  
 Copyright (c) 2015, Iquidus Technology  
 Copyright (c) 2015, Luke Williams  
 All rights reserved.
