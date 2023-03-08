@@ -240,9 +240,9 @@ export class Explorer {
   async is_block_orphaned(
     height: number
   ): Promise<number> {
+    const dbBlock = await MongoDB.Block.Model.findOne({ height });
     const blockhash = await this.get_blockhash(height);
-    const block = await this.get_block(blockhash);
-    if (block?.confirmations > -1) {
+    if (dbBlock.hash == blockhash) {
       return height;
     }
     return await this.is_block_orphaned(height - 1);
