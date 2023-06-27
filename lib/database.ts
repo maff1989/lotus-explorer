@@ -1139,20 +1139,12 @@ export class Database {
   ): Promise<void> {
     const start = Date.now();
     try {
-      const addresses = list == 'received'
-        ? await MongoDB.Address.Model
-          .find({}, 'a_id balance received name')
-          .sort({ received: 'desc' })
-          .limit(100)
-        : await MongoDB.Address.Model
-          .find({}, 'a_id balance received name')
-          .sort({ balance: 'desc' })
-          .limit(100);
-      list == 'received'
-        ? await MongoDB.Richlist.Model
-          .updateOne({ coin: settings.coin }, { received: addresses })
-        : await MongoDB.Richlist.Model
-          .updateOne({ coin: settings.coin }, { balance: addresses });
+      const addresses = await MongoDB.Address.Model
+        .find({ a_id: { $ne: 'OP_RETURN' }}, 'a_id balance received name')
+        .sort({ [list]: 'desc' })
+        .limit(100);
+      await MongoDB.Richlist.Model
+        .updateOne({ coin: settings.coin }, { [list]: addresses });
     } catch (e: any) {
       throw new Error(`update_richlist: ${e.message}`);
     }
