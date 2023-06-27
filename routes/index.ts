@@ -389,6 +389,8 @@ router.post('/search', async (req, res) => {
       if (dbTx?.txid || mempool.includes(search)) {
         return res.redirect(`/tx/${search}`);;
       }
+      // error if not block/tx
+      return route_get_index(res, `Not a valid block or transaction: ${search}`);
     }
     // process db address
     const address = await db.get_address(search);
